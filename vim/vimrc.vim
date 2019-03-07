@@ -114,3 +114,24 @@
 	"Swap line
 	"Insert blank below and above
 
+"This is my plugin list
+call plug#begin()
+Plug 'morhetz/gruvbox'
+Plug 'scrooloose/nerdtree'
+call plug#end()
+
+"Color Scheme
+colorscheme gruvbox
+
+"Opens up NERDTree Automatically
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+
+"This closes vim if the only window left is NERDTree
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+"This gets rid of the leading G on the directory buffer in NERDTree
+let g:NERDTreeNodeDelimiter = "\u00a0"
+
+        
+        
