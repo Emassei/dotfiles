@@ -92,4 +92,10 @@ Each plugin is sensitive to where you are and what you're doing, they reveal the
 * `%` has been remapped to `v`.
 * Use vim movement keys for moving between panes. 
 * Copy buffer is coppied to xclip.
-* Status bar tells you date, time, user, and hostname. Especially useful with nested ssh sessions. 
+* Status bar tells you date, time, user, and hostname. Especially useful with nested ssh sessions.
+
+### Local Plugins outside of the dot files
+
+* brew install pgcli  # Only on macOS - This is for command line postgres
+
+
