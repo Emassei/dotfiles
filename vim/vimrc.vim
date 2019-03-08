@@ -7,7 +7,7 @@
 	set dir=/tmp/
 	set relativenumber 
 	set number
-
+    set nowrap
 	autocmd Filetype html setlocal sw=2 expandtab
 	autocmd Filetype javascript setlocal sw=4 expandtab
 
@@ -118,6 +118,7 @@
 call plug#begin()
 Plug 'morhetz/gruvbox'
 Plug 'scrooloose/nerdtree'
+Plug 'ctrlpvim/ctrlp.vim'
 call plug#end()
 
 "Color Scheme
