@@ -119,6 +119,10 @@ call plug#begin()
 Plug 'morhetz/gruvbox'
 Plug 'scrooloose/nerdtree'
 Plug 'ctrlpvim/ctrlp.vim'
+Plug 'valloric/youcompleteme'
+Plug 'scrooloose/syntastic'
+Plug 'pangloss/vim-javascript'
+Plug 'morhetz/gruvbox'
 call plug#end()
 
 "Color Scheme
@@ -134,5 +138,17 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 "This gets rid of the leading G on the directory buffer in NERDTree
 let g:NERDTreeNodeDelimiter = "\u00a0"
 
-        
+"This is the recomneded settings for syntastic, will see how it goes then
+"update as needed
+set statusline+=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_wq = 0
+
+"This is for vim-javascript
+let g:javascript_plugin_jsdoc = 1
         
