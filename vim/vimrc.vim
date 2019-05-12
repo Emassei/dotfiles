@@ -127,6 +127,7 @@ call plug#end()
 
 "Color Scheme
 colorscheme gruvbox
+set background=dark
 
 "Opens up NERDTree Automatically
 autocmd StdinReadPre * let s:std_in=1
