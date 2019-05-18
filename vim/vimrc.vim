@@ -152,4 +152,16 @@ let g:syntastic_check_on_wq = 0
 
 "This is for vim-javascript
 let g:javascript_plugin_jsdoc = 1
-        
+
+"This is to select all by pressing ctrl+a
+map <C-a> <esc>ggVG<CR>
+
+"This is to create closing character for the following keys
+inoremap " ""<left>
+inoremap ' ''<left>
+inoremap ( ()<left>
+inoremap [ []<left>
+inoremap { {}<left>
+inoremap {<CR> {<CR>}<ESC>O
+inoremap {;<CR> {<CR>};<ESC>O
+
