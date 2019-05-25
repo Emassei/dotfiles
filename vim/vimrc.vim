@@ -172,3 +172,6 @@ set wildmenu
 if &diff                             " only for diff mode/vimdiff
   set diffopt=filler,context:1000000 " filler is default and inserts empty lines for sync
   endif
+
+"Now the clipboard will work across environments, mac or linux
+set clipboard^=unnamed,unnamedplus
