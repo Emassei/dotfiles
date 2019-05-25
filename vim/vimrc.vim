@@ -165,3 +165,10 @@ inoremap { {}<left>
 inoremap {<CR> {<CR>}<ESC>O
 inoremap {;<CR> {<CR>};<ESC>O
 
+"For command line autocompletion
+set wildmenu
+
+"for not displaying folds when doing a vim diff
+if &diff                             " only for diff mode/vimdiff
+  set diffopt=filler,context:1000000 " filler is default and inserts empty lines for sync
+  endif
