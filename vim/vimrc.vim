@@ -178,3 +178,6 @@ set clipboard^=unnamed,unnamedplus
 
 "Set pprint to command line variable
 command PP execute "%!python -m json.tool"
+
+"To run current line from vim to the shell
+command Run exevute ".w !bash"
