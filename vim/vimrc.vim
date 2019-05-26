@@ -122,7 +122,7 @@ Plug 'ctrlpvim/ctrlp.vim'
 Plug 'valloric/youcompleteme'
 Plug 'scrooloose/syntastic'
 Plug 'pangloss/vim-javascript'
-Plug 'morhetz/gruvbox'
+Plug 'elzr/vim-json'
 call plug#end()
 
 "Color Scheme
@@ -175,3 +175,6 @@ if &diff                             " only for diff mode/vimdiff
 
 "Now the clipboard will work across environments, mac or linux
 set clipboard^=unnamed,unnamedplus
+
+"Set pprint to command line variable
+command PP execute "%!python -m json.tool"
