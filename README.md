@@ -98,3 +98,5 @@ Each plugin is sensitive to where you are and what you're doing, they reveal the
 
 * Install vimplug from https://github.com/junegunn/vim-plug, and then run :InstallPlug in the vim console
 * brew install pgcli  # Only on macOS - This is for command line postgres
+* For arch you need to run ./install.sh --clang-completer --system-libclang 
+
