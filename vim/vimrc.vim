@@ -123,6 +123,7 @@ Plug 'valloric/youcompleteme'
 Plug 'scrooloose/syntastic'
 Plug 'pangloss/vim-javascript'
 Plug 'elzr/vim-json'
+Plug 'shime/vim-livedown'
 call plug#end()
 
 "Color Scheme
@@ -181,3 +182,6 @@ command PP execute "%!python -m json.tool"
 
 "To run current line from vim to the shell
 command Run exevute ".w !bash"
+
+"ignore case
+set ignorecase
