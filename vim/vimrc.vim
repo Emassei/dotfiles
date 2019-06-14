@@ -183,5 +183,12 @@ command PP execute "%!python -m json.tool"
 "To run current line from vim to the shell
 command Run exevute ".w !bash"
 
-"ignore case
+"ignore case on searches
 set ignorecase
+
+"highlight lines that are too ling
+command LL execute "/\%>80v.\+"
+
+"This is to be able to delete
+nnoremap d "_d
+vnoremap d "_d
