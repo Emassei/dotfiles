@@ -124,6 +124,7 @@ Plug 'scrooloose/syntastic'
 Plug 'pangloss/vim-javascript'
 Plug 'elzr/vim-json'
 Plug 'shime/vim-livedown'
+Plug 'nathanaelkane/vim-indent-guides'
 call plug#end()
 
 "Color Scheme
