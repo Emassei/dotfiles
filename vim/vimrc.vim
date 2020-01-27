@@ -7,6 +7,7 @@
 	set dir=/tmp/
 	set nornu 
 	set number
+	set relativenumber
     set nowrap
 	autocmd Filetype html setlocal sw=2 expandtab
 	autocmd Filetype javascript setlocal sw=4 expandtab
