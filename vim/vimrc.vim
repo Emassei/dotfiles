@@ -18,7 +18,7 @@
 	set hlsearch
 	nnoremap <C-l> :nohl<CR><C-l>:echo "Search Cleared"<CR>
 	nnoremap <C-c> :set norelativenumber<CR>:set nonumber<CR>:echo "Line numbers turned off."<CR>
-	nnoremap <C-n> :set relativenumber<CR>:set number<CR>:echo "Line numbers turned on."<CR>
+	nnoremap <C-r> :set relativenumber<CR>:set number<CR>:echo "Line numbers turned on."<CR>
 
 	nnoremap n nzzzv
 	nnoremap N Nzzzv
@@ -121,7 +121,8 @@ Plug 'morhetz/gruvbox'
 Plug 'ctrlpvim/ctrlp.vim'
 Plug 'airblade/vim-gitgutter'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-Plug 'scrooloose/syntastic'
+" Plug 'scrooloose/syntastic'
+Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 Plug 'pangloss/vim-javascript'
 Plug 'elzr/vim-json'
 Plug 'shime/vim-livedown'
@@ -138,7 +139,23 @@ Plug 'scrooloose/nerdcommenter'
 Plug 'mileszs/ack.vim'
 Plug 'joshdick/onedark.vim'
 Plug 'tpope/vim-fugitive'
+Plug 'vimwiki/vimwiki'
 call plug#end()
+
+set nocompatible
+filetype plugin on
+
+" vimwiki with markdown support
+let g:vimwiki_ext2syntax = {'.md': 'markdown', '.markdown': 'markdown', '.mdown': 'markdown'}
+" helppage -> :h vimwiki-syntax 
+
+let g:vimwiki_list = [{'path': '~/vimwiki/',
+                      \ 'syntax': 'markdown', 'ext': '.md'}]
+
+" vim-instant-markdown - Instant Markdown previews from Vim
+" https://github.com/suan/vim-instant-markdown
+let g:instant_markdown_autostart = 0	" disable autostart
+map <leader>md :InstantMarkdownPreview<CR>
 
 "Color Scheme
 colorscheme onedark
@@ -150,14 +167,14 @@ set t_Co=256
 
 "This is the recomneded settings for syntastic, will see how it goes then
 "update as needed
-set statusline+=%#warningmsg#
-set statusline+=%{SyntasticStatuslineFlag()}
-set statusline+=%*
+" set statusline+=%#warningmsg#
+" set statusline+=%{SyntasticStatuslineFlag()}
+" set statusline+=%*
 
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
-let g:syntastic_check_on_wq = 0
+" let g:syntastic_always_populate_loc_list = 1
+" let g:syntastic_auto_loc_list = 1
+" let g:syntastic_check_on_open = 1
+" let g:syntastic_check_on_wq = 0
 
 "This is for vim-javascript
 let g:javascript_plugin_jsdoc = 1
