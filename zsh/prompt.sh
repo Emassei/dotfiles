@@ -38,12 +38,6 @@ set_prompt() {
 	fi
 
 	# Sudo: https://superuser.com/questions/195781/sudo-is-there-a-command-to-check-if-i-have-sudo-and-or-how-much-time-is-left
-	CAN_I_RUN_SUDO=$(sudo -n uptime 2>&1|grep "load"|wc -l)
-	if [ ${CAN_I_RUN_SUDO} -gt 0 ]
-	then
-		PS1+=', '
-		PS1+="%{$fg_bold[red]%}SUDO%{$reset_color%}"
-	fi
 
 	PS1+="%{$fg[white]%}]: %{$reset_color%}% "
 }
