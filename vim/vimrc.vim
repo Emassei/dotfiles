@@ -5,39 +5,24 @@
 	set tabstop=4
 	set shiftwidth=4
 	set dir=/tmp/
-	set nornu 
+	set nornu
 	set number
 	set relativenumber
     set nowrap
+	set linebreak
 	autocmd Filetype html setlocal sw=2 expandtab
 	autocmd Filetype javascript setlocal sw=4 expandtab
 
 	set cursorline
-	hi Cursor ctermfg=White ctermbg=Yellow cterm=bold guifg=white guibg=yellow gui=bold
+	"hi Cursor ctermfg=White ctermbg=Yellow cterm=bold guifg=white guibg=yellow gui=bold
 
 	set hlsearch
-	nnoremap <C-l> :nohl<CR><C-l>:echo "Search Cleared"<CR>
+	nnoremap <C-F> :nohl<CR><C-l>:echo "Search Cleared"<CR>
 	nnoremap <C-c> :set norelativenumber<CR>:set nonumber<CR>:echo "Line numbers turned off."<CR>
 	nnoremap <C-r> :set relativenumber<CR>:set number<CR>:echo "Line numbers turned on."<CR>
 
-	nnoremap n nzzzv
-	nnoremap N Nzzzv
-
-	nnoremap H 0
-	nnoremap L $
-	nnoremap J G
-	nnoremap K gg
-
-	map <tab> %
-
 	set backspace=indent,eol,start
 
-	nnoremap <Space> za
-	nnoremap <leader>z zMzvzz
-
-	nnoremap vv 0v$
-
-	set listchars=tab:\|\ 
 	nnoremap <leader><tab> :set list!<cr>
 	set pastetoggle=<F2>
 	set mouse=a
@@ -47,47 +32,7 @@
 	" Tabs
 		so ~/dotfiles/vim/tabs.vim
 
-	" General
-		inoremap <leader>for <esc>Ifor (int i = 0; i < <esc>A; i++) {<enter>}<esc>O<tab>
-		inoremap <leader>if <esc>Iif (<esc>A) {<enter>}<esc>O<tab>
-		
-
-	" Java
-		inoremap <leader>sys <esc>ISystem.out.println(<esc>A);
-		vnoremap <leader>sys yOSystem.out.println(<esc>pA);
-
-	" Java
-		inoremap <leader>con <esc>Iconsole.log(<esc>A);
-		vnoremap <leader>con yOconsole.log(<esc>pA);
-
-	" C++
-		inoremap <leader>cout <esc>Istd::cout << <esc>A << std::endl;
-		vnoremap <leader>cout yOstd::cout << <esc>pA << std:endl;
-
-	" C
-		inoremap <leader>out <esc>Iprintf(<esc>A);<esc>2hi
-		vnoremap <leader>out yOprintf(, <esc>pA);<esc>h%a
-
-	" Typescript
-		autocmd BufNewFile,BufRead *.ts set syntax=javascript
-		autocmd BufNewFile,BufRead *.tsx set syntax=javascript
-
-	" Markup
-		inoremap <leader>< <esc>I<<esc>A><esc>yypa/<esc>O<tab>
-
-
-" File and Window Management 
-	inoremap <leader>w <Esc>:w<CR>
-	nnoremap <leader>w :w<CR>
-
-	inoremap <leader>q <ESC>:q<CR>
-	nnoremap <leader>q :q<CR>
-
-	inoremap <leader>x <ESC>:x<CR>
-	nnoremap <leader>x :x<CR>
-
-	nnoremap <leader>e :Ex<CR>
-	nnoremap <leader>t :tabnew<CR>:Ex<CR>
+" File and Window Management
 	nnoremap <leader>v :vsplit<CR>:w<CR>:Ex<CR>
 	nnoremap <leader>s :split<CR>:w<CR>:Ex<CR>
 
@@ -100,54 +45,37 @@
 			\ endif
 	augroup END
 
-" Auto load
-	" Triger `autoread` when files changes on disk
-	" https://unix.stackexchange.com/questions/149209/refresh-changed-content-of-file-opened-in-vim/383044#383044
-	" https://vi.stackexchange.com/questions/13692/prevent-focusgained-autocmd-running-in-command-line-editing-mode
-	autocmd FocusGained,BufEnter,CursorHold,CursorHoldI * if mode() != 'c' | checktime | endif
-	set autoread 
-	" Notification after file change
-	" https://vi.stackexchange.com/questions/13091/autocmd-event-for-autoread
-	autocmd FileChangedShellPost *
-	  \ echohl WarningMsg | echo "File changed on disk. Buffer reloaded." | echohl None
-
-" Future stuff
-	"Swap line
-	"Insert blank below and above
 
 "This is my plugin list
 call plug#begin()
-Plug 'morhetz/gruvbox'
-Plug 'ctrlpvim/ctrlp.vim'
 Plug 'airblade/vim-gitgutter'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-" Plug 'scrooloose/syntastic'
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
-Plug 'pangloss/vim-javascript'
-Plug 'elzr/vim-json'
-Plug 'shime/vim-livedown'
 Plug 'scrooloose/nerdtree'
-Plug 'nathanaelkane/vim-indent-guides'
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
-Plug 'jremmen/vim-ripgrep'
-Plug 'epmatsw/ag.vim'
-Plug 'junegunn/limelight.vim'
-Plug 'junegunn/seoul256.vim'
 Plug 'vim-airline/vim-airline'
 Plug 'scrooloose/nerdcommenter'
 Plug 'mileszs/ack.vim'
 Plug 'joshdick/onedark.vim'
 Plug 'tpope/vim-fugitive'
 Plug 'vimwiki/vimwiki'
+Plug 'junegunn/goyo.vim'
 call plug#end()
 
 set nocompatible
 filetype plugin on
 
+
+" Shortcutting split navigation, saving a keypress:
+	map <C-h> <C-w>h
+	map <C-j> <C-w>j
+	map <C-k> <C-w>k
+	map <C-l> <C-w>l
+
 " vimwiki with markdown support
 let g:vimwiki_ext2syntax = {'.md': 'markdown', '.markdown': 'markdown', '.mdown': 'markdown'}
-" helppage -> :h vimwiki-syntax 
+" helppage -> :h vimwiki-syntax
 
 let g:vimwiki_list = [{'path': '~/vimwiki/',
                       \ 'syntax': 'markdown', 'ext': '.md'}]
@@ -157,52 +85,24 @@ let g:vimwiki_list = [{'path': '~/vimwiki/',
 let g:instant_markdown_autostart = 0	" disable autostart
 map <leader>md :InstantMarkdownPreview<CR>
 
+" so I can add the python idpb trace with one keystroke
+nnoremap <leader>p oimport ipdb; ipdb.set_trace()<Esc>
+
+" Automatically deletes all trailing whitespace on save.
+	autocmd BufWritePre * %s/\s\+$//e
+
+" Save file as sudo on files that require root permission
+	cnoremap w!! execute 'silent! write !sudo tee % >/dev/null' <bar> edit!
+
+" Goyo plugin makes text more readable when writing prose:
+	map <leader>f :Goyo<CR>
+
 "Color Scheme
 colorscheme onedark
-set background=dark
-
-"might work for the colorscheme
-set t_Co=256
-
-
-"This is the recomneded settings for syntastic, will see how it goes then
-"update as needed
-" set statusline+=%#warningmsg#
-" set statusline+=%{SyntasticStatuslineFlag()}
-" set statusline+=%*
-
-" let g:syntastic_always_populate_loc_list = 1
-" let g:syntastic_auto_loc_list = 1
-" let g:syntastic_check_on_open = 1
-" let g:syntastic_check_on_wq = 0
-
-"This is for vim-javascript
-let g:javascript_plugin_jsdoc = 1
-
-"this is to use the silver searcher with vim
-let g:ag_working_path_mode="r"
-"This is to select all by pressing ctrl+a
-let g:ackprg = 'ag --vimgrep'
-
-
-map <C-a> <esc>ggVG<CR>
-
-"This is to create closing character for the following keys
-"inoremap " ""<left>
-"inoremap ' ''<left>
-"inoremap ( ()<left>
-inoremap [ []<left>
-"inoremap { {}<left>
-inoremap {<CR> {<CR>}<ESC>O
-inoremap {;<CR> {<CR>};<ESC>O
 
 "For command line autocompletion
 set wildmenu
 
-"for not displaying folds when doing a vim diff
-if &diff                             " only for diff mode/vimdiff
-  set diffopt=filler,context:1000000 " filler is default and inserts empty lines for sync
-  endif
 
 "Now the clipboard will work across environments, mac or linux
 set clipboard^=unnamed,unnamedplus
@@ -226,8 +126,17 @@ vnoremap d "_d
 "This is toggle nerdtree
 nmap <C-n> :NERDTreeToggle<CR>
 
+"To bring up the file searcher
+nmap <C-g> :Files<CR>
+
+"To bring up the buffer searcher
+nmap <C-b> :Buffers<CR>
+
+nmap <C-H> :bnext<CR>
+nmap <C-L> :bprevious<CR>
+
 "This is for coc.vim to work
-" if hidden is not set, TextEdit might fail.
+"if hidden is not set, TextEdit might fail.
 set hidden
 
 " Some servers have issues with backup files, see #649
@@ -235,7 +144,7 @@ set nobackup
 set nowritebackup
 
 " Better display for messages
-set cmdheight=2
+set cmdheight=3
 
 " You will have bad experience for diagnostic messages when it's default 4000.
 set updatetime=300
@@ -246,6 +155,21 @@ set shortmess+=c
 " always show signcolumns
 set signcolumn=yes
 
+
+"  ____                                           __
+" / ___|___  _ __   __ _ _   _  ___ _ __    ___  / _|
+"| |   / _ \| '_ \ / _` | | | |/ _ \ '__|  / _ \| |_
+"| |__| (_) | | | | (_| | |_| |  __/ |    | (_) |  _|
+" \____\___/|_| |_|\__, |\__,_|\___|_|     \___/|_|
+"                     |_|
+"  ____                      _      _   _
+" / ___|___  _ __ ___  _ __ | | ___| |_(_) ___  _ __
+"| |   / _ \| '_ ` _ \| '_ \| |/ _ \ __| |/ _ \| '_ \
+"| |__| (_) | | | | | | |_) | |  __/ |_| | (_) | | | |
+" \____\___/|_| |_| |_| .__/|_|\___|\__|_|\___/|_| |_|
+"                     |_|
+" =====================================================================
+" EVERYTHING BELOW THIS LINE IS FOR TAB COMPLETITION STUFF DRIVEN BY COC
 " Use tab for trigger completion with characters ahead and navigate.
 " Use command ':verbose imap <tab>' to make sure tab is not mapped by other plugin.
 inoremap <silent><expr> <TAB>
@@ -340,7 +264,7 @@ set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
 
 " Using CocList
 " Show all diagnostics
-nnoremap <silent> <space>a  :<C-u>CocList diagnostics<cr>
+	nnoremap <silent> <space>a  :<C-u>CocList diagnostics<cr>
 " Manage extensions
 nnoremap <silent> <space>e  :<C-u>CocList extensions<cr>
 " Show commands
