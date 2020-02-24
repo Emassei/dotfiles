@@ -1,20 +1,19 @@
 " General Vim settings
 	syntax on
 	let mapleader=","
-	set autoindent
-	set tabstop=4
-	set shiftwidth=4
+	"set autoindent
+	"set tabstop=4
+	"set shiftwidth=4
 	set dir=/tmp/
 	set nornu
 	set number
 	set relativenumber
-    set nowrap
+        set nowrap
 	set linebreak
-	autocmd Filetype html setlocal sw=2 expandtab
-	autocmd Filetype javascript setlocal sw=4 expandtab
+	"autocmd Filetype html setlocal sw=2 expandtab
+	autocmd Filetype javascript setlocal sw=2 expandtab
 
 	set cursorline
-	"hi Cursor ctermfg=White ctermbg=Yellow cterm=bold guifg=white guibg=yellow gui=bold
 
 	set hlsearch
 	nnoremap <C-F> :nohl<CR><C-l>:echo "Search Cleared"<CR>
@@ -28,9 +27,6 @@
 	set mouse=a
 	set incsearch
 
-" Language Specific
-	" Tabs
-		so ~/dotfiles/vim/tabs.vim
 
 " File and Window Management
 	nnoremap <leader>v :vsplit<CR>:w<CR>:Ex<CR>
