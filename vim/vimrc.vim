@@ -135,8 +135,17 @@ command LL execute "/\%>80v.\+"
 nnoremap d "_d
 vnoremap d "_d
 
-"This is toggle nerdtree
-nmap <C-q> :NERDTreeToggle<CR>
+"This is to toggle nerdtree, if it's open close it, if not go to the directory
+"that your file is on
+function! ToggleNerdTree()
+  if exists("g:NERDTree") && g:NERDTree.IsOpen()
+    :NERDTreeToggle
+  else
+    :NERDTreeFind
+  endif
+endfunction
+
+nmap <C-q> :call ToggleNerdTree()<CR>
 
 "To bring up the file searcher
 nmap <C-g> :Files<CR>
