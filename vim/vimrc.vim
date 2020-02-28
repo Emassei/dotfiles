@@ -142,3 +142,5 @@ nmap <C-b> :Buffers<CR>
 
 nmap <C-H> :bnext<CR>
 nmap <C-L> :bprevious<CR>
+
+so ~/dotfiles/vim/coc.vim

@@ -35,7 +35,6 @@ set shortmess+=c
 set signcolumn=yes
 
 " This is the vim config for conquer of completition.
-so ~/dotfiles/vim/coc.vim
 inoremap <silent><expr> <TAB>
       \ pumvisible() ? "\<C-n>" :
       \ <SID>check_back_space() ? "\<TAB>" :
