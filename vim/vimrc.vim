@@ -70,6 +70,10 @@ filetype plugin on
 	map <C-k> <C-w>k
 	map <C-l> <C-w>l
 
+" go through buffers
+nmap <C-n> :bnext<CR>
+nmap <C-p> :bprevious<CR>
+
 
 "This is to create closing character for the following keys
 inoremap " ""<left>
@@ -132,7 +136,7 @@ nnoremap d "_d
 vnoremap d "_d
 
 "This is toggle nerdtree
-nmap <C-n> :NERDTreeToggle<CR>
+nmap <C-q> :NERDTreeToggle<CR>
 
 "To bring up the file searcher
 nmap <C-g> :Files<CR>
@@ -140,7 +144,5 @@ nmap <C-g> :Files<CR>
 "To bring up the buffer searcher
 nmap <C-b> :Buffers<CR>
 
-nmap <C-H> :bnext<CR>
-nmap <C-L> :bprevious<CR>
 
 so ~/dotfiles/vim/coc.vim
