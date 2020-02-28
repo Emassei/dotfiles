@@ -44,6 +44,7 @@
 
 "This is my plugin list
 call plug#begin()
+Plug 'sheerun/vim-polyglot'
 Plug 'airblade/vim-gitgutter'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
@@ -94,6 +95,7 @@ nnoremap <leader>p oimport ipdb; ipdb.set_trace()<Esc>
 	map <leader>f :Goyo<CR>
 
 "Color Scheme
+let g:onedark_termcolors=256
 colorscheme onedark
 
 "For command line autocompletion
