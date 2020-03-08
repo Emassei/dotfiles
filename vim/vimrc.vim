@@ -34,8 +34,14 @@ autocmd Filetype javascript setlocal sw=2 expandtab
 "| | | | | | (_| | |_) | |_) | | | | | (_| \__ \
 "|_| |_| |_|\__,_| .__/| .__/|_|_| |_|\__, |___/
                 "|_|   |_|            |___/
+
+
+" this is to search, through out all files under the
+" current directory
+nnoremap <C-f> :Ack
+
 " Clear search
-nnoremap <C-F> :nohl<CR><C-l>:echo "Search Cleared"<CR>
+nnoremap <C-d> :nohl<CR><C-l>:echo "Search Cleared"<CR>
 
 " Toggle number display
 nnoremap <C-c> :set norelativenumber<CR>:set nonumber<CR>:echo "Line numbers turned off."<CR>
@@ -90,6 +96,8 @@ map <leader>f :Goyo<CR>
 " set the fold method
 map <leader>z :set foldmethod=indent<CR>
 map <leader>x :set foldmethod=manual<CR>
+
+map <leader><CR> :terminal<CR>
 
   "___ ___  _ __ ___  _ __ ___   __ _ _ __   __| |___
  "/ __/ _ \| '_ ` _ \| '_ ` _ \ / _` | '_ \ / _` / __|
