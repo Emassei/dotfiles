@@ -28,6 +28,8 @@ set clipboard^=unnamed,unnamedplus
 " Automatically deletes all trailing whitespace on save.
 autocmd BufWritePre * %s/\s\+$//e
 autocmd Filetype javascript setlocal sw=2 expandtab
+" This highlights all words the cursor is under
+autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
 
  "_ __ ___   __ _ _ __  _ __ (_)_ __   __ _ ___
 "| '_ ` _ \ / _` | '_ \| '_ \| | '_ \ / _` / __|
@@ -41,7 +43,7 @@ autocmd Filetype javascript setlocal sw=2 expandtab
 nnoremap <C-f> :Ack
 
 " Clear search
-nnoremap <C-d> :nohl<CR><C-l>:echo "Search Cleared"<CR>
+nnoremap <C-e> :nohl<CR><C-l>:echo "Search Cleared"<CR>
 
 " Toggle number display
 nnoremap <C-c> :set norelativenumber<CR>:set nonumber<CR>:echo "Line numbers turned off."<CR>
@@ -97,7 +99,13 @@ map <leader>f :Goyo<CR>
 map <leader>z :set foldmethod=indent<CR>
 map <leader>x :set foldmethod=manual<CR>
 
+" open a terminal in vim, then I can copy and paste stuff as the terminal
+" exists
 map <leader><CR> :terminal<CR>
+
+"remap the vim ranger binding to r not f
+let g:ranger_map_keys = 0
+map <leader>r :Ranger<CR>
 
   "___ ___  _ __ ___  _ __ ___   __ _ _ __   __| |___
  "/ __/ _ \| '_ ` _ \| '_ ` _ \ / _` | '_ \ / _` / __|
@@ -132,10 +140,12 @@ Plug 'junegunn/fzf.vim'
 Plug 'vim-airline/vim-airline'
 Plug 'scrooloose/nerdcommenter'
 Plug 'mileszs/ack.vim'
-Plug 'joshdick/onedark.vim'
+Plug 'drewtempelmeyer/palenight.vim'
 Plug 'tpope/vim-fugitive'
 Plug 'vimwiki/vimwiki'
 Plug 'junegunn/goyo.vim'
+Plug 'francoiscabrol/ranger.vim'
+Plug 'ap/vim-buftabline'
 call plug#end()
 
  "_ __ ___ (_)___  ___
@@ -143,7 +153,9 @@ call plug#end()
 "| | | | | | \__ \ (__
 "|_| |_| |_|_|___/\___|
 
-colorscheme onedark
+set background=dark
+colorscheme palenight
+let g:airline_theme = "palenight"
 
 filetype plugin on
 
