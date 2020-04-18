@@ -138,7 +138,7 @@ function! CopyResultsSplit(text)
     :execute "g/" . a:text . "/y A"
     :reg a
     :vsplit
-    :edit 'scratchpad.txt'
+    :edit scratchpad.txt
     :normal "aP
 endfunction
 
