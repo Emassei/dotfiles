@@ -130,6 +130,20 @@ endfunction
 
 command! -nargs=1 CopyResults call CopyResults(<f-args>)
 
+"copy all occureances and past into a vsplit
+function! CopyResultsSplit(text)
+    "figure out how to update vim to check for the buffer
+    ":bdelete \'scratchpad.txt\'
+    :let @a=''
+    :execute "g/" . a:text . "/y A"
+    :reg a
+    :vsplit
+    :edit 'scratchpad.txt'
+    :normal "aP
+endfunction
+
+command! -nargs=1 CopyResultsSplit call CopyResultsSplit(<f-args>)
+
 "get the word count for a string in the current file
 function! WordCount(text)
    :execute "%s/" . a:text . "//gn"
