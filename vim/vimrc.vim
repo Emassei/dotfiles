@@ -37,7 +37,6 @@ autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<c
 "|_| |_| |_|\__,_| .__/| .__/|_|_| |_|\__, |___/
                 "|_|   |_|            |___/
 
-
 " this is to search, through out all files under the
 " current directory
 nnoremap <C-f> :Ack
@@ -45,9 +44,6 @@ nnoremap <C-f> :Ack
 " Clear search
 nnoremap <C-e> :nohl<CR><C-l>:echo "Search Cleared"<CR>
 
-" Toggle number display
-nnoremap <C-c> :set norelativenumber<CR>:set nonumber<CR>:echo "Line numbers turned off."<CR>
-nnoremap <C-x> :set relativenumber<CR>:set number<CR>:echo "Line numbers turned on."<CR>
 
 " Shortcutting split navigation, saving a keypress:
 map <C-h> <C-w>h
@@ -89,6 +85,9 @@ nmap <C-g> :Files<CR>
 "To bring up the buffer searcher
 nmap <C-b> :Buffers<CR>
 
+
+"Remove current buffer
+map <leader>k :bd<CR>
 "to start a markdown preview
 map <leader>md :InstantMarkdownPreview<CR>
 
@@ -101,7 +100,7 @@ map <leader>x :set foldmethod=manual<CR>
 
 " open a terminal in vim, then I can copy and paste stuff as the terminal
 " exists
-map <leader><CR> :terminal<CR>
+map <leader><CR> :terminal ++curwin<CR>
 
 "remap the vim ranger binding to r not f
 let g:ranger_map_keys = 0
@@ -121,6 +120,22 @@ command Run execute ".w !bash"
 
 "highlight lines that are too ling
 command LL execute "/\%>80v.\+"
+
+"copy all occureances to the a buffer, and show results
+function! CopyResults(text)
+    :let @a=''
+    :execute "g/" . a:text . "/y A"
+    :reg a
+endfunction
+
+command! -nargs=1 CopyResults call CopyResults(<f-args>)
+
+"get the word count for a string in the current file
+function! WordCount(text)
+   :execute "%s/" . a:text . "//gn"
+endfunction
+
+command! -nargs=1 WordCount call WordCount(<f-args>)
 
  "_ __ | |_   _  __ _(_)_ __  ___
 "| '_ \| | | | |/ _` | | '_ \/ __|
