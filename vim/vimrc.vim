@@ -136,7 +136,6 @@ function! CopyResultsSplit(text)
     ":bdelete \'scratchpad.txt\'
     :let @a=''
     :execute "g/" . a:text . "/y A"
-    :reg a
     :vsplit
     :edit scratchpad.txt
     :normal "aP
