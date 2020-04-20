@@ -100,7 +100,7 @@ map <leader>x :set foldmethod=manual<CR>
 
 " open a terminal in vim, then I can copy and paste stuff as the terminal
 " exists
-map <leader><CR> :terminal ++curwin<CR>
+map <leader><CR> :terminal ++noclose ++curwin<CR>
 
 "remap the vim ranger binding to r not f
 let g:ranger_map_keys = 0
