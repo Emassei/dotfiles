@@ -106,6 +106,11 @@ map <leader><CR> :terminal ++noclose ++curwin<CR>
 let g:ranger_map_keys = 0
 map <leader>r :Ranger<CR>
 
+"run visual select as a shell command
+map <leader>e :'<,'>terminal bash<CR>
+
+map <leader>p :'<,'>!python -m json.tool<CR>
+
   "___ ___  _ __ ___  _ __ ___   __ _ _ __   __| |___
  "/ __/ _ \| '_ ` _ \| '_ ` _ \ / _` | '_ \ / _` / __|
 "| (_| (_) | | | | | | | | | | | (_| | | | | (_| \__ \
