@@ -168,7 +168,7 @@ Plug 'airblade/vim-gitgutter'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 Plug 'scrooloose/nerdtree'
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 Plug 'vim-airline/vim-airline'
 Plug 'scrooloose/nerdcommenter'
@@ -179,6 +179,7 @@ Plug 'vimwiki/vimwiki'
 Plug 'junegunn/goyo.vim'
 Plug 'francoiscabrol/ranger.vim'
 Plug 'ap/vim-buftabline'
+Plug 'rigellute/shades-of-purple.vim'
 call plug#end()
 
  "_ __ ___ (_)___  ___
@@ -187,8 +188,11 @@ call plug#end()
 "|_| |_| |_|_|___/\___|
 
 set background=dark
-colorscheme palenight
-let g:airline_theme = "palenight"
+colorscheme shades_of_purple
+let g:shades_of_purple_lightline = 1
+let g:lightline = { 'colorscheme': 'shades_of_purple' }
+
+
 
 filetype plugin on
 
