@@ -1,12 +1,15 @@
 # Vars
 	HISTFILE=~/.zsh_history
-	SAVEHIST=1000 
-	setopt inc_append_history # To save every command before it is executed 
+	SAVEHIST=1000
+	setopt inc_append_history # To save every command before it is executed
 	setopt share_history # setopt inc_append_history
 
 	git config --global push.default current
 
 # Aliases
+        #this command will break on other machines, I am just writing it down so I don't forget the command
+        alias wifi="iwconfig wlp0s20f3 | grep -i --color quality"
+
 	alias v="vim -p"
 	mkdir -p /tmp/log
 	alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
@@ -26,7 +29,7 @@ source ~/dotfiles/zsh/plugins/fixls.zsh
 #Functions
 	# Loop a command and show the output in vim
 	loop() {
-		echo ":cq to quit\n" > /tmp/log/output 
+		echo ":cq to quit\n" > /tmp/log/output
 		fc -ln -1 > /tmp/log/program
 		while true; do
 			cat /tmp/log/program >> /tmp/log/output ;
@@ -44,7 +47,7 @@ source ~/dotfiles/zsh/plugins/fixls.zsh
  	}
  	alias cd="c"
 
-# For vim mappings: 
+# For vim mappings:
 	stty -ixon
 
 # Completions
