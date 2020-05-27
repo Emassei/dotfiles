@@ -7,8 +7,6 @@
 	git config --global push.default current
 
 # Aliases
-        #this command will break on other machines, I am just writing it down so I don't forget the command
-        alias wifi="iwconfig wlp0s20f3 | grep -i --color quality"
 
 	alias v="vim -p"
 	mkdir -p /tmp/log
@@ -49,6 +47,15 @@ source ~/dotfiles/zsh/plugins/fixls.zsh
 
 # For vim mappings:
 	stty -ixon
+
+# Check wifi Signal
+function wifi(){
+  while :
+    do
+      nmcli dev wifi
+      sleep 1
+    done
+}
 
 # Completions
 # These are all the plugin options available: https://github.com/robbyrussell/oh-my-zsh/tree/291e96dcd034750fbe7473482508c08833b168e3/plugins
