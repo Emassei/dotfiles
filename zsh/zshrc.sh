@@ -21,6 +21,9 @@ bindkey -v
 
 # Settings
 	export VISUAL=vim
+	export BROWSER="brave"
+	export EDITOR="vim"
+	export TERMINAL="st"
 
 source ~/dotfiles/zsh/plugins/fixls.zsh
 

@@ -24,7 +24,7 @@ set ignorecase
 "For command line autocompletion
 set wildmenu
 "Now the clipboard will work across environments, mac or linux
-set clipboard^=unnamed,unnamedplus
+set clipboard=unnamedplus
 " Automatically deletes all trailing whitespace on save.
 autocmd BufWritePre * %s/\s\+$//e
 autocmd Filetype javascript setlocal sw=2 expandtab
@@ -92,14 +92,13 @@ map <leader>k :bd<CR>
 map <leader>md :InstantMarkdownPreview<CR>
 
 " Goyo plugin makes text more readable when writing prose:
-map <leader>f :Goyo<CR>
+map <leader>f :set wrap <bar> :Goyo<CR>
 
 " set the fold method
 map <leader>z :set foldmethod=indent<CR>
 map <leader>x :set foldmethod=manual<CR>
 
-" open a terminal in vim, then I can copy and paste stuff as the terminal
-" exists
+" open a terminal in vim, then I can copy and paste stuff in the terminal
 map <leader><CR> :terminal ++noclose ++curwin<CR>
 
 "remap the vim ranger binding to r not f
@@ -109,6 +108,7 @@ map <leader>r :Ranger<CR>
 "run visual select as a shell command
 map <leader>e :'<,'>terminal bash<CR>
 
+"Pretty Print a selection
 map <leader>p :'<,'>!python -m json.tool<CR>
 
   "___ ___  _ __ ___  _ __ ___   __ _ _ __   __| |___
