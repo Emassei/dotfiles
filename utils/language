@@ -1,0 +1,9 @@
+#!/bin/sh
+
+chosen=$(printf "English\\nSpanish" | dmenu -i -p "Select Language") &&
+
+if [ "$chosen" == "English" ]; then
+        setxkbmap us
+elif [ "$chosen" == "Spanish" ]; then
+        setxkbmap es
+fi
