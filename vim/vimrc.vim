@@ -6,10 +6,10 @@
 syntax on
 let mapleader=","
 set dir=/tmp/
+set wrap
 set nornu
 set number
 set relativenumber
-set nowrap
 set linebreak
 set splitbelow splitright
 set cursorline
@@ -30,6 +30,10 @@ autocmd BufWritePre * %s/\s\+$//e
 autocmd Filetype javascript setlocal sw=2 expandtab
 " This highlights all words the cursor is under
 autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
+" So I can view unicode characters
+set encoding=utf-8
+
+
 
  "_ __ ___   __ _ _ __  _ __ (_)_ __   __ _ ___
 "| '_ ` _ \ / _` | '_ \| '_ \| | '_ \ / _` / __|
