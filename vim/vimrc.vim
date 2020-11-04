@@ -41,13 +41,6 @@ set encoding=utf-8
 "|_| |_| |_|\__,_| .__/| .__/|_|_| |_|\__, |___/
                 "|_|   |_|            |___/
 
-" this is to search, through out all files under the
-" current directory
-nnoremap <C-f> :Ack
-
-" Clear search
-nnoremap <C-e> :nohl<CR><C-l>:echo "Search Cleared"<CR>
-
 
 " Shortcutting split navigation, saving a keypress:
 map <C-h> <C-w>h
@@ -55,13 +48,17 @@ map <C-j> <C-w>j
 map <C-k> <C-w>k
 map <C-l> <C-w>l
 
-" File and Window Management
-nnoremap <leader>v :vsplit<CR>:w<CR>:Ex<CR>
-nnoremap <leader>s :split<CR>:w<CR>:Ex<CR>
+" Clear search
+nnoremap <C-e> :nohl<CR><C-l>:echo "Search Cleared"<CR>
+
+" this is to search, through out all files under the
+" current directory
+nnoremap <C-f> :Ack
+
 
 " Cycle through buffers
-nmap <C-n> :bnext<CR>
-nmap <C-p> :bprevious<CR>
+nmap <C-]> :bnext<CR>
+nmap <C-[> :bprevious<CR>
 
 " This is to create closing character for the following keys
 inoremap " ""<left>
@@ -71,6 +68,24 @@ inoremap [ []<left>
 inoremap { {}<left>
 inoremap {<CR> {<CR>}<ESC>O
 inoremap {;<CR> {<CR>};<ESC>O
+
+" Relative or absolute number lines
+function! NumberToggle()
+    if(&number == 1)
+        set number!
+        set relativenumber!
+      elseif(&relativenumber==1)
+        set relativenumber
+        set number
+      else
+        set norelativenumber
+        set number
+    endif
+endfunction
+
+nnoremap <C-n> :call NumberToggle()<CR>
+
+
 
 "This is to toggle nerdtree, if it's open close it, if not go to the directory
 "that your file is on
@@ -89,6 +104,16 @@ nmap <C-g> :Files<CR>
 "To bring up the buffer searcher
 nmap <C-b> :Buffers<CR>
 
+" _                _
+"| | ___  __ _  __| | ___ _ __
+"| |/ _ \/ _` |/ _` |/ _ \ '__|
+"| |  __/ (_| | (_| |  __/ |
+"|_|\___|\__,_|\__,_|\___|_|
+
+
+" File and Window Management
+nnoremap <leader>v :vsplit<CR>:w<CR>:Ex<CR>
+nnoremap <leader>s :split<CR>:w<CR>:Ex<CR>
 
 "Remove current buffer
 map <leader>k :bd<CR>
@@ -127,8 +152,11 @@ command PP execute "%!python -m json.tool"
 "To run current line from vim to the shell
 command Run execute ".w !bash"
 
-"highlight lines that are too ling
+"highlight lines that are too long
 command LL execute "/\%>80v.\+"
+
+"Sudo write when I forgot to open in sudo
+command SudoWrite execute "w !sudo tee %"
 
 "copy all occureances to the a buffer, and show results
 function! CopyResults(text)
@@ -184,6 +212,7 @@ Plug 'junegunn/goyo.vim'
 Plug 'francoiscabrol/ranger.vim'
 Plug 'ap/vim-buftabline'
 Plug 'rigellute/shades-of-purple.vim'
+Plug 'lervag/vimtex'
 call plug#end()
 
  "_ __ ___ (_)___  ___
@@ -196,9 +225,11 @@ colorscheme shades_of_purple
 let g:shades_of_purple_lightline = 1
 let g:lightline = { 'colorscheme': 'shades_of_purple' }
 
-
-
+let g:tex_flavor = 'latex'
+let g:vimtex_view_use_temp_files='zathura'
+let g:vimtex_view_method = 'zathura'
 filetype plugin on
+
 
 " vimwiki with markdown support
 let g:vimwiki_ext2syntax = {'.md': 'markdown', '.markdown': 'markdown', '.mdown': 'markdown'}
