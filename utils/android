@@ -1,0 +1,24 @@
+
+#!/bin/sh
+
+# Using a lot of what luke smith did, but changed it around for my own purposes.
+
+phones_connected() {
+#two screens not mirroring
+  simple-mtpfs -l
+}
+
+
+# Get user choice including multi-monitor and manual selection:
+chosen=$(printf "External Monitor\\nLaptop Display\\nTwo Monitors\\nMirrored" "$screens" | dmenu -i -p "Select Display Option:") &&
+
+if [ "$chosen" == "External Monitor" ]; then
+       	onescreen "HDMI-1" "eDP-1"
+elif [ "$chosen" == "Laptop Display" ]; then
+       	onescreen  "eDP-1" "HDMI-1"
+elif [ "$chosen" == "Two Monitors" ]; then
+  twoscreens
+else
+  twomirroredscreens
+fi
+
