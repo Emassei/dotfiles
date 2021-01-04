@@ -57,8 +57,8 @@ nnoremap <C-f> :Ack
 
 
 " Cycle through buffers
-nmap <C-]> :bnext<CR>
-nmap <C-[> :bprevious<CR>
+nmap <C-o> :bnext<CR>
+nmap <C-p> :bprevious<CR>
 
 " This is to create closing character for the following keys
 inoremap " ""<left>

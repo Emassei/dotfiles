@@ -1,0 +1,37 @@
+#!/bin/sh
+
+# Using a lot of what luke smith did, but changed it around for my own purposes.
+
+onescreen() { # If only one output available or chosen.
+	xrandr --output $1 --auto --output $2 --off
+	}
+
+# Get all possible displays
+allposs=$(xrandr -q | grep "connected")
+
+# Get all connected screens.
+screens=$(echo "$allposs" | awk '/ connected/ {print $1}')
+
+twoscreens() {
+#two screens not mirroring
+  xrandr --output HDMI-1 --auto --output eDP-1 --auto --right-of HDMI-1
+}
+
+twomirroredscreens() {
+#Two screens mirrored
+  xrandr --output HDMI-1 --auto --output eDP-1 --auto
+}
+
+# Get user choice including multi-monitor and manual selection:
+chosen=$(printf "External Monitor\\nLaptop Display\\nTwo Monitors\\nMirrored" "$screens" | dmenu -i -p "Select Display Option:") &&
+
+if [ "$chosen" == "External Monitor" ]; then
+       	onescreen "HDMI1" "eDP1"
+elif [ "$chosen" == "Laptop Display" ]; then
+       	onescreen  "eDP1" "HDMI1"
+elif [ "$chosen" == "Two Monitors" ]; then
+  twoscreens
+else
+  twomirroredscreens
+fi
+
