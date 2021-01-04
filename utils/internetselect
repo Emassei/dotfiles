@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Using a lot of what luke smith did, but changed it around for my own purposes.
+
+acivateconnection() { # If only one output available or chosen.
+	nmcli connection up $1
+	}
+
+# Get all possible displays
+#allposs=$(xrandr -q | grep "connected")
+
+# Get all connected screens.
+chosen=$(nmcli connection show | awk '{ print $1}' |sed s/"NAME"// | dmenu -i -p "Select a connection") &&
+case "$chosen" in
+	*) acivateconnection "$chosen" ;;
+esac
+# display all conections with active connections in red
+# if unactivated connection selected connect
+# if activated connection selected disconnect
