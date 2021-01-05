@@ -14,12 +14,12 @@ screens=$(echo "$allposs" | awk '/ connected/ {print $1}')
 
 twoscreens() {
 #two screens not mirroring
-  xrandr --output HDMI-1 --auto --output eDP-1 --auto --right-of HDMI-1
+  xrandr --output HDMI1 --auto --output eDP1 --auto --right-of HDMI1
 }
 
 twomirroredscreens() {
 #Two screens mirrored
-  xrandr --output HDMI-1 --auto --output eDP-1 --auto
+  xrandr --output HDMI1 --auto --output eDP1 --auto
 }
 
 # Get user choice including multi-monitor and manual selection:
