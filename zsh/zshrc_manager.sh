@@ -1,9 +1,8 @@
 time_out () { perl -e 'alarm shift; exec @ARGV' "$@"; }
 
-#if command -v tmux>/dev/null; then
-	#[ -z $TMUX ] && exec tmux
-#else
-	#echo "tmux not installed. Run ./deploy to configure dependencies"
+#if command -v tmux >/dev/null 2>&1 && [ "${display}" ]; then
+    ## if not inside a tmux session, and if no session is started, start a new session
+    #[ -z "${tmux}" ] && (tmux attach >/dev/null 2>&1 || tmux)
 #fi
 
 echo "What up Nerd? Write in your stupid journal!"
