@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[ "$(stat -c %y ~/.cache/corona) 2>&1 | cut -d' ' -f1)" != "$(date '+%Y-%m-%d')"  ] &&
+[ "$(stat -c %y ~/.cache/corona 2>/dev/null)  | cut -d' ' -f1)" != "$(date '+%Y-%m-%d')"  ] &&
 	curl -s https://corona-stats.online/co | sed -r "s/\x1B\[(([0-9]{1,2})?(;)?([0-9]{1,2})?)?[m,K,H,f,J]//g" > ~/.cache/corona
 
 
