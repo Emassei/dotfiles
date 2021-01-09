@@ -1,0 +1,3 @@
+#!/bin/sh
+
+cat ~/vimwiki/Spanish.md | sed "/^$/ d; s/,.*//g" | shuf -n 1
