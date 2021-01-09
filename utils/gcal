@@ -1,0 +1,17 @@
+#!/bin/sh
+
+today=`date +"%x"`
+tomorrow=`date +"%x" -d "+1 days"`
+
+gcalcli agenda $today $tomorrow | sed -r "s/\x1B\[(([0-9]{1,2})?(;)?([0-9]{1,2})?)?[m,K,H,f,J]//g; /^$/ d" > ~/.cache/gcal
+
+events=`cat ~/.cache/gcal | wc -l`
+opening_text="Events Today:"
+
+if [ "$events" > 0 ]; then
+  echo "$opening_text $events"
+else
+  echo "$opening_text 0"
+fi
+
+
