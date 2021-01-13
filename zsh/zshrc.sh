@@ -1,5 +1,5 @@
 # Vars
-	HISTFILE=~/.zsh_history
+	#HISTFILE=~/.zsh_history
 	SAVEHIST=1000
 	setopt inc_append_history # To save every command before it is executed
 	setopt share_history # setopt inc_append_history
@@ -8,6 +8,7 @@
 
 # Aliases
 
+        alias tmux='tmux -f "$XDG_CONFIG_DIR/tmux.conf"'
 	alias v="vim -p"
 	mkdir -p /tmp/log
 	alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
