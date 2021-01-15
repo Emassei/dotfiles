@@ -1,4 +1,12 @@
 #!/bin/sh
 
-curl  https://api.kanye.rest | awk -F: '{ print $2 }' | sed "s/}//g" | espeak 2>/dev/null
+speech_program=say
+
+if ! command -v say &> /dev/null
+then
+    speech_program=espeak
+fi
+
+
+curl  https://api.kanye.rest | awk -F: '{ print $2 }' | sed "s/}//g" | $speech_program 2>/dev/null
 
