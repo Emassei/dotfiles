@@ -9,7 +9,7 @@
 # Aliases
 
         alias tmux='tmux -f "$XDG_CONFIG_DIR/tmux.conf"'
-	alias v="vim -p"
+	alias v="nvim -p"
 	mkdir -p /tmp/log
 	alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
 	alias r='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'

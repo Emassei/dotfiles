@@ -33,8 +33,6 @@ autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<c
 " So I can view unicode characters
 set encoding=utf-8
 
-
-
  "_ __ ___   __ _ _ __  _ __ (_)_ __   __ _ ___
 "| '_ ` _ \ / _` | '_ \| '_ \| | '_ \ / _` / __|
 "| | | | | | (_| | |_) | |_) | | | | | (_| \__ \

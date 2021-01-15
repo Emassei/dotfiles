@@ -1,0 +1,4 @@
+#!/bin/sh
+
+curl  https://api.kanye.rest | awk -F: '{ print $2 }' | sed "s/}//g" | espeak 2>/dev/null
+
