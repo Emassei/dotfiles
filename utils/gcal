@@ -5,7 +5,7 @@ opening_text="Events Today:"
 today=`date +"%x"`
 tomorrow=`date +"%x" -d "+1 days"`
 no_events="No Events Found"
-path="--config-folder $XDG_CONFIG_HOME/gcalcli"
+path="--config-folder $XDG_CONFIG_HOME/gcalcli/"
 
 
 gcalcli $path agenda $today $tomorrow | sed -r "s/\x1B\[(([0-9]{1,2})?(;)?([0-9]{1,2})?)?[m,K,H,f,J]//g; /^$/ d" > ~/.cache/gcal

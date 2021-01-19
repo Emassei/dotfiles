@@ -8,5 +8,8 @@ then
 fi
 
 
-curl  https://api.kanye.rest | awk -F: '{ print $2 }' | sed "s/}//g" | $speech_program 2>/dev/null
+curl -s https://api.kanye.rest | awk -F: '{ print $2 }' | sed "s/}//g" | $speech_program 2>/dev/null
 
+
+
+#cat borat2.txt | sed -n 's:.*<p>\(.*\)</p>.*:\1:p' | shuf -n 1 | espeak
