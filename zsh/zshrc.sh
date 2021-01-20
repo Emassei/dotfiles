@@ -8,23 +8,15 @@
 
 # Aliases
 
-        alias tmux='tmux -f "$XDG_CONFIG_DIR/tmux.conf"'
+  alias tmux='tmux -f "$XDG_CONFIG_DIR/tmux.conf"'
 	alias v="nvim -p"
 	mkdir -p /tmp/log
 	alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
 	alias r='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
-    alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
-	# This is currently causing problems (fails when you run it anywhere that isn't a git project's root directory)
-	# alias vs="v `git status --porcelain | sed -ne 's/^ M //p'`"
+  alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
 
-# vim mode
+# Vim Mode in Zsh
 bindkey -v
-
-# Settings
-	export VISUAL=vim
-	export BROWSER="brave"
-	export EDITOR="vim"
-	export TERMINAL="st"
 
 source ~/dotfiles/zsh/plugins/fixls.zsh
 
