@@ -2,7 +2,7 @@
 
 setxkbmap -option "caps:swapescape"
 xbindkeys -f "$XDG_CONFIG_HOME"/xbindkeys
-xrdb -merge ~/.config/X11/Xresources
+xrdb -merge $HOME/dotfiles/Xresources
 feh --bg-fill --randomize --no-fehbg ~/media/pictures/wallpaper/vaporwave/* &
 flameshot &
 dunst &
