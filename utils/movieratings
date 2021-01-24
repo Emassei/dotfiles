@@ -1,11 +1,11 @@
 #!/bin/sh
 
-curl -s https://editorial.rottentomatoes.com/guide/all-a24-movies-ranked/ > output.html;
-grep -A 2 article_movie_title output.html | grep -oP '<a(?:\s[^>]*)?>\K.*?(?=</a>)' > movies.txt;
-grep -A 2 tMeterScore output.html | grep -oP '<span(?:\s[^>]*)?>\K.*?(?=</span>)' | sed '1~2d'> ratings.txt;
-paste movies.txt ratings.txt > results.txt;
-cat results.txt;
-rm -rf output.html;
-rm -rf movies.txt;
-rm -rf ratings.txt;
-rm -rf results.txt;
+curl -s https://editorial.rottentomatoes.com/guide/all-a24-movies-ranked/ > $XDG_CACHE_HOME/output.html;
+grep -A 2 article_movie_title $XDG_CACHE_HOME/output.html | grep -oP '<a(?:\s[^>]*)?>\K.*?(?=</a>)' > $XDG_CACHE_HOME/movies.txt;
+grep -A 2 tMeterScore $XDG_CACHE_HOME/output.html | grep -oP '<span(?:\s[^>]*)?>\K.*?(?=</span>)' | sed '1~2d'> $XDG_CACHE_HOME/ratings.txt;
+paste $XDG_CACHE_HOME/movies.txt $XDG_CACHE_HOME/ratings.txt > $XDG_CACHE_HOME/results.txt;
+cat $XDG_CACHE_HOME/results.txt;
+rm -rf $XDG_CACHE_HOME/output.html;
+rm -rf $XDG_CACHE_HOME/movies.txt;
+rm -rf $XDG_CACHE_HOME/ratings.txt;
+rm -rf $XDG_CACHE_HOME/results.txt;
