@@ -35,6 +35,15 @@ check_for_software() {
 	fi
 }
 
+check_for_directory(){
+	DIR=$1
+	if [ -d "$DIR" ]; then
+		echo "$DIR exists"
+	else;
+		echo "$DIR" does not exist
+	fi
+}
+
 check_default_shell() {
 	if [ -z "${SHELL##*zsh*}" ] ;then
 			echo "Default shell is zsh."
