@@ -1,10 +1,5 @@
 # Dotfiles, a mix of parth, luke smith and me.
 
-
-## Setup Options
-
-
-
 ## Installation
 
 Once the repo is cloned, execute the deploy script:
