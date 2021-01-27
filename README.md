@@ -1,20 +1,9 @@
-# Awesome Dotfiles
+# Dotfiles, a mix of parth, luke smith and me.
 
-Simple, but extensive customization of ZSH, TMUX, and Vim.
-
-[![VideoWalkthrough](https://img.youtube.com/vi/UgDz_9i2nwc/0.jpg)](https://www.youtube.com/watch?v=UgDz_9i2nwc)
 
 ## Setup Options
 
-There's 3 ways in which you can use this, depending on how much you think you'll be customizing.
 
-One of the key features is that this implementation stays in sync across all your machines. So depending on how much you'd like to customize your configuration, you have a few options:
-
-* Little Customization: Just clone this repo and jump to [Installation](#installation).
-* Mild Customization: [Fork]() this repo, and clone your own fork. Keep an eye on this repo for bugfixes and other improvements that you'd like to incorporate into your fork. Then jump to [Installation](#installation).
-* Most Customization: Building your own dotfiles from scratch! Read through these docs, watch the video above, star this repo, and create your own dotfiles! You can add this repository as a [git module](https://git-scm.com/book/en/v2/Git-Tools-Submodules) and source the parts you like.
-
-If you're unsure, just read the docs, watch the video, clone this repository, and jump to [Installation](#installation).
 
 ## Installation
 
@@ -25,11 +14,10 @@ Once the repo is cloned, execute the deploy script:
 
 This script guides you through the following:
 
-1. Checks to see if you have zsh, tmux, and vim installed.
+1. Checks to see if you have software installed.
 2. Installs them using your default package manager if you don't have some of them installed.
 3. Checks to see if your default shell is zsh.
 4. Sets zsh to your default shell.
-5. Backs up your old configuration files.
 
 Pretty convenient for configuring new servers.
 
@@ -39,12 +27,6 @@ Pretty convenient for configuring new servers.
 
 All default dotfiles (`.zshrc`, `.vimrc`, etc) source something within the dotfiles repository. This helps separate changes that are synced across all your machines with system specific changes.
 
-Upon launching a new shell, the first thing that's evaulated is `zshrc_manager.sh`. This script first launches tmux. Then once zsh logs in, within tmux, it updates the dotfiles repository, and sources the changes.
-
-## [Zsh](https://en.wikipedia.org/wiki/Z_shell)
-
-* `cd` has been reassigned to `cd` and `ls`. Every time you navigate to a new directory, it will display the content of that directory.
-* `v` has been aliased too: `vim -p`. This let's you open multiple files in vim as tabs.
 
 ### Prompt
 
@@ -63,17 +45,6 @@ Each plugin is sensitive to where you are and what you're doing, they reveal the
 * `Time plugin`: appears when a program took more than 1s to execute. Tells you how long it took to execute.
 * `PID plugin`: appears when you background a task. Tells you what the PID of the task is.
 
-### Keybindings
-| Key Stroke | What It Does |
-|------------|--------------|
-| Ctrl-H     | Runs ``cd ~/`` |
-| Ctrl-K     | Runs ``cd ..`` |
-| Ctrl-G     | Runs ``git add -A; git commit -v && git push`` |
-| Ctrl-V     | Runs ``fc``. Takes last command and puts it in a vim buffer. |
-| Ctrl-S     | Adds ``sudo`` to the beginning of the buffer. |
-| Ctrl-L     | Runs ``ls``. |
-| Ctrl-O     | Equivalent to hitting ``Enter``. |
-| Ctrl-P     | Equivalent to pressing ``Up Arrow``. |
 
 ### Plugins
 
@@ -101,14 +72,4 @@ Each plugin is sensitive to where you are and what you're doing, they reveal the
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 ```
-* brew install pgcli  # Only on macOS - This is for command line postgres
 * For arch you need to run ./install.sh --clang-completer --system-libclang
-* Fastest Arch mirrors from Colombia!
-```
-Server = http://mirrors.evowise.com/archlinux/$repo/os/$arch
-Server = http://archlinux.mirrors.benatherton.com/$repo/os/$arch
-Server = http://mirrors.kernel.org/archlinux/$repo/os/$arch
-Server = http://mirrors.acm.wpi.edu/archlinux/$repo/os/$arch
-Server = http://mirrors.gigenet.com/archlinux/$repo/os/$arch
-Server = http://mirror.math.princeton.edu/pub/archlinux/$repo/os/$arch
-```

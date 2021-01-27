@@ -1,3 +1,5 @@
+#!/bin/sh
+
 prompt_install() {
 	echo -n "$1 is not installed. Would you like to install it? (y/n) " >&2
 	old_stty_cfg=$(stty -g)
@@ -19,8 +21,8 @@ prompt_install() {
 			sudo pacman -S $1
 
 		else
-			echo "I'm not sure what your package manager is! Please install $1 on your own and run this deploy script again. Tests for package managers are in the deploy script you just ran starting at line 13. Feel free to make a pull request at https://github.com/parth/dotfiles :)" 
-		fi 
+			echo "I'm not sure what your package manager is! Please install $1 on your own and run this deploy script again. Tests for package managers are in the deploy script you just ran starting at line 13. Feel free to make a pull request at https://github.com/parth/dotfiles :)"
+		fi
 	fi
 }
 
@@ -54,7 +56,7 @@ echo "We're going to do the following:"
 echo "1. Check to make sure you have zsh, vim, and tmux installed"
 echo "2. We'll help you install them if you don't"
 echo "3. We're going to check to see if your default shell is zsh"
-echo "4. We'll try to change it if it's not" 
+echo "4. We'll try to change it if it's not"
 
 echo "Let's get started? (y/n)"
 old_stty_cfg=$(stty -g)
@@ -62,7 +64,7 @@ stty raw -echo
 answer=$( while ! head -c 1 | grep -i '[ny]' ;do true ;done )
 stty $old_stty_cfg
 if echo "$answer" | grep -iq "^y" ;then
-	echo 
+	echo
 else
 	echo "Quitting, nothing was changed."
 	exit 0
@@ -70,7 +72,7 @@ fi
 
 
 check_for_software zsh
-echo 
+echo
 check_for_software vim
 echo
 check_for_software tmux
@@ -94,8 +96,9 @@ fi
 
 printf "source '$HOME/dotfiles/zsh/zshrc_manager.sh'" > ~/.zshrc
 printf "so $HOME/dotfiles/vim/vimrc.vim" > ~/.vimrc
-printf "source-file $HOME/dotfiles/tmux/tmux.conf" > ~/.tmux.conf
-printf "#include \""$HOME/dotfiles/Xresources/Xresources\""" > /.Xresources
+printf "source-file $HOME/dotfiles/tmux/tmux.conf" > ~/.config/tmux/.tmux.conf
+printf "#!/bin/sh\nsource $HOME/dotfiles/xinitrc" > ~/.xinitrc
+printf "#!/bin/zsh\nsource $HOME/dotfiles/zprofile" > ~/.zprofile
 printf "[include]" "%s\n" "    path = $HOME/dotfiles/gitconfig/.gitconfig" > ~/.gitconfig
 
 echo
