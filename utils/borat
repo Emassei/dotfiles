@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# The sed command here can extract the quotes
+#cat $HOME/code/borat/extracted_quotes.txt | sed -n 's:.*<p>\(.*\)</p>.*:\1:p' | shuf -n 1 | espeak 2>/dev/null
+
+# This assumes locally hosted and cleaned up quotes
+cat $HOME/code/borat/extracted_quotes.txt | shuf -n 1 | espeak 2>/dev/null
