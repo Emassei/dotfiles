@@ -1,5 +1,13 @@
 #!/bin/sh
 
+st='git@github.com:Emassei/st.git'
+dmenu='git@github.com:Emassei/dmenu.git'
+dwm='git@github.com:Emassei/dwm.git'
+dwmblocks='git@github.com:Emassei/dwmblocks.git'
+slock='git://git.suckless.org/slock'
+
+suckless_tools=('st' 'dmenu' 'dwm' 'dwmblocks' 'slock')
+
 prompt_install() {
 	echo -n "$1 is not installed. Would you like to install it? (y/n) " >&2
 	old_stty_cfg=$(stty -g)
@@ -8,7 +16,12 @@ prompt_install() {
 	stty $old_stty_cfg && echo
 	if echo "$answer" | grep -iq "^y" ;then
 		# This could def use community support
-		if [ -x "$(command -v apt-get)" ]; then
+		if [[ " ${suckless_tools[@]}"  =~ " $1 " ]]; then
+			cd $HOME/code/
+			git clone $1
+			cd $1
+			sudo make install
+		elif [ -x "$(command -v apt-get)" ]; then
 			sudo apt-get install $1 -y
 
 		elif [ -x "$(command -v brew)" ]; then
@@ -19,8 +32,7 @@ prompt_install() {
 
 		elif [ -x "$(command -v pacman)" ]; then
 			sudo pacman -S $1
-
-		else
+	else
 			echo "I'm not sure what your package manager is! Please install $1 on your own and run this deploy script again. Tests for package managers are in the deploy script you just ran starting at line 13. Feel free to make a pull request at https://github.com/parth/dotfiles :)"
 		fi
 	fi
@@ -35,7 +47,8 @@ check_for_software() {
 	fi
 }
 
-check_for_directory(){
+check_for_directory() {
+	echo "Check for directory structure"
 	DIR=$1
 	if [ -d "$DIR" ]; then
 		echo "$DIR exists"
@@ -86,6 +99,18 @@ check_for_software vim
 echo
 check_for_software tmux
 echo
+check_for_software st
+echo
+check_for_software dmenu
+echo
+check_for_software dwm
+echo
+check_for_software dwmblocks
+echo
+check_for_software slock
+echo
+
+
 
 check_default_shell
 
