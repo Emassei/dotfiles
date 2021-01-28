@@ -1,10 +1,11 @@
 #!/bin/sh
-
-st='git@github.com:Emassei/st.git'
-dmenu='git@github.com:Emassei/dmenu.git'
-dwm='git@github.com:Emassei/dwm.git'
-dwmblocks='git@github.com:Emassei/dwmblocks.git'
-slock='git://git.suckless.org/slock'
+declare -A repos=(
+	[st]='git@github.com:Emassei/st.git'
+	[dmenu]='git@github.com:Emassei/dmenu.git'
+	[dwm]='git@github.com:Emassei/dwm.git'
+	[dwmblocks]='git@github.com:Emassei/dwmblocks.git'
+	[slock]='git://git.suckless.org/slock'
+)
 
 suckless_tools=('st' 'dmenu' 'dwm' 'dwmblocks' 'slock')
 
@@ -18,7 +19,7 @@ prompt_install() {
 		# This could def use community support
 		if [[ " ${suckless_tools[@]}"  =~ " $1 " ]]; then
 			cd $HOME/code/
-			git clone $1
+			git clone ${repos[$1]}
 			cd $1
 			sudo make install
 		elif [ -x "$(command -v apt-get)" ]; then
@@ -49,11 +50,12 @@ check_for_software() {
 
 check_for_directory() {
 	echo "Check for directory structure"
-	DIR=$1
+	DIR='code'
 	if [ -d "$DIR" ]; then
 		echo "$DIR exists"
-	else;
-		echo "$DIR" does not exist
+	else
+		echo "Making code directory"
+		mkdir $HOME/$DIR
 	fi
 }
 
@@ -99,6 +101,8 @@ check_for_software vim
 echo
 check_for_software tmux
 echo
+check_for_directory
+echo
 check_for_software st
 echo
 check_for_software dmenu
@@ -109,8 +113,6 @@ check_for_software dwmblocks
 echo
 check_for_software slock
 echo
-
-
 
 check_default_shell
 
