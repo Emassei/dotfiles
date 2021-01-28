@@ -137,5 +137,8 @@ printf "#!/bin/sh\nsource $HOME/dotfiles/xinitrc" > ~/.xinitrc
 printf "#!/bin/zsh\nsource $HOME/dotfiles/zprofile" > ~/.zprofile
 printf "[include]" "%s\n" "    path = $HOME/dotfiles/gitconfig/.gitconfig" > ~/.gitconfig
 
+# Install packages that are in the xinintrc
+sudo pacman -S flameshot dunst picom
+
 echo
 echo "Please log out and log back in for default shell to be initialized."
