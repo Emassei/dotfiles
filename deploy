@@ -130,7 +130,8 @@ else
 	echo -e "\nNot backing up old dotfiles."
 fi
 
-printf "source '$HOME/dotfiles/zsh/zshrc_manager.sh'" > ~/.zshrc
+mkdir $HOME/.config/zsh
+printf "source '$HOME/dotfiles/zsh/zshrc_manager.sh'" > ~/.config/zsh/.zshrc
 printf "so $HOME/dotfiles/vim/vimrc.vim" > ~/.vimrc
 printf "source-file $HOME/dotfiles/tmux/tmux.conf" > ~/.config/tmux/.tmux.conf
 printf "#!/bin/sh\nsource $HOME/dotfiles/xinitrc" > ~/.xinitrc
@@ -138,7 +139,7 @@ printf "#!/bin/zsh\nsource $HOME/dotfiles/zprofile" > ~/.zprofile
 printf "[include]" "%s\n" "    path = $HOME/dotfiles/gitconfig/.gitconfig" > ~/.gitconfig
 
 # Install packages, there will probably be more
-sudo pacman -S flameshot dunst picom base base-devel vim networkmanager grub xorg-server xorg-xinit git noto-fonts ntfs-3g xbindkeys
+sudo pacman -S flameshot dunst picom base base-devel vim networkmanager grub xorg-server xorg-xinit git noto-fonts ntfs-3g xbindkeys libnotify tldr ttf-joypixels
 
 echo
 echo "Please log out and log back in for default shell to be initialized."
