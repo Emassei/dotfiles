@@ -1,4 +1,5 @@
 #!/bin/sh
+
 declare -A repos=(
 	[st]='git@github.com:Emassei/st.git'
 	[dmenu]='git@github.com:Emassei/dmenu.git'
@@ -137,19 +138,31 @@ printf "source-file $HOME/dotfiles/tmux/tmux.conf" > ~/.config/tmux/.tmux.conf
 printf "#!/bin/sh\nsource $HOME/dotfiles/xinitrc" > ~/.xinitrc
 printf "#!/bin/zsh\nsource $HOME/dotfiles/zprofile" > ~/.zprofile
 printf "[include]" "%s\n" "    path = $HOME/dotfiles/gitconfig/.gitconfig" > ~/.gitconfig
+mkdir $HOME/.config/nvim
+printf "so $HOME/dotfiles/vim/vimrc.vim" > ~/.config/nvim/init.vim
 
-# Install packages, there will probably be more
-sudo pacman -S flameshot dunst picom base base-devel vim networkmanager grub xorg-server xorg-xinit git noto-fonts ntfs-3g xbindkeys libnotify tldr ttf-joypixels
+# see https://github.com/junegunn/vim-plug if this is outdated.
+sh -c 'curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim --create-dirs \
+       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
 
-#clean this up, this will need a directory to cd into
-git clone https://aur.archlinux.org/yay.git
-cd yay
-makepkg -si
+if [ -x "$(command -v pacman)" ]; then
+	# Install packages
+	sudo pacman -S flameshot dunst picom base base-devel neovim networkmanager grub xorg-server xorg-xinit git noto-fonts ntfs-3g xbindkeys libnotify tldr ttf-joypixels ranger
 
-yay -S libxft-bgra-git
-yay -S brave-bin
+	# AUR installer
+	cd $HOME/code
+	git clone https://aur.archlinux.org/yay.git
+	cd yay
+	makepkg -si
 
-cat $HOME/dotfiles/arch_logo > /etc/issue
+	# This is for the icons to appear on suckless tools
+	yay -S libxft-bgra-git
+	# Brave install
+	yay -S brave-bin
+
+	# Putting in the arch logo
+	cp $HOME/dotfiles/arch_logo /etc/issue
+fi
 
 echo
 echo "Please log out and log back in for default shell to be initialized."
