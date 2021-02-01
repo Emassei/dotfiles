@@ -24,4 +24,4 @@ export PYLINTHOME="$XDG_CACHE_HOME"/pylint
 export NPM_CONFIG_USERCONFIG=$XDG_CONFIG_HOME/npm/npmrc
 export PYTHONSTARTUP="$XDG_CONFIG_HOME"/pythonrc
 export TEXMFVAR=$XDG_CACHE_HOME/texlive/texmf-var
-source $XDG_DATA_BIN'/virtualenvwrapper.sh'
+#source $XDG_DATA_BIN'/virtualenvwrapper.sh'

@@ -1,4 +1,0 @@
-pacman -S lxqt qt5 xf86-video-fbdev xf86-input-synaptics xorg-server xorg-server-utils xorg-xinit mesa xf86-input-keyboard xf86-input-mouse xterm
-
-
-gpg --keyserver pgp.mit.edu --recv-keys 4A193C06D35E7C670FA4EF0BA2FB9E081F2D130E
