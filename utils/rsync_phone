@@ -1,3 +1,8 @@
 #!/bin/sh
 
-rsync --update --progress -e 'ssh -p 2222' -Oazvr $HOME/media/rsync 192.168.1.2:/sdcard --delete
+
+if ! rsync --update --progress -e 'ssh -p 2222' -Oazvr $HOME/media/rsync 192.168.1.2:/sdcard --delete 2>/dev/null; then
+	echo "No connection available, is the ssh client turned on? and are you connected to the lan?"
+else
+	echo "Files transfered"
+fi
