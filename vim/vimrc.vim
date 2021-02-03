@@ -193,6 +193,7 @@ command! -nargs=1 WordCount call WordCount(<f-args>)
 
 "This is my plugin list
 call plug#begin()
+Plug 'honza/vim-snippets'
 Plug 'sheerun/vim-polyglot'
 Plug 'airblade/vim-gitgutter'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}

@@ -89,6 +89,8 @@ fi
 
 export PATH=$PATH:$HOME/dotfiles/utils
 export PATH="$HOME/.local/bin:$PATH"
+#this is for python plugins to work with coc
+export PATH="$PATH:/usr/bin/python"
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 if systemctl -q is-active graphical.target && [[ ! $DISPLAY && $XDG_VTNR -eq 1 ]]; then
   exec startx
