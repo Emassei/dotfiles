@@ -138,6 +138,11 @@ map <leader>e :'<,'>terminal bash<CR>
 "Pretty Print a selection
 map <leader>p :'<,'>!python -m json.tool<CR>
 
+"Python Formatting
+autocmd FileType python set sw=4
+autocmd FileType python set ts=4
+autocmd FileType python set sts=4
+
   "___ ___  _ __ ___  _ __ ___   __ _ _ __   __| |___
  "/ __/ _ \| '_ ` _ \| '_ ` _ \ / _` | '_ \ / _` / __|
 "| (_| (_) | | | | | | | | | | | (_| | | | | (_| \__ \
@@ -198,7 +203,7 @@ Plug 'honza/vim-snippets'
 Plug 'sheerun/vim-polyglot'
 Plug 'airblade/vim-gitgutter'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
+Plug 'instant-markdown/vim-instant-markdown', {'for': 'markdown'}
 Plug 'scrooloose/nerdtree'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
@@ -238,9 +243,6 @@ let g:vimwiki_ext2syntax = {'.md': 'markdown', '.markdown': 'markdown', '.mdown'
 let g:vimwiki_list = [{'path': '~/vimwiki/',
                       \ 'syntax': 'markdown', 'ext': '.md'}]
 
-" vim-instant-markdown - Instant Markdown previews from Vim
-" https://github.com/suan/vim-instant-markdown
-let g:instant_markdown_autostart = 0	" disable autostart
 
 " Save file as sudo on files that require root permission
 cnoremap w!! execute 'silent! write !sudo tee % >/dev/null' <bar> edit!
