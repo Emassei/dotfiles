@@ -55,8 +55,8 @@ nnoremap <C-f> :Ack
 
 
 " Cycle through buffers
-nmap <C-o> :bnext<CR>
-nmap <C-p> :bprevious<CR>
+nmap <C-o> :bprevious<CR>
+nmap <C-p> :bnext<CR>
 
 " This is to create closing character for the following keys
 inoremap " ""<left>
@@ -114,7 +114,7 @@ nnoremap <leader>v :vsplit<CR>:w<CR>:Ex<CR>
 nnoremap <leader>s :split<CR>:w<CR>:Ex<CR>
 
 "Remove current buffer
-map <leader>k :bd<CR>
+map <leader>k :bd!<CR>
 "to start a markdown preview
 map <leader>md :InstantMarkdownPreview<CR>
 
