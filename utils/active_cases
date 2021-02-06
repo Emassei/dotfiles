@@ -15,27 +15,26 @@ results=$(curl -s 'https://wabi-south-central-us-api.analysis.windows.net/public
   -H 'Referer: https://wabi-south-central-us-api.analysis.windows.net/' \
   -H 'Accept-Language: en-US,en;q=0.9' \
   --data-binary $'{"version":"1.0.0","queries":[{"Query":{"Commands":[{"SemanticQueryDataShapeCommand":{"Query":{"Version":2,"From":[{"Name":"c","Entity":"Casos","Type":0}],"Select":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"},"Name":"Casos.atención"},{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0},"Name":"Sum(Casos.Casos)"}],"Where":[{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"}}],"Values":[[{"Literal":{"Value":"\'Casa\'"}}],[{"Literal":{"Value":"\'Hospital\'"}}],[{"Literal":{"Value":"\'Hospital UCI\'"}}]]}}},{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"ciudad"}}],"Values":[[{"Literal":{"Value":"\'Armenia\'"}}],[{"Literal":{"Value":"\'Circasia\'"}}],[{"Literal":{"Value":"\'Filandia\'"}}],[{"Literal":{"Value":"\'Salento\'"}}]]}}}],"OrderBy":[{"Direction":2,"Expression":{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0}}}]},"Binding":{"Primary":{"Groupings":[{"Projections":[0,1]}]},"DataReduction":{"DataVolume":3,"Primary":{"Top":{}}},"Version":1}}}]},"QueryId":"","ApplicationContext":{"DatasetId":"755c5696-b95d-497c-94e4-f0b59839f4b9","Sources":[{"ReportId":"c1868109-0049-4bd7-b4ab-727e932eda15"}]}}],"cancelQueries":[],"modelId":2827883}' \
-    --compressed | tr , '\n' | grep -A 5 'Casa' | sed "s/^{.*\[//g; s/\"C\":\[//g; s/].*//g; s/\"//g" | sed -n 'n;p' | awk '{ sum += $1} END { print sum }')
+    --compressed | tr , '\n' | grep -A 5 'Casa' | sed "s/^{.*\[//g; s/\"C\":\[//g; s/].*//g; s/\"//g" | sed -n 'n;p' | awk '{ sum += $1} end { print sum }')
 
 
+# awk '{ sum += $1} end { print sum }') adds all of the lines together
 # sed -n n;p = prints every even numbered line
 
 difference=$(diff <(echo "$results") <(head -n 1 $XDG_CACHE_HOME/active_cases) | wc -l)
 
 if (( difference > 0 )); then
+  # sed inserts the results and a new line into the active_cases file
   sed -i "1s/^/$results\n /" $XDG_CACHE_HOME/active_cases
 fi
 
+# working the math between the stored value and the new one to get the change
 change=$(head -n 2 $XDG_CACHE_HOME/active_cases | awk '{print $1}' | paste -sd- - | bc)
 
 if [[ $change =~ "-" ]]; then
-
   change=$(echo $change | sed 's/-/🔻/g')
 else
-
   change=$(echo '🔺' $change)
 fi
 
-
 echo 'Active:' $(head -n 1 $XDG_CACHE_HOME/active_cases) ' (New' $change')'
-
