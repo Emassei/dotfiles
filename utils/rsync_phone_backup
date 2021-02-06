@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-if ! rsync --update --progress -e 'ssh -p 2222' -Oazvr  192.168.1.2:/sdcard $HOME/phone --delete 2>/dev/null; then
+if ! rsync --update --progress -e 'ssh -p 2222' -Oazvr  192.168.1.2:/sdcard/DCIM/Camera $HOME/phone --delete 2>/dev/null; then
 	echo "No connection available, is the ssh client turned on? and are you connected to the lan?"
 else
 	echo "Files transfered"
