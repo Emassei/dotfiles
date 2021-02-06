@@ -23,7 +23,7 @@ results=$(curl -s 'https://wabi-south-central-us-api.analysis.windows.net/public
 difference=$(diff <(echo "$results") <(head -n 1 $XDG_CACHE_HOME/active_cases) | wc -l)
 
 if (( difference > 0 )); then
-  sed -i '1s/^/$results /' $XDG_CACHE_HOME/active_cases
+  sed -i "1s/^/$results /" $XDG_CACHE_HOME/active_cases
 fi
 
 change=$(head -n 2 $XDG_CACHE_HOME/active_cases | awk '{print $1}' | paste -sd- - | bc)
