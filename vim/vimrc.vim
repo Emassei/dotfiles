@@ -142,6 +142,7 @@ map <leader>p :'<,'>!python -m json.tool<CR>
 autocmd FileType python set sw=4
 autocmd FileType python set ts=4
 autocmd FileType python set sts=4
+autocmd FileType python setlocal colorcolumn=79
 
   "___ ___  _ __ ___  _ __ ___   __ _ _ __   __| |___
  "/ __/ _ \| '_ ` _ \| '_ ` _ \ / _` | '_ \ / _` / __|
