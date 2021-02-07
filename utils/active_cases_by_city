@@ -1,0 +1,114 @@
+#!/bin/sh
+
+circasia(){
+curl -s 'https://wabi-south-central-us-api.analysis.windows.net/public/reports/querydata?synchronous=true' \
+  -H 'Connection: keep-alive' \
+  -H 'Accept: application/json, text/plain, */*' \
+  -H 'RequestId: d694c32d-0f5e-1568-b60b-628d4efbfa21' \
+  -H 'X-PowerBI-ResourceKey: 5aab936c-a15a-4e36-9855-8b5e2cb51cef' \
+  -H 'ActivityId: dfe19d0c-dacb-4727-b2b9-3cfe3a943bf4' \
+  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36' \
+  -H 'Content-Type: application/json;charset=UTF-8' \
+  -H 'Origin: https://app.powerbi.com' \
+  -H 'Sec-Fetch-Site: cross-site' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Referer: https://wabi-south-central-us-api.analysis.windows.net/' \
+  -H 'Accept-Language: en-US,en;q=0.9' \
+  --data-binary $'{"version":"1.0.0","queries":[{"Query":{"Commands":[{"SemanticQueryDataShapeCommand":{"Query":{"Version":2,"From":[{"Name":"c","Entity":"Casos","Type":0}],"Select":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"},"Name":"Casos.atención"},{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0},"Name":"Sum(Casos.Casos)"}],"Where":[{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"}}],"Values":[[{"Literal":{"Value":"\'Casa\'"}}],[{"Literal":{"Value":"\'Hospital\'"}}],[{"Literal":{"Value":"\'Hospital UCI\'"}}]]}}},{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"ciudad"}}],"Values":[[{"Literal":{"Value":"\'Circasia\'"}}]]}}}],"OrderBy":[{"Direction":2,"Expression":{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0}}}]},"Binding":{"Primary":{"Groupings":[{"Projections":[0,1]}]},"DataReduction":{"DataVolume":3,"Primary":{"Top":{}}},"Version":1}}}]},"QueryId":"","ApplicationContext":{"DatasetId":"755c5696-b95d-497c-94e4-f0b59839f4b9","Sources":[{"ReportId":"c1868109-0049-4bd7-b4ab-727e932eda15"}]}}],"cancelQueries":[],"modelId":2827883}' \
+  --compressed
+}
+
+filandia(){
+curl -s 'https://wabi-south-central-us-api.analysis.windows.net/public/reports/querydata?synchronous=true' \
+  -H 'Connection: keep-alive' \
+  -H 'Accept: application/json, text/plain, */*' \
+  -H 'RequestId: d694c32d-0f5e-1568-b60b-628d4efbfa21' \
+  -H 'X-PowerBI-ResourceKey: 5aab936c-a15a-4e36-9855-8b5e2cb51cef' \
+  -H 'ActivityId: dfe19d0c-dacb-4727-b2b9-3cfe3a943bf4' \
+  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36' \
+  -H 'Content-Type: application/json;charset=UTF-8' \
+  -H 'Origin: https://app.powerbi.com' \
+  -H 'Sec-Fetch-Site: cross-site' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Referer: https://wabi-south-central-us-api.analysis.windows.net/' \
+  -H 'Accept-Language: en-US,en;q=0.9' \
+  --data-binary $'{"version":"1.0.0","queries":[{"Query":{"Commands":[{"SemanticQueryDataShapeCommand":{"Query":{"Version":2,"From":[{"Name":"c","Entity":"Casos","Type":0}],"Select":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"},"Name":"Casos.atención"},{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0},"Name":"Sum(Casos.Casos)"}],"Where":[{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"}}],"Values":[[{"Literal":{"Value":"\'Casa\'"}}],[{"Literal":{"Value":"\'Hospital\'"}}],[{"Literal":{"Value":"\'Hospital UCI\'"}}]]}}},{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"ciudad"}}],"Values":[[{"Literal":{"Value":"\'Filandia\'"}}]]}}}],"OrderBy":[{"Direction":2,"Expression":{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0}}}]},"Binding":{"Primary":{"Groupings":[{"Projections":[0,1]}]},"DataReduction":{"DataVolume":3,"Primary":{"Top":{}}},"Version":1}}}]},"QueryId":"","ApplicationContext":{"DatasetId":"755c5696-b95d-497c-94e4-f0b59839f4b9","Sources":[{"ReportId":"c1868109-0049-4bd7-b4ab-727e932eda15"}]}}],"cancelQueries":[],"modelId":2827883}' \
+  --compressed
+}
+armenia(){
+curl -s 'https://wabi-south-central-us-api.analysis.windows.net/public/reports/querydata?synchronous=true' \
+  -H 'Connection: keep-alive' \
+  -H 'Accept: application/json, text/plain, */*' \
+  -H 'RequestId: d694c32d-0f5e-1568-b60b-628d4efbfa21' \
+  -H 'X-PowerBI-ResourceKey: 5aab936c-a15a-4e36-9855-8b5e2cb51cef' \
+  -H 'ActivityId: dfe19d0c-dacb-4727-b2b9-3cfe3a943bf4' \
+  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36' \
+  -H 'Content-Type: application/json;charset=UTF-8' \
+  -H 'Origin: https://app.powerbi.com' \
+  -H 'Sec-Fetch-Site: cross-site' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Referer: https://wabi-south-central-us-api.analysis.windows.net/' \
+  -H 'Accept-Language: en-US,en;q=0.9' \
+  --data-binary $'{"version":"1.0.0","queries":[{"Query":{"Commands":[{"SemanticQueryDataShapeCommand":{"Query":{"Version":2,"From":[{"Name":"c","Entity":"Casos","Type":0}],"Select":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"},"Name":"Casos.atención"},{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0},"Name":"Sum(Casos.Casos)"}],"Where":[{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"}}],"Values":[[{"Literal":{"Value":"\'Casa\'"}}],[{"Literal":{"Value":"\'Hospital\'"}}],[{"Literal":{"Value":"\'Hospital UCI\'"}}]]}}},{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"ciudad"}}],"Values":[[{"Literal":{"Value":"\'Armenia\'"}}]]}}}],"OrderBy":[{"Direction":2,"Expression":{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0}}}]},"Binding":{"Primary":{"Groupings":[{"Projections":[0,1]}]},"DataReduction":{"DataVolume":3,"Primary":{"Top":{}}},"Version":1}}}]},"QueryId":"","ApplicationContext":{"DatasetId":"755c5696-b95d-497c-94e4-f0b59839f4b9","Sources":[{"ReportId":"c1868109-0049-4bd7-b4ab-727e932eda15"}]}}],"cancelQueries":[],"modelId":2827883}' \
+  --compressed
+}
+salento(){
+curl -s 'https://wabi-south-central-us-api.analysis.windows.net/public/reports/querydata?synchronous=true' \
+  -H 'Connection: keep-alive' \
+  -H 'Accept: application/json, text/plain, */*' \
+  -H 'RequestId: d694c32d-0f5e-1568-b60b-628d4efbfa21' \
+  -H 'X-PowerBI-ResourceKey: 5aab936c-a15a-4e36-9855-8b5e2cb51cef' \
+  -H 'ActivityId: dfe19d0c-dacb-4727-b2b9-3cfe3a943bf4' \
+  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36' \
+  -H 'Content-Type: application/json;charset=UTF-8' \
+  -H 'Origin: https://app.powerbi.com' \
+  -H 'Sec-Fetch-Site: cross-site' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Referer: https://wabi-south-central-us-api.analysis.windows.net/' \
+  -H 'Accept-Language: en-US,en;q=0.9' \
+  --data-binary $'{"version":"1.0.0","queries":[{"Query":{"Commands":[{"SemanticQueryDataShapeCommand":{"Query":{"Version":2,"From":[{"Name":"c","Entity":"Casos","Type":0}],"Select":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"},"Name":"Casos.atención"},{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0},"Name":"Sum(Casos.Casos)"}],"Where":[{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"}}],"Values":[[{"Literal":{"Value":"\'Casa\'"}}],[{"Literal":{"Value":"\'Hospital\'"}}],[{"Literal":{"Value":"\'Hospital UCI\'"}}]]}}},{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"ciudad"}}],"Values":[[{"Literal":{"Value":"\'Salento\'"}}]]}}}],"OrderBy":[{"Direction":2,"Expression":{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0}}}]},"Binding":{"Primary":{"Groupings":[{"Projections":[0,1]}]},"DataReduction":{"DataVolume":3,"Primary":{"Top":{}}},"Version":1}}}]},"QueryId":"","ApplicationContext":{"DatasetId":"755c5696-b95d-497c-94e4-f0b59839f4b9","Sources":[{"ReportId":"c1868109-0049-4bd7-b4ab-727e932eda15"}]}}],"cancelQueries":[],"modelId":2827883}' \
+  --compressed
+}
+chosen=$(printf "Circasia\\nFilandia\\nArmenia\\nSalento" "$screens" | dmenu -i -p "Select a City to view:") &&
+
+if [ "$chosen" == "Circasia" ]; then
+  city=$(circasia)
+elif [ "$chosen" == "Filandia" ]; then
+  city=$(filandia)
+elif [ "$chosen" == "Armenia" ]; then
+  city=$(armenia)
+else
+  city=$(salento)
+fi
+
+city=$(echo $city |tr , '\n' | grep -A 5 'Hospital' | sed "s/^{.*\[//g; s/\"C\":\[//g; s/].*//g; s/\"//g; s/IC:.*//g; s/HAD.*//g" )
+
+total=$(echo $city | tr -d -c 0-9)
+
+
+
+
+# awk '{ sum += $1} end { print sum }') adds all of the lines together
+# sed -n n;p = prints every even numbered line
+
+#difference=$(diff <(echo "$results") <(head -n 1 $XDG_CACHE_HOME/active_cases) | wc -l)
+
+#if (( difference > 0 )); then
+  ## sed inserts the results and a new line into the active_cases file
+  #sed -i "1s/^/$results\n /" $XDG_CACHE_HOME/active_cases
+#fi
+
+## working the math between the stored value and the new one to get the change
+#change=$(head -n 2 $XDG_CACHE_HOME/active_cases | awk '{print $1}' | paste -sd- - | bc)
+
+#if [[ $change =~ "-" ]]; then
+  #change=$(echo $change | sed 's/-/🔻/g')
+#else
+  #change=$(echo '🔺' $change)
+#fi
+
+echo $city $total
