@@ -117,6 +117,8 @@ nnoremap <leader>s :split<CR>:w<CR>:Ex<CR>
 map <leader>k :bd!<CR>
 "to start a markdown preview
 map <leader>md :InstantMarkdownPreview<CR>
+"Stop auto previewing markdown pages
+let g:instant_markdown_autostart = 0
 
 " Goyo plugin makes text more readable when writing prose:
 map <leader>f :set wrap <bar> :Goyo<CR>
