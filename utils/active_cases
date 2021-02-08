@@ -20,6 +20,9 @@ results=$(curl -s 'https://wabi-south-central-us-api.analysis.windows.net/public
 # awk '{ sum += $1} end { print sum }') adds all of the lines together
 # sed -n n;p = prints every even numbered line
 
+#remove blank lines and white space
+sed -i -E 's/[[:blank:]]+//g; /^[[:space:]]*$/d' $XDG_CACHE_HOME/active_cases
+
 difference=$(diff <(echo "$results") <(head -n 1 $XDG_CACHE_HOME/active_cases) | wc -l)
 
 if (( difference > 0 )); then
