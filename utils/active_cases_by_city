@@ -73,7 +73,7 @@ curl -s 'https://wabi-south-central-us-api.analysis.windows.net/public/reports/q
   --data-binary $'{"version":"1.0.0","queries":[{"Query":{"Commands":[{"SemanticQueryDataShapeCommand":{"Query":{"Version":2,"From":[{"Name":"c","Entity":"Casos","Type":0}],"Select":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"},"Name":"Casos.atención"},{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0},"Name":"Sum(Casos.Casos)"}],"Where":[{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"atención"}}],"Values":[[{"Literal":{"Value":"\'Casa\'"}}],[{"Literal":{"Value":"\'Hospital\'"}}],[{"Literal":{"Value":"\'Hospital UCI\'"}}]]}}},{"Condition":{"In":{"Expressions":[{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"ciudad"}}],"Values":[[{"Literal":{"Value":"\'Salento\'"}}]]}}}],"OrderBy":[{"Direction":2,"Expression":{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"c"}},"Property":"Casos"}},"Function":0}}}]},"Binding":{"Primary":{"Groupings":[{"Projections":[0,1]}]},"DataReduction":{"DataVolume":3,"Primary":{"Top":{}}},"Version":1}}}]},"QueryId":"","ApplicationContext":{"DatasetId":"755c5696-b95d-497c-94e4-f0b59839f4b9","Sources":[{"ReportId":"c1868109-0049-4bd7-b4ab-727e932eda15"}]}}],"cancelQueries":[],"modelId":2827883}' \
   --compressed
 }
-chosen=$(printf "Circasia\\nFilandia\\nArmenia\\nSalento" "$screens" | dmenu -i -p "Select a City to view:") &&
+chosen=$(printf "Circasia\\nFilandia\\nArmenia\\nSalento" "$screens" | dmenu -i -p "Select a City to view:")
 
 if [ "$chosen" == "Circasia" ]; then
   city=$(circasia)
@@ -85,9 +85,10 @@ else
   city=$(salento)
 fi
 
-city=$(echo $city |tr , '\n' | grep -A 5 'Hospital' | sed "s/^{.*\[//g; s/\"C\":\[//g; s/].*//g; s/\"//g; s/IC:.*//g; s/HAD.*//g" )
+city=$(echo $city |tr , '\n' | grep -A 5 'Hospital' | sed "s/^{.*\[//g; s/\"C\":\[//g; s/].*//g; s/\"//g; s/IC:.*//g; s/HAD.*//g")
 
-total=$(echo $city | tr -d -c 0-9)
+
+total=$(echo $city | tr ' ' '\n' | sed 's/\w.*//g')
 
 
 

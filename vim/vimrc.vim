@@ -40,7 +40,7 @@ set encoding=utf-8
                 "|_|   |_|            |___/
 
 
-" Shortcutting split navigation, saving a keypress:
+" Shortcutting split navigation, saving a eypress:
 map <C-h> <C-w>h
 map <C-j> <C-w>j
 map <C-k> <C-w>k
@@ -101,6 +101,8 @@ nmap <C-g> :Files<CR>
 
 "To bring up the buffer searcher
 nmap <C-b> :Buffers<CR>
+
+nmap <C-s> :setlocal spell! spelllang=en_us<CR>
 
 " _                _
 "| | ___  __ _  __| | ___ _ __
@@ -199,8 +201,10 @@ command! -nargs=1 WordCount call WordCount(<f-args>)
 "| .__/|_|\__,_|\__, |_|_| |_|___/
 "|_|            |___/
 
+
 "This is my plugin list
 call plug#begin()
+Plug 'dbeniamine/cheat.sh-vim'
 Plug 'josa42/coc-sh'
 Plug 'honza/vim-snippets'
 Plug 'sheerun/vim-polyglot'
@@ -239,6 +243,11 @@ let g:vimtex_view_method = 'zathura'
 filetype plugin on
 
 
+hi SpellBad guibg=#ff2929 ctermbg=224
+
+"no mappings for cheat just use HowIn as a command much easier
+let g:CheatSheetDoNotMap=1
+
 " vimwiki with markdown support
 let g:vimwiki_ext2syntax = {'.md': 'markdown', '.markdown': 'markdown', '.mdown': 'markdown'}
 " helppage -> :h vimwiki-syntax
@@ -260,3 +269,4 @@ augroup line_return
 augroup END
 
 so ~/dotfiles/vim/coc.vim
+
