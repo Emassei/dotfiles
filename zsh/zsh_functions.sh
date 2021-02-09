@@ -59,7 +59,7 @@ loop() {
 # Custom cd
 c() {
 	cd $1;
-	ls;
+	#ls;
 }
 alias cd="c"
 
