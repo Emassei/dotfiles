@@ -23,3 +23,8 @@
 	}
 	zle -N edit_and_run
 	bindkey "^v" edit_and_run
+
+
+
+# fzf
+bindkey -s '^f' 'nvim $(fzf)^M'
