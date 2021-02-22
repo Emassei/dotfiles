@@ -112,4 +112,4 @@ total=$(echo $city | tr ' ' '\n' | sed 's/\w.*//g')
   #change=$(echo '🔺' $change)
 #fi
 
-echo $city $total
+echo $city $total | dmenu

@@ -5,6 +5,7 @@
     "coc-json": ">=1.2.6",
     "coc-marketplace": ">=1.8.0",
     "coc-prettier": ">=1.1.20",
+    "coc-pyright": ">=1.1.109",
     "coc-sh": ">=0.6.0",
     "coc-snippets": ">=2.4.0",
     "coc-tsserver": ">=1.6.7",
