@@ -1,9 +1,6 @@
 #!/bin/sh
 
-curl -s "https://en.wikipedia.org/wiki/List_of_UFC_events" > $XDG_CACHE_HOME/ufc_events.html
+curl -s "https://en.wikipedia.org/wiki/List_of_UFC_events" | xpath -q -e '//table[@id="Scheduled_events"]//td' | sed "/reference/d; /<\/td>/d; /mw-redirect/d; /rowspan/d; s/<td>//g; s/<[^>]\+>/ /g" > $XDG_CACHE_HOME/ufc_events.html
 
-table=$(xpath -q -e '//table[@id="Scheduled_events"' $XDG_CACHE_HOME/ufc_events.html)
-
-echo $table | awk -F '<*/td>' '$2{print $2}'
-
+cat $XDG_CACHE_HOME/ufc_events.html
 
