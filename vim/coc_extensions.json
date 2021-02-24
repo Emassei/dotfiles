@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "coc-eslint": ">=1.4.5",
-    "coc-jedi": ">=0.18.0",
     "coc-json": ">=1.2.6",
     "coc-marketplace": ">=1.8.0",
     "coc-prettier": ">=1.1.20",
