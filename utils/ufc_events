@@ -1,6 +1,13 @@
 #!/bin/sh
 
-curl -s "https://en.wikipedia.org/wiki/List_of_UFC_events" | xpath -q -e '//table[@id="Scheduled_events"]//td' | sed "/reference/d; /<\/td>/d; /mw-redirect/d; /rowspan/d; s/<td>//g; s/<[^>]\+>/ /g" > $XDG_CACHE_HOME/ufc_events.html
+curl -s "https://en.wikipedia.org/wiki/List_of_UFC_events" | xpath -q -e '//table[@id="Scheduled_events"]//td' | sed "/reference/d; /<\/td>/d; /mw-redirect/d; /rowspan/d; s/<td>//g; s/<[^>]\+>/ /g" > $XDG_CACHE_HOME/ufc_events.txt
 
-cat $XDG_CACHE_HOME/ufc_events.html
+today=$(date -d $(date +"%Y%m%d") +%s)
+
+latest_ufc_date=$(date -d $(tail -n1 $XDG_CACHE_HOME/ufc_events.txt | sed "s/,//g; s/ /-/g") +%s)
+
+difference=$(date --date @$(($latest_ufc_date-$today)) +'%-d days')
+
+ufc_event_name=$(tail -n2 $XDG_CACHE_HOME/ufc_events.txt | head -n1)
+echo "${difference}:${ufc_event_name}"
 
