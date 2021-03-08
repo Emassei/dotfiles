@@ -1,4 +1,6 @@
 #!/bin/sh
 
+st zathura "~/media/books/philosophy/strauss/natural_right_and_history/notes/natural_right_notes.pdf" &
 st zathura "~/media/books/philosophy/strauss/natural_right_and_history/Leo Strauss - Natural Right and History (Walgreen Foundation Lectures) (1999, University Of Chicago Press) - libgen.lc.pdf" &
 nvim "/home/ernie/media/books/philosophy/strauss/natural_right_and_history/notes/natural_right_notes.tex"
+
