@@ -1,0 +1,19 @@
+#!/bin/sh
+
+
+item=$(aws ec2 describe-instances --query "Reservations[].Instances[].InstanceId" --output text)
+
+echo "What do you want to do with your instance?"
+
+  select answer in "Start" "Stop" "Check_Instance_Status" "Check_All_Instances"; do
+  case $answer in
+    Start ) aws ec2 start-instances --instance-ids $item; break;;
+    Stop ) aws ec2 stop-instances --instance-ids $item; break;;
+    Check_Instance_Status ) aws ec2 describe-instance-status --instance-id $item; break;;
+    Check_All_Instances ) aws ec2 describe-instances; break;;
+  esac
+done
+
+url=$(aws ec2 describe-instances --query "Reservations[].Instances[].PublicDnsName" --output text)
+
+sed -i "s/personal_site='.*'/personal_site='ssh ubuntu@$url'/" $XDG_CONFIG_HOME/zsh/.zshrc

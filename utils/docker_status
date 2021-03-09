@@ -5,3 +5,8 @@ if docker info 2>/dev/null | grep -q "Containers"; then
 else
 	echo " ❌"
 fi
+
+
+#case $BLOCK_BUTTON in
+	 #1) setsid -f "$TERMINAL" -e "docker info 2>/dev/null | grep -A 4 "Containers" | tail -f";;
+ #esac
