@@ -1,19 +1,36 @@
 #!/bin/sh
 
+running_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=running --output text)
 
-item=$(aws ec2 describe-instances --query "Reservations[].Instances[].InstanceId" --output text)
+if [ ! -z $running_instances ]; then
+  echo "The Follwing Instances are running:"
+  echo $running_instances
+fi
+
+instances=($(aws ec2 describe-instances --query "Reservations[].Instances[].Tags[0].Value" --output text))
+
+echo "Which instance do you want to use"
+select choice in "${instances[@]}"; do
+  [[ -n $choice ]] || { echo "Invalid choice. Please try again." >&2; continue; }
+  name=$choice
+  break
+done
+
+instance_id=$(aws ec2 describe-instances --filters 'Name=tag:Name,Values='$name --output text --query 'Reservations[*].Instances[*].InstanceId')
 
 echo "What do you want to do with your instance?"
 
-  select answer in "Start" "Stop" "Check_Instance_Status" "Check_All_Instances"; do
+select answer in "Start" "Stop" "Check_Instance_Status" "Check_All_Instances"; do
   case $answer in
-    Start ) aws ec2 start-instances --instance-ids $item; break;;
-    Stop ) aws ec2 stop-instances --instance-ids $item; break;;
-    Check_Instance_Status ) aws ec2 describe-instance-status --instance-id $item; break;;
+    Start ) aws ec2 start-instances --instance-ids $instance_id; break;;
+    Stop ) aws ec2 stop-instances --instance-ids $instance_id; break;;
+    Check_Instance_Status ) aws ec2 describe-instance-status --instance-id $instance_id; break;;
     Check_All_Instances ) aws ec2 describe-instances; break;;
   esac
 done
 
-url=$(aws ec2 describe-instances --query "Reservations[].Instances[].PublicDnsName" --output text)
+url=$(aws ec2 describe-instances --filters 'Name=tag:Name,Values='$name --output text --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
 
-sed -i "s/personal_site='.*'/personal_site='ssh ubuntu@$url'/" $XDG_CONFIG_HOME/zsh/.zshrc
+if [ ! -z $url ]; then
+  sed -i "s/personal_site='.*'/aws_site='ssh ubuntu@$url'/" $XDG_CONFIG_HOME/zsh/.zshrc;
+fi
