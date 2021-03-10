@@ -2,12 +2,20 @@
 
 running_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=running --output text)
 
-if [ ! -z $running_instances ]; then
-  echo "The Follwing Instances are running:"
-  echo $running_instances
-else
-  echo "No Running Instances"
-fi
+
+stopped_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=stopped --output text)
+
+  figlet "Running Instances" -f digital
+  if [ -z $running_instances ]; then
+    echo 'None'
+  else
+  echo $running_instances | sed 's/ /\n/g'
+  fi
+
+  figlet "Stopped Instances" -f digital
+  echo $stopped_instances | sed 's/ /\n/g'
+
+printf "\n"
 
 instances=($(aws ec2 describe-instances --query "Reservations[].Instances[].Tags[0].Value" --output text))
 
