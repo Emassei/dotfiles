@@ -5,6 +5,8 @@ running_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instance
 if [ ! -z $running_instances ]; then
   echo "The Follwing Instances are running:"
   echo $running_instances
+else
+  echo "No Running Instances"
 fi
 
 instances=($(aws ec2 describe-instances --query "Reservations[].Instances[].Tags[0].Value" --output text))
