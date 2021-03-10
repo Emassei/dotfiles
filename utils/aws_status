@@ -6,11 +6,7 @@ running_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instance
 stopped_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=stopped --output text)
 
   figlet "Running Instances" -f digital
-  if [ -z $running_instances ]; then
-    echo 'None'
-  else
   echo $running_instances | sed 's/ /\n/g'
-  fi
 
   figlet "Stopped Instances" -f digital
   echo $stopped_instances | sed 's/ /\n/g'
