@@ -32,5 +32,5 @@ done
 url=$(aws ec2 describe-instances --filters 'Name=tag:Name,Values='$name --output text --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
 
 if [ ! -z $url ]; then
-  sed -i "s/personal_site='.*'/aws_site='ssh ubuntu@$url'/" $XDG_CONFIG_HOME/zsh/.zshrc;
+  sed -i "s/aws_site='.*'/aws_site='ssh ubuntu@$url'/" $XDG_CONFIG_HOME/zsh/.zshrc;
 fi
