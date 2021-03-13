@@ -5,11 +5,17 @@ running_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instance
 
 stopped_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=stopped --output text)
 
-  figlet "Running Instances" -f digital
-  echo $running_instances | sed 's/ /\n/g'
 
-  figlet "Stopped Instances" -f digital
-  echo $stopped_instances | sed 's/ /\n/g'
+terminated_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=terminated --output text)
+
+figlet "Running Instances" -f digital
+echo $running_instances | sed 's/ /\n/g'
+
+figlet "Stopped Instances" -f digital
+echo $stopped_instances | sed 's/ /\n/g'
+
+figlet "Terminated Instances" -f digital
+echo $terminated_instances| sed 's/ /\n/g'
 
 printf "\n"
 
@@ -26,11 +32,12 @@ instance_id=$(aws ec2 describe-instances --filters 'Name=tag:Name,Values='$name 
 
 echo "What do you want to do with your instance?"
 
-select answer in "Start" "Stop" "Check_Instance_Status" "Check_All_Instances"; do
+select answer in "Start" "Stop" "Check_Instance_Status" "Terminate_Instance" "Check_All_Instances"; do
   case $answer in
     Start ) aws ec2 start-instances --instance-ids $instance_id; break;;
     Stop ) aws ec2 stop-instances --instance-ids $instance_id; break;;
     Check_Instance_Status ) aws ec2 describe-instance-status --instance-id $instance_id; break;;
+    Terminate_Instance ) aws ec2 terminate-instances --instance-ids $instance_id; break;;
     Check_All_Instances ) aws ec2 describe-instances; break;;
   esac
 done
