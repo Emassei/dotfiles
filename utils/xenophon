@@ -1,0 +1,6 @@
+#!/bin/sh
+
+st zathura "~/media/books/philosophy/strauss/xenophon/notes/xenophon_notes.pdf" &
+st zathura "~/media/books/philosophy/strauss/xenophon/xenophon_strauss.pdf" &
+nvim "/home/ernie/media/books/philosophy/strauss/xenophon/notes/xenophon_notes.tex"
+
