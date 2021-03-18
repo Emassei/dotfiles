@@ -1,0 +1,4 @@
+#!/bin/bash
+
+id=$(docker ps | grep '8000/tcp' | awk '{print $1}')
+docker exec -it $id bash

@@ -54,6 +54,7 @@ instances_check() {
 volumes_check(){
   running_volumes=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`available`] && DBInstances[*].DBInstanceIdentifier' --output text)
   starting_volumes=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`starting`] && DBInstances[*].DBInstanceIdentifier' --output text)
+  backing_up=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`backing-up`] && DBInstances[*].DBInstanceIdentifier' --output text)
   stopping_volumes=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`stopping`] && DBInstances[*].DBInstanceIdentifier' --output text)
   stopped_volumes=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`stopped`] && DBInstances[*].DBInstanceIdentifier' --output text)
 
@@ -62,6 +63,9 @@ volumes_check(){
 
   figlet "starting volumes" -f digital
   echo $starting_volumes
+
+  figlet "backing up volumes" -f digital
+  echo $backing_up
 
   figlet "Stopping Volumes" -f digital
   echo $stopping_volumes
