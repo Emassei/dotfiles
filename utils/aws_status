@@ -2,6 +2,7 @@
 
 running_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=running --output text)
 
+running_volumes=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`running`] && DBInstances[*].DBInstanceIdentifier' --output text)
 
 stopped_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=stopped --output text)
 

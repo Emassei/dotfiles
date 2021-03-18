@@ -1,0 +1,19 @@
+#!/bin/bash
+
+function create_aws_cert(){
+	./easyrsa init-pki &
+	./easyrsa build-ca nopass &
+	./easyrsa build-server-full server nopass &
+	./easyrsa build-client-full client1.domain.tld nopass &
+	cp pki/ca.crt ~/certs/ &
+	cp pki/issued/server.crt ~/certs/ &
+	cp pki/private/server.key ~/certs/ &
+	cp pki/issued/client1.domain.tld.crt ~/certs &
+	cp pki/private/client1.domain.tld.key ~/certs/ &
+
+}
+
+create_aws_cert
+
+
+	#aws acm import-certificate --certificate fileb://client1.domain.tld.crt --private-key fileb://client1.domain.tld.key --certificate-chain fileb://ca.crt
