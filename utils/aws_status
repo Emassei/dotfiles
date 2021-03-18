@@ -1,50 +1,100 @@
 #!/bin/sh
 
-running_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=running --output text)
 
-running_volumes=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`running`] && DBInstances[*].DBInstanceIdentifier' --output text)
+instances_check() {
+  running_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=running --output text)
+  stopped_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=stopped --output text)
+  #terminated_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=terminated --output text)
 
-stopped_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=stopped --output text)
+
+  figlet "Running Instances" -f digital
+  echo $running_instances | sed 's/ /\n/g'
+
+  figlet "Stopped Instances" -f digital
+  echo $stopped_instances | sed 's/ /\n/g'
 
 
-terminated_instances=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].Tags[0].Value' --filters Name=instance-state-name,Values=terminated --output text)
+  #figlet "Terminated Instances" -f digital
+  #echo $terminated_instances| sed 's/ /\n/g'
 
-figlet "Running Instances" -f digital
-echo $running_instances | sed 's/ /\n/g'
 
-figlet "Stopped Instances" -f digital
-echo $stopped_instances | sed 's/ /\n/g'
+  printf "\n"
 
-figlet "Terminated Instances" -f digital
-echo $terminated_instances| sed 's/ /\n/g'
+  instances=($(aws ec2 describe-instances --query "Reservations[].Instances[].Tags[0].Value" --output text))
 
-printf "\n"
+  echo "Which instance do you want to use"
+  select choice in "${instances[@]}"; do
+    [[ -n $choice ]] || { echo "Invalid choice. Please try again." >&2; continue; }
+    name=$choice
+    break
+  done
 
-instances=($(aws ec2 describe-instances --query "Reservations[].Instances[].Tags[0].Value" --output text))
+  instance_id=$(aws ec2 describe-instances --filters 'Name=tag:Name,Values='$name --output text --query 'Reservations[*].Instances[*].InstanceId')
 
-echo "Which instance do you want to use"
-select choice in "${instances[@]}"; do
-  [[ -n $choice ]] || { echo "Invalid choice. Please try again." >&2; continue; }
-  name=$choice
-  break
-done
+  echo "What do you want to do with your instance?"
 
-instance_id=$(aws ec2 describe-instances --filters 'Name=tag:Name,Values='$name --output text --query 'Reservations[*].Instances[*].InstanceId')
+  select answer in "Start" "Stop" "Check_Instance_Status" "Terminate_Instance" "Check_All_Instances"; do
+    case $answer in
+      Start ) aws ec2 start-instances --instance-ids $instance_id; break;;
+      Stop ) aws ec2 stop-instances --instance-ids $instance_id; break;;
+      Check_Instance_Status ) aws ec2 describe-instance-status --instance-id $instance_id; break;;
+      Terminate_Instance ) aws ec2 terminate-instances --instance-ids $instance_id; break;;
+      Check_All_Instances ) aws ec2 describe-instances; break;;
+    esac
+  done
 
-echo "What do you want to do with your instance?"
+  url=$(aws ec2 describe-instances --filters 'Name=tag:Name,Values='$name --output text --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
 
-select answer in "Start" "Stop" "Check_Instance_Status" "Terminate_Instance" "Check_All_Instances"; do
+  if [ ! -z $url ]; then
+    sed -i "s/aws_site='.*'/aws_site='ssh ubuntu@$url'/" $XDG_CONFIG_HOME/zsh/.zshrc;
+  fi
+
+}
+
+volumes_check(){
+  running_volumes=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`available`] && DBInstances[*].DBInstanceIdentifier' --output text)
+  stopping_volumes=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`stopping`] && DBInstances[*].DBInstanceIdentifier' --output text)
+  stopped_volumes=$(aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`stopped`] && DBInstances[*].DBInstanceIdentifier' --output text)
+
+  figlet "Running Volumes" -f digital
+  echo $running_volumes
+
+
+  figlet "Stopping Volumes" -f digital
+  echo $stopping_volumes
+
+  figlet "Stopped Volumes" -f digital
+  echo $stopped_volumes
+
+
+  volumes=($(aws rds describe-db-instances --query "DBInstances[*].DBInstanceIdentifier" --output text))
+
+  echo "Which instance do you want to use"
+  select choice in "${volumes[@]}"; do
+    [[ -n $choice ]] || { echo "Invalid choice. Please try again." >&2; continue; }
+    instance_identifier=$choice
+    break
+  done
+
+  echo "What do you want to do with your instance?"
+
+  select answer in "Start" "Stop" "Check_Instance_Status" "Terminate_Instance" "Check_All_Instances"; do
+    case $answer in
+      Start ) aws rds start-db-instance --db-instance-identifier $instance_identifier; break;;
+      Stop ) aws rds stop-db-instance --db-instance-identifier $instance_identifier; break;;
+      Check_Instance_Status ) aws rds describe-db-instances --db-instance-identifier $instance_identifier; break;;
+      Terminate_Instance ) aws rds delete-db-instance --db-instance-identifier $instance_identifier; break;;
+      Check_All_Instances ) aws rds describe-db-instances; break;;
+    esac
+  done
+
+}
+
+
+echo "What do you want to check? Instances or Volumes"
+select answer in "Instances" "Volumes"; do
   case $answer in
-    Start ) aws ec2 start-instances --instance-ids $instance_id; break;;
-    Stop ) aws ec2 stop-instances --instance-ids $instance_id; break;;
-    Check_Instance_Status ) aws ec2 describe-instance-status --instance-id $instance_id; break;;
-    Terminate_Instance ) aws ec2 terminate-instances --instance-ids $instance_id; break;;
-    Check_All_Instances ) aws ec2 describe-instances; break;;
+    Instances ) instances_check; break;;
+    Volumes ) volumes_check; break;;
   esac
 done
-
-url=$(aws ec2 describe-instances --filters 'Name=tag:Name,Values='$name --output text --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
-
-if [ ! -z $url ]; then
-  sed -i "s/aws_site='.*'/aws_site='ssh ubuntu@$url'/" $XDG_CONFIG_HOME/zsh/.zshrc;
-fi
