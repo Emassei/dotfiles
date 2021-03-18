@@ -11,9 +11,10 @@ function create_aws_cert(){
 	cp pki/issued/client1.domain.tld.crt ~/certs &
 	cp pki/private/client1.domain.tld.key ~/certs/ &
 
+	aws acm import-certificate --certificate fileb://server.crt --private-key fileb://server.key --certificate-chain fileb://ca.crt
+
 }
 
-create_aws_cert
+#create_aws_cert
 
 
-	#aws acm import-certificate --certificate fileb://client1.domain.tld.crt --private-key fileb://client1.domain.tld.key --certificate-chain fileb://ca.crt
