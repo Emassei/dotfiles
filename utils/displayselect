@@ -25,7 +25,7 @@ twomirroredscreens() {
 # Get user choice including multi-monitor and manual selection:
 chosen=$(printf "External Monitor\\nLaptop Display\\nTwo Monitors\\nMirrored" "$screens" | dmenu -i -p "Select Display Option:") &&
 
-if [ "$chosen" == "external monitor" ]; then
+if [ "$chosen" == "External Monitor" ]; then
        	onescreen "HDMI1" "eDP1"
 elif [ "$chosen" == "Laptop Display" ]; then
        	onescreen  "eDP1" "HDMI1"
