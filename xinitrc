@@ -3,9 +3,10 @@
 setxkbmap -option "caps:swapescape"
 xbindkeys -f $HOME/dotfiles/xbindkeys
 xrdb -merge $HOME/dotfiles/Xresources
-feh --bg-fill --randomize --no-fehbg ~/media/pictures/wallpaper/vaporwave/* &
+feh --bg-fill --randomize --no-fehbg ~/media/pictures/wallpaper/* &
 flameshot &
 dunst &
 picom &
+clipmenud &
 dwm
 
