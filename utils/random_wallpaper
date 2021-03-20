@@ -1,0 +1,4 @@
+#!/bin/bash
+
+
+feh --bg-fill --randomize --no-fehbg ~/media/pictures/wallpaper/*
