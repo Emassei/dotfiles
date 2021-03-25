@@ -1,7 +1,9 @@
 #!/bin/sh
 
+phone_ip=$(sudo arp-scan -l | grep 'HUAWEI' | awk '{print $1}')
 
-if ! rsync --update --progress -e 'ssh -p 2222' -Oazvr $HOME/media/rsync 192.168.1.1:/sdcard --delete 2>/dev/null; then
+
+if ! rsync --update --progress -e 'ssh -p 2222' -Oazvrt $HOME/media/rsync $phone_ip:/mnt/ext_sdcard --delete 2>/dev/null; then
 	echo "No connection available, is the ssh client turned on? and are you connected to the lan?"
 else
 	echo "Files transfered"
