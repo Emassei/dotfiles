@@ -93,8 +93,10 @@ export PATH="$HOME/.local/bin:$PATH"
 #this is for python plugins to work with coc
 export PATH="$PATH:/usr/bin/python"
 export VIRTUAL_ENV_DISABLE_PROMPT=1
-if systemctl -q is-active graphical.target && [[ ! $DISPLAY && $XDG_VTNR -eq 1 ]]; then
-  exec startx
+if systemctl -q is-active graphical.target && [[ ! $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
+  exec startx ~/dotfiles/xinitrc_dwm
+elif systemctl -q is-active graphical.target && [[ ! $DISPLAY ]] && [[ $(tty) = /dev/tty2 ]]; then
+  exec startx ~/dotfiles/xinitrc_xfce
 fi
 
 #mkdir -p /tmp/log
