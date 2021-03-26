@@ -1,0 +1,4 @@
+#!/bin/sh
+
+st zathura "~/media/books/languages/latin/lingva_latina/familia_romana.pdf" &
+trans -I la:en
