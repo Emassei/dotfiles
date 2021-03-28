@@ -83,7 +83,15 @@ endfunction
 
 nnoremap <C-n> :call NumberToggle()<CR>
 
+function! TerminalPasteTool()
+  :%s/\n -d/ -d
+  :silent .  w !bash | python -m json.tool | xsel --clipboard
+  :vnew
+  normal! "+p
+endfunction
 
+
+nnoremap <C-t> :call TerminalPasteTool()<cr>
 
 "This is to toggle nerdtree, if it's open close it, if not go to the directory
 "that your file is on
