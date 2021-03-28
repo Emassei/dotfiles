@@ -84,7 +84,7 @@ endfunction
 nnoremap <C-n> :call NumberToggle()<CR>
 
 function! TerminalPasteTool()
-  :%s/\n -d/ -d
+  :silent %s/\n -d/ -d
   :silent .  w !bash | python -m json.tool | xsel --clipboard
   :vnew
   normal! "+p
