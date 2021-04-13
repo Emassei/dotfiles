@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# active cases for:
+# Arnenia
+# Circasia
+# Filandia
+# Salento
+
 results=$(curl -s 'https://wabi-south-central-us-api.analysis.windows.net/public/reports/querydata?synchronous=true' \
   -H 'Connection: keep-alive' \
   -H 'Accept: application/json, text/plain, */*' \
