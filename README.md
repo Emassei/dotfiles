@@ -68,3 +68,32 @@ curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 ```
 * For arch you need to run ./install.sh --clang-completer --system-libclang
+
+## Port forward a ftp server
+
+```
+#Install ftp locally, assuming you are using a pi
+
+sudo apt install proftpd
+
+sudo vim /etc/proftpd/proftpd.conf
+# add the following to the conf
+ServerName "RaspberryPi"
+# create a local directory for the service to use
+DefaultRoot /home/pi/downloads/share
+# You might have to create a user specifically for this purpose
+
+
+sudo service proftpd reload
+sudo service proftpd status
+
+# Port Forwarding
+
+# add a port forwarding for the local ip of the pi
+
+# the external ports:
+# 20,21
+# and the internal port:
+# 21
+# using both udp and tcp
+```
