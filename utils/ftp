@@ -1,0 +1,11 @@
+#!/bin/sh
+
+sudo wc -l /var/log/proftpd/xferlog | awk '{print $1}'  >> ~/.cache/ftp.txt
+
+first_line=$(sed -n '1 p' ~/.cache/ftp.txt)
+next_line=$(sed -n '2 p' ~/.cache/ftp.txt)
+
+if [ "$first_line" != "$next_line" ]; then
+	status=$(tail -1 /var/log/proftpd/xferlog)
+  echo "New Download: $status" | msmtp  emassei05@gmail.com
+fi
