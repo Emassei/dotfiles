@@ -6,6 +6,12 @@ last_line=$(tail -1 ~/.cache/ftp.txt)
 second_to_last_line=$(tail -2 ~/.cache/ftp.txt | head -1)
 
 if [ "$last_line" != "$second_to_last_line" ]; then
-	status=$(tail -1 /var/log/proftpd/xferlog | sed 's/\:/ /g')
+  status=$(tail -1 /var/log/proftpd/xferlog | sed 's/\:/ /g')
   echo "Subject: New ftp Connection\n$status" | msmtp  emassei05@gmail.com
+fi
+
+ftp_list_length=$(sudo wc -l ~/.cache/ftp.txt | awk '{print $1}')
+
+if [ "$ftp_list_length" -gt 100 ]; then
+  sed -i '$!d' ~/.cache/ftp.txt
 fi
