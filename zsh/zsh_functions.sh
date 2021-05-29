@@ -64,32 +64,6 @@ port_range(){
 
 
 
-# port scan
-port_scan() {
-	echo "Enter IP address range you want to scan (ex.192.168.1.0/24)"
-	read ip_range
-	if [[ $ip_range == 192* ]]
-	then
-		command='-sTV'
-	else
-		command='-PnV'
-	fi
-	echo "Do you want to scan a range of ports or just common ports?"
-	echo "Type range or common"
-
-  select answer in "range" "common"; do
-    case $answer in
-      range ) aws ec2 start-instances --instance-ids $instance_id; break;;
-      common ) aws ec2 stop-instances --instance-ids $instance_id; break;;
-    esac
-  done
-
-  nmap $command  -p 20,21,22,23,25,53,80,110,119,123,143,161,194 $ip_range | grep "open\|report"
-	echo "Which IP do you want to scan for vulnerabilities?"
-	read vulnerable_ip
-	nmap --script vulners $command $vulnerable_ip
-}
-
 # Custom cd
 c() {
 	cd $1;

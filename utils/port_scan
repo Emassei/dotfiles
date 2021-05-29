@@ -1,0 +1,33 @@
+#!/bin/sh
+
+common_ports='20,21,22,23,25,53,80,110,119,123,143,161,194 '
+
+create_port_range(){
+	# Highest number of ports 65535 that could be open
+	arg1=$1
+  seq -s, $arg1
+}
+
+echo "Enter specific IP address (192.168.1.1) or range (ex.192.168.1.0/24) you want to scan "
+read ip_range
+
+if [[ $ip_range == 192* ]]
+then
+	command='-sTV'
+else
+	command='-PnVo'
+fi
+
+echo "Do you want to scan a range of ports or just common ports?"
+
+select answer in "range" "common" "specific"; do
+	case $answer in
+		range ) echo "What port range do you want to use?"; read range; port_range=$(create_port_range $range); nmap $command -p $port_range $ip_range | grep "open\|report"; break;;
+		common ) nmap $command -p $common_ports $ip_range | grep "open\|report"; break;;
+		specific ) nmap $command -p $common_ports $ip_range | grep "open\|report"; break;;
+	esac
+done
+
+echo "Which IP do you want to scan for vulnerabilities?"
+read vulnerable_ip
+nmap --script vulners $command $vulnerable_ip
