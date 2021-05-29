@@ -58,12 +58,19 @@ loop() {
 
 # port scan
 port_scan() {
-	echo "Enter IP address range you want to scan (ex.192.168.1.0)"
+	echo "Enter IP address range you want to scan (ex.192.168.1.0/24)"
 	read ip_range
-  nmap -sT  -p 20,21,22,23,25,53,80,110,119,123,143,161,194 $ip_range/24 | grep "open\|report"
+	if [[ $ip_range == 192* ]]
+	then
+		command='-sTV'
+	else
+		command='-PnV'
+	fi
+
+  nmap $command  -p 20,21,22,23,25,53,80,110,119,123,143,161,194 $ip_range | grep "open\|report"
 	echo "Which IP do you want to scan for vulnerabilities?"
 	read vulnerable_ip
-	nmap --script vulners -sV $vulnerable_ip
+	nmap --script vulners $command $vulnerable_ip
 }
 
 # Custom cd
