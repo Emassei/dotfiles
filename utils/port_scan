@@ -18,16 +18,30 @@ else
 	command='-PnVo'
 fi
 
-echo "Do you want to scan a range of ports or just common ports?"
+echo "Do you want to scan a range of ports, common ports, or a specific port?"
 
 select answer in "range" "common" "specific"; do
 	case $answer in
 		range ) echo "What port range do you want to use?"; read range; port_range=$(create_port_range $range); nmap $command -p $port_range $ip_range | grep "open\|report"; break;;
 		common ) nmap $command -p $common_ports $ip_range | grep "open\|report"; break;;
-		specific ) nmap $command -p $common_ports $ip_range | grep "open\|report"; break;;
+		specific ) echo "Type a port"; read port; nmap $command -p $port $ip_range | grep "open\|report"; break;;
 	esac
 done
 
-echo "Which IP do you want to scan for vulnerabilities?"
-read vulnerable_ip
-nmap --script vulners $command $vulnerable_ip
+if [[ $ip_range == *//* ]] || [[ $ip_range == *\/*  ]]; then
+  echo "Do you want to scan one of the IP addresses for vulnerabilities"
+  select answer in "yes" "No"; do
+		case $answer in
+			yes ) echo "Which IP do you want to scan?"; read vulnerable_ip; nmap --script vulners $command $vulnerable_ip; break;;
+			no ) echo "Ok"; break;;
+		esac
+	done
+else
+  echo "Do you want to scan the IP for vulnerabilities"
+  select answer in "yes" "No"; do
+		case $answer in
+			yes ) nmap --script vulners $command $ip_range; break;;
+			no ) echo "Ok"; break;;
+		esac
+	done
+fi
