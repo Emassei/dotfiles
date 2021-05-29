@@ -56,6 +56,7 @@ alias define='sdcv'
 alias local_db='pgcli postgres://postgres:postgres@localhost:5432'
 alias local_mysql='mycli -u wordpress_user -p password -P 3306'
 
+alias port_scan='port_scan'
 
 # Vim Mode in Zsh
 bindkey -v
