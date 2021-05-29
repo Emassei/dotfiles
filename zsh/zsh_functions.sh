@@ -56,6 +56,14 @@ loop() {
 	done;
 }
 
+port_range(){
+	# Highest number of ports 65535 that could be open
+	arg1=$1
+  seq -s, $arg1
+}
+
+
+
 # port scan
 port_scan() {
 	echo "Enter IP address range you want to scan (ex.192.168.1.0/24)"
@@ -66,6 +74,15 @@ port_scan() {
 	else
 		command='-PnV'
 	fi
+	echo "Do you want to scan a range of ports or just common ports?"
+	echo "Type range or common"
+
+  select answer in "range" "common"; do
+    case $answer in
+      range ) aws ec2 start-instances --instance-ids $instance_id; break;;
+      common ) aws ec2 stop-instances --instance-ids $instance_id; break;;
+    esac
+  done
 
   nmap $command  -p 20,21,22,23,25,53,80,110,119,123,143,161,194 $ip_range | grep "open\|report"
 	echo "Which IP do you want to scan for vulnerabilities?"
