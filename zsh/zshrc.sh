@@ -52,11 +52,10 @@ alias english-latin="trans -I en:la"
 alias french="tans -I fr:en"
 
 alias pi='ssh pi@192.168.1.120'
+alias pi_colombia='ssh pi@macondo-colombia.ddns.net -p 2454'
 alias define='sdcv'
 alias local_db='pgcli postgres://postgres:postgres@localhost:5432'
 alias local_mysql='mycli -u wordpress_user -p password -P 3306'
-
-alias port_scan='port_scan'
 
 # Vim Mode in Zsh
 bindkey -v
