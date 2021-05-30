@@ -1,0 +1,10 @@
+#!/bin/sh
+
+
+vpn=$(nmcli con show --active | grep "vpn" | awk '{print $1, $4}')
+
+if [ -z "${vpn}" ]; then
+	echo "No active VPN"
+else
+	echo "Active VPN: "$vpn
+fi
