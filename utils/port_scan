@@ -18,13 +18,14 @@ else
 	command='-PnVo'
 fi
 
-echo "Do you want to scan a range of ports, common ports, or a specific port?"
+echo "Do you want to scan a range of ports, common ports, specific port, or check target details?"
 
-select answer in "range" "common" "specific"; do
+select answer in "range" "common" "specific" "details"; do
 	case $answer in
 		range ) echo "What port range do you want to use?"; read range; port_range=$(create_port_range $range); nmap $command -p $port_range $ip_range | grep "open\|report"; break;;
 		common ) nmap $command -p $common_ports $ip_range | grep "open\|report"; break;;
 		specific ) echo "Type a port"; read port; nmap $command -p $port $ip_range | grep "open\|report"; break;;
+		details ) sudo nmap -O $ip_range; exit 1; break;;
 	esac
 done
 
