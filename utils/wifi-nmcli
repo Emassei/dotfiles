@@ -1,0 +1,8 @@
+#!/bin/sh
+nmcli dev wifi rescan
+
+nmcli dev wifi list
+
+echo "Which Wifi do you want to connect to? (ENTER SSID)"
+read ssid
+nmcli --ask device wifi connect $ssid
