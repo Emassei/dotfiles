@@ -233,6 +233,7 @@ Plug 'francoiscabrol/ranger.vim'
 Plug 'ap/vim-buftabline'
 Plug 'rigellute/shades-of-purple.vim'
 Plug 'lervag/vimtex'
+Plug 'dracula/vim', { 'as': 'dracula' }
 call plug#end()
 
  "_ __ ___ (_)___  ___
@@ -241,9 +242,9 @@ call plug#end()
 "|_| |_| |_|_|___/\___|
 
 set background=dark
-colorscheme shades_of_purple
-let g:shades_of_purple_lightline = 1
-let g:lightline = { 'colorscheme': 'shades_of_purple' }
+colorscheme dracula
+"let g:shades_of_purple_lightline = 1
+"let g:lightline = { 'colorscheme': 'shades_of_purple' }
 
 let g:tex_flavor = 'latex'
 let g:vimtex_view_use_temp_files='zathura'
