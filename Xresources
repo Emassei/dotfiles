@@ -134,7 +134,7 @@
  *.foreground: #F8F8F2
  *.background: #282A36
  *.color0:     #000000
- *.color8:     #ae0700
+ *.color8:     #770000
  *.color1:     #FF5555
  *.color9:     #FF6E67
  *.color2:     #50FA7B
