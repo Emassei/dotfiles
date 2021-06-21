@@ -28,4 +28,8 @@ do
 
 	printf "%s%s%s%% " "$status" "$warn" "$capacity"
 	unset warn
+
+  if [[ $capacity < 10 ]]; then
+		notify-send 'Battery is super low: ' $capacity ' you need to plug that in you dumb shit.' --urgency=critical
+  fi
 done | sed 's/ *$//'
