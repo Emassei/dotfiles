@@ -28,8 +28,6 @@ set clipboard=unnamedplus
 " Automatically deletes all trailing whitespace on save.
 autocmd BufWritePre * %s/\s\+$//e
 autocmd Filetype javascript setlocal sw=2 expandtab
-" This highlights all words the cursor is under
-autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
 " So I can view unicode characters
 set encoding=utf-8
 
@@ -150,6 +148,9 @@ map <leader>e :'<,'>terminal bash<CR>
 "Pretty Print a selection
 map <leader>p :'<,'>!python -m json.tool<CR>
 
+
+
+
 "Python Formatting
 autocmd FileType python set sw=4
 autocmd FileType python set ts=4
@@ -168,8 +169,7 @@ command PP execute "%!python -m json.tool"
 "To run current line from vim to the shell
 command Run execute ".w !bash"
 
-"highlight lines that are too long
-command LL execute "/\%>80v.\+"
+
 
 "Sudo write when I forgot to open in sudo
 command SudoWrite execute "w !sudo tee %"
@@ -203,6 +203,20 @@ endfunction
 
 command! -nargs=1 WordCount call WordCount(<f-args>)
 
+" This highlights all words the cursor is under
+function! HighlightMatchingWord()
+  if !exists('#Highlight#CursorMoved')
+    augroup Highlight
+      autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
+    augroup END
+  else
+    augroup Highlight
+      autocmd!
+    augroup END
+  endif
+endfunction
+
+nnoremap <C-h> :call HighlightMatchingWord()<CR>
  "_ __ | |_   _  __ _(_)_ __  ___
 "| '_ \| | | | |/ _` | | '_ \/ __|
 "| |_) | | |_| | (_| | | | | \__ \
