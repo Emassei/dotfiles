@@ -1,0 +1,13 @@
+#!/bin/sh
+
+while true; do
+
+	lid_status=$(awk '{print $2}' '/proc/acpi/button/lid/LID/state')
+	hdmi_screen="HDMI1"
+	laptop_screen="eDP1"
+
+
+	if [[ $lid_status == "closed" ]]; then
+		xrandr --output $hdmi_screen --auto --output $laptop_screen --off
+	fi
+done
