@@ -216,7 +216,7 @@ function! HighlightMatchingWord()
   endif
 endfunction
 
-nnoremap <C-h> :call HighlightMatchingWord()<CR>
+nnoremap <C-H> :call HighlightMatchingWord()<CR>
  "_ __ | |_   _  __ _(_)_ __  ___
 "| '_ \| | | | |/ _` | | '_ \/ __|
 "| |_) | | |_| | (_| | | | | \__ \
