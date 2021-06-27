@@ -9,5 +9,9 @@ while true; do
 
 	if [[ $lid_status == "closed" ]]; then
 		xrandr --output $hdmi_screen --auto --output $laptop_screen --off
+		#this is for the hdmi speakers
+		pactl set-card-profile 0 output:hdmi-stereo-extra1
+		#this is for the lapstop speakers
+ 		#pactl set-card-profile 0 output:analog-stereo
 	fi
 done

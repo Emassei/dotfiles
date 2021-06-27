@@ -1,0 +1,12 @@
+#!/bin/sh
+
+placa=$(curl -s https://www.pyphoy.com/_next/data/lZMkk_itp_PaOxMqC14bg/armenia/particulares.json | jq -r '.pageProps.categoryData.data' | jq '.[0].numbers' | jq '.[]')
+
+if [[ $placa == *'4'* ]]; then
+	echo ' Pico Y Placa!'
+else
+	echo ' Happy Driving!'
+fi
+
+
+
