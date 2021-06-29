@@ -11,7 +11,23 @@ while true; do
 		xrandr --output $hdmi_screen --auto --output $laptop_screen --off
 		#this is for the hdmi speakers
 		pactl set-card-profile 0 output:hdmi-stereo-extra1
-		#this is for the lapstop speakers
+		#this is for the lapstop speakers or headphones
  		#pactl set-card-profile 0 output:analog-stereo
+	elif [[ $lid_status == "open"]]; then
+		xrandr --output $hdmi_screen --auto --output $laptop_screen --auto
 	fi
 done
+
+#while true; do
+	#audio_output=$("pactl list sinks | grep 'Active Port' | awk '{print $3}'")
+
+
+
+	#if [[ $audio_output == "closed" ]]; then
+		#xrandr --output $hdmi_screen --auto --output $laptop_screen --off
+		##this is for the hdmi speakers
+		#pactl set-card-profile 0 output:hdmi-stereo-extra1
+		##this is for the lapstop speakers or headphones
+     ##pactl set-card-profile 0 output:analog-stereo
+	#fi
+#done

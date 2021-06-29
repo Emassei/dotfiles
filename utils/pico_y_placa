@@ -1,6 +1,6 @@
 #!/bin/sh
 
-placa=$(curl -s https://www.pyphoy.com/_next/data/lZMkk_itp_PaOxMqC14bg/armenia/particulares.json | jq -r '.pageProps.categoryData.data' | jq '.[0].numbers' | jq '.[]')
+placa=$(curl -s https://www.pyphoy.com/_next/data/tm4e-13c5jyY55sCD0BWU/armenia/motos.json| jq -r '.pageProps.categoryData.data' | jq '.[0].numbers' | jq '.[]')
 
 if [[ $placa == *'4'* ]]; then
 	echo ' Pico Y Placa!'
