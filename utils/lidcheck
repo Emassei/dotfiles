@@ -1,22 +1,22 @@
 #!/bin/sh
 
-while true; do
+#while true; do
 
-	lid_status=$(awk '{print $2}' '/proc/acpi/button/lid/LID/state')
-	hdmi_screen="HDMI1"
-	laptop_screen="eDP1"
+	#lid_status=$(awk '{print $2}' '/proc/acpi/button/lid/LID/state')
+	#hdmi_screen="HDMI1"
+	#laptop_screen="eDP1"
 
 
-	if [[ $lid_status == "closed" ]]; then
-		xrandr --output $hdmi_screen --auto --output $laptop_screen --off
-		#this is for the hdmi speakers
-		pactl set-card-profile 0 output:hdmi-stereo-extra1
-		#this is for the lapstop speakers or headphones
- 		#pactl set-card-profile 0 output:analog-stereo
-	elif [[ $lid_status == "open"]]; then
-		xrandr --output $hdmi_screen --auto --output $laptop_screen --auto
-	fi
-done
+	#if [[ $lid_status == "closed" ]]; then
+		#xrandr --output $hdmi_screen --auto --output $laptop_screen --off
+		##this is for the hdmi speakers
+		#pactl set-card-profile 0 output:hdmi-stereo-extra1
+		##this is for the lapstop speakers or headphones
+     ##pactl set-card-profile 0 output:analog-stereo
+	#elif [[ $lid_status == "open"]]; then
+		#xrandr --output $hdmi_screen --auto --output $laptop_screen --auto
+	#fi
+#done
 
 #while true; do
 	#audio_output=$("pactl list sinks | grep 'Active Port' | awk '{print $3}'")
