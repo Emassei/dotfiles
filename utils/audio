@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# To turn audio off from the speakers
+pactl set-card-profile alsa_card.pci-0000_00_1f.3 off
+
+# to turn audio on the computer speakers
+pactl set-card-profile alsa_card.pci-0000_00_1f.3 output:analog-stereo
+
+# to have audio come from the dock hdmi speakers
+pactl set-card-profile alsa_card.usb-DisplayLink_AmazonBasics_Docking_Station_430701210033167-02 output:analog-stereo+input:analog-stereo
