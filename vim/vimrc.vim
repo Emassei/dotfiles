@@ -203,20 +203,20 @@ endfunction
 
 command! -nargs=1 WordCount call WordCount(<f-args>)
 
-" This highlights all words the cursor is under
-function! HighlightMatchingWord()
-  if !exists('#Highlight#CursorMoved')
-    augroup Highlight
-      autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
-    augroup END
-  else
-    augroup Highlight
-      autocmd!
-    augroup END
-  endif
-endfunction
+"" This highlights all words the cursor is under
+"function! HighlightMatchingWord()
+  "if !exists('#Highlight#CursorMoved')
+    "augroup Highlight
+      "autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
+    "augroup END
+  "else
+    "augroup Highlight
+      "autocmd!
+    "augroup END
+  "endif
+"endfunction
 
-nnoremap <C-y> :call HighlightMatchingWord()<CR>
+"nnoremap <C-y> :call HighlightMatchingWord()<CR>
  "_ __ | |_   _  __ _(_)_ __  ___
 "| '_ \| | | | |/ _` | | '_ \/ __|
 "| |_) | | |_| | (_| | | | | \__ \
@@ -248,13 +248,13 @@ Plug 'ap/vim-buftabline'
 Plug 'rigellute/shades-of-purple.vim'
 Plug 'lervag/vimtex'
 Plug 'dracula/vim', { 'as': 'dracula' }
+Plug 'StanAngeloff/php.vim'
 call plug#end()
 
  "_ __ ___ (_)___  ___
 "| '_ ` _ \| / __|/ __|
 "| | | | | | \__ \ (__
 "|_| |_| |_|_|___/\___|
-
 set background=dark
 colorscheme dracula
 "let g:shades_of_purple_lightline = 1
