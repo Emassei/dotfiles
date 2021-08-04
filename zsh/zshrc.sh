@@ -38,6 +38,7 @@ alias vpn_torrent_california="connect_to_vpn torrent_california"
 alias vpn_torrent_canada="connect_to_vpn torrent_canada"
 alias vpn_amazon_prime="connect_to_vpn amazon_prime"
 alias screenshot="flameshot gui"
+alias space="ncdu"
 
 alias chill="random_music_track chill"
 alias classical="random_music_track classical"

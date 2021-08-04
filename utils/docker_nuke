@@ -1,6 +1,15 @@
 #!/bin/sh
-docker stop $(docker ps -a -q) 2>/dev/null;
-docker container prune -f;
-docker volume prune -f;
-docker rmi $(docker images -q) -f 2>/dev/null;
-docker info 2>/dev/null | grep --after-context=3 "Containers"
+
+echo "Do you want to nuke or lite?"
+
+select answer in "nuke (Everything)" "middle (not images)" "lite (not images or volumes)"; do
+	case $answer in
+		nuke ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker volume prune -f; docker rmi $(docker images -q) -f 2>/dev/null; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
+		lite ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
+		middle ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker volume prune -f; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
+	esac
+done
+
+
+
+
