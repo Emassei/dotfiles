@@ -1,8 +1,8 @@
 #!/bin/sh
 
-echo "Do you want to nuke or lite?"
+echo -e "What do you want to do? \n\nNuke: destroys everything \nMedium: Destroys containers and volumes \nLite: Destroys containers\n"
 
-select answer in "nuke (Everything)" "middle (not images)" "lite (not images or volumes)"; do
+select answer in "nuke" "middle" "lite"; do
 	case $answer in
 		nuke ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker volume prune -f; docker rmi $(docker images -q) -f 2>/dev/null; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
 		lite ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
