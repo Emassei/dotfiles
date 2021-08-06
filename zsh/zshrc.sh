@@ -58,6 +58,8 @@ alias define='sdcv'
 alias local_db='pgcli postgres://postgres:postgres@localhost:5432'
 alias local_mysql='mycli -u wordpress_user -p password -P 3306'
 
+alias hdmi_speaker='pactl set-card-profile alsa_card.usb-Lenovo_ThinkPad_USB-C_Dock_Gen2_USB_Audio_000000000000-00 off'
+alias headphones='pactl set-card-profile alsa_card.usb-Lenovo_ThinkPad_USB-C_Dock_Gen2_USB_Audio_000000000000-00 output:analog-stereo+input:multichannel-input'
 # Vim Mode in Zsh
 bindkey -v
 
