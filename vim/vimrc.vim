@@ -249,6 +249,7 @@ Plug 'rigellute/shades-of-purple.vim'
 Plug 'lervag/vimtex'
 Plug 'dracula/vim', { 'as': 'dracula' }
 Plug 'StanAngeloff/php.vim'
+Plug 'lilydjwg/colorizer'
 call plug#end()
 
  "_ __ ___ (_)___  ___
