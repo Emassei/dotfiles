@@ -1,11 +1,10 @@
 #!/bin/sh
 
 declare -A repos=(
-	[st]='git@github.com:Emassei/st.git'
-	[dmenu]='git@github.com:Emassei/dmenu.git'
-	[dwm]='git@github.com:Emassei/dwm.git'
-	[dwmblocks]='git@github.com:Emassei/dwmblocks.git'
-	[slock]='git://git.suckless.org/slock'
+	[st]='https://github.com:Emassei/st.git'
+	[dwm]='https://github.com:Emassei/dwm.git'
+	[dwmblocks]='https://github.com:Emassei/dwmblocks.git'
+	[slock]='https://git.suckless.org/slock'
 )
 
 suckless_tools=('st' 'dmenu' 'dwm' 'dwmblocks' 'slock')
