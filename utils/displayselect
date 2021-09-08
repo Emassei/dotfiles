@@ -1,11 +1,8 @@
 #!/bin/sh
 
-amazon_dock_hdmi='DVI-I-1-1'
-laptop_screen='eDP1'
-hdmi_screen='HDMI1'
+laptop_screen=$(xrandr -q | grep " connected" | awk '{print $1}' | head -n 1)
+hdmi_screen=$(xrandr -q | grep " connected" | awk '{print $1}' | tail -n 1)
 
-
-# Using a lot of what luke smith did, but changed it around for my own purposes.
 
 onescreen() { # If only one output available or chosen.
 	xrandr --output $1 --auto --output $2 --off
@@ -27,24 +24,18 @@ twoscreens() {
 
 twomirroredscreens() {
 #Two screens mirrored
-  xrandr --output HDMI1 --auto --output eDP1 --auto
+  xrandr --output $hdmi_screen --auto --output $laptop_screen --auto
 }
 
-
 # Get user choice including multi-monitor and manual selection:
-chosen=$(printf "External Monitor\\nLaptop Display\\nTwo Monitors\\nMirrored\\nAmazon Dock" "$screens" | dmenu -i -p "Select Display Option:") &&
+chosen=$(printf "External Monitor\\nLaptop Display\\nTwo Monitors\\nMirrored" "$screens" | dmenu -i -p "Select Display Option:") &&
 
 if [ "$chosen" == "External Monitor" ]; then
-       	onescreen "HDMI1" "eDP1"
+       	onescreen $hdmi_screen $laptop_screen
 elif [ "$chosen" == "Laptop Display" ]; then
-       	onescreen  "eDP1" "HDMI1"
+       	onescreen  $laptop_screen $hdmi_screen
 elif [ "$chosen" == "Two Monitors" ]; then
   twoscreens
-elif [ "$chosen" == "Amazon Dock" ]; then
-    xrandr --output eDP1 --auto --primary --output DVI-I-1-1 --auto --same-as eDP1
 else
   twomirroredscreens
 fi
-
-# to use witht the amazon dock
-#xrandr --output eDP1 --auto --primary --output DVI-I-1-1 --auto --same-as eDP1
