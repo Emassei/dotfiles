@@ -1,7 +1,7 @@
 #!/bin/sh
 
-laptop_screen=$(xrandr -q | grep " connected" | awk '{print $1}' | head -n 1)
-hdmi_screen=$(xrandr -q | grep " connected" | awk '{print $1}' | tail -n 1)
+laptop_screen=$(xrandr -q | grep -i "edp" | awk '{print $1}')
+hdmi_screen=$(xrandr -q | grep -i "\-1\-1" | awk '{print $1}')
 
 
 onescreen() { # If only one output available or chosen.
@@ -12,7 +12,7 @@ onescreen_dock(){
 	xrandr --output $1 --auto --output $2 --off
 }
 # Get all possible displays
-allposs=$(xrandr -q | grep "connected")
+allposs=$(xrandr -q | grep " connected")
 
 # Get all connected screens.
 screens=$(echo "$allposs" | awk '/ connected/ {print $1}')
