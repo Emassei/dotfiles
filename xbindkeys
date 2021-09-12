@@ -1,8 +1,8 @@
-"amixer set Master 10%+"
+"pamixer --allow-boost -i 3"
   XF86AudioRaiseVolume
 
-"amixer set Master 10%-"
+"pamixer --allow-boost -d 3"
   XF86AudioLowerVolume
 
-"amixer set Master Toggle"
+"pamixer --toggle-mute"
   XF86AudioMute
