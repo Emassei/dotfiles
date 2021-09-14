@@ -59,14 +59,15 @@ __fzfcmd() {
     echo "fzf-tmux ${FZF_TMUX_OPTS:--d${FZF_TMUX_HEIGHT:-40%}} -- " || echo "fzf"
 }
 
-fzf-file-widget() {
-  LBUFFER="${LBUFFER}$(__fsel)"
-  local ret=$?
-  zle reset-prompt
-  return $ret
-}
-zle     -N   fzf-file-widget
-bindkey '^T' fzf-file-widget
+# I am using the file widget in keybindings, it opens vim automatically
+#fzf-file-widget() {
+  #LBUFFER="${LBUFFER}$(__fsel)"
+  #local ret=$?
+  #zle reset-prompt
+  #return $ret
+#}
+#zle     -N   fzf-file-widget
+#bindkey '^T' fzf-file-widget
 
 # ALT-C - cd into the selected directory
 fzf-cd-widget() {
@@ -87,7 +88,7 @@ fzf-cd-widget() {
   return $ret
 }
 zle     -N    fzf-cd-widget
-bindkey '\ef' fzf-cd-widget
+bindkey '^f' fzf-cd-widget
 
 # CTRL-R - Paste the selected command from history into the command line
 fzf-history-widget() {

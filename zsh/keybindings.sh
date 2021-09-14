@@ -26,4 +26,4 @@
 
 
 # In the above setting, -s option is used to translate the input string to output string so that when you press the shortcut, it is replaced with the command you want to run. ^M or \n is used to represent the Enter key so that the command is run automatically.
-bindkey -s '^f' 'nvim $(fzf)^M'
+bindkey -s '^t' 'nvim $(fzf)^M'
