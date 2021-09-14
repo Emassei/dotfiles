@@ -250,6 +250,7 @@ Plug 'lervag/vimtex'
 Plug 'dracula/vim', { 'as': 'dracula' }
 Plug 'StanAngeloff/php.vim'
 Plug 'lilydjwg/colorizer'
+Plug 'puremourning/vimspector'
 call plug#end()
 
  "_ __ ___ (_)___  ___
