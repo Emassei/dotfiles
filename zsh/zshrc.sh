@@ -8,7 +8,7 @@ source ~/dotfiles/zsh/keybindings.sh
 source ~/dotfiles/zsh/zsh_functions.sh
 source ~/dotfiles/zsh/prompt.sh
 source ~/dotfiles/zsh/plugins/fixls.zsh
-
+source ~/dotfiles/fzf/key-bindings.zsh
 
 # Vars
 SAVEHIST=1000
