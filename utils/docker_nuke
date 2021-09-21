@@ -1,12 +1,12 @@
 #!/bin/sh
 
-echo -e "What do you want to do? \n\nNuke: destroys everything \nMedium: Destroys containers and volumes \nLite: Destroys containers\n"
+echo -e "What do you want to do? \n\nNuke: Destroy everything \nMedium: Destroy containers and volumes \nLite: Destroy containers\n"
 
-select answer in "nuke" "middle" "lite"; do
+select answer in "Nuke" "Medium" "Lite"; do
 	case $answer in
-		nuke ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker volume prune -f; docker rmi $(docker images -q) -f 2>/dev/null; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
-		lite ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
-		middle ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker volume prune -f; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
+		Nuke ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker volume prune -f; docker rmi $(docker images -q) -f 2>/dev/null; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
+		Medium ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker volume prune -f; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
+		Lite ) docker stop $(docker ps -a -q) 2>/dev/null; docker container prune -f; docker info 2>/dev/null | grep --after-context=3 "Containers"; break;;
 	esac
 done
 

@@ -26,6 +26,7 @@ alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
 alias colombia="curl https://corona-stats.online/co"
 
 alias translate="spanish_translate"
+alias pacman_clean="sudo pacman -Qtdq | sudo pacman -Rns -;sudo pacman -Scc"
 
 alias stopwatch="stopwatch"
 alias speed_test="curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python -"
