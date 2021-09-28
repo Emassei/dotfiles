@@ -129,14 +129,14 @@ map <leader>md :InstantMarkdownPreview<CR>
 let g:instant_markdown_autostart = 0
 
 " Goyo plugin makes text more readable when writing prose:
-map <leader>f :set wrap <bar> :Goyo<CR>
+map <leader>f :Goyo<CR>
 
 " set the fold method
 map <leader>z :set foldmethod=indent<CR>
 map <leader>x :set foldmethod=manual<CR>
 
 " open a terminal in vim, then I can copy and paste stuff in the terminal
-map <leader><CR> :terminal ++noclose ++curwin<CR>
+map <leader><CR> :terminal<CR>
 
 "remap the vim ranger binding to r not f
 let g:ranger_map_keys = 0
@@ -197,90 +197,42 @@ command PP execute "%!python -m json.tool"
 "To run current line from vim to the shell
 command Run execute ".w !bash"
 
-
-
 "Sudo write when I forgot to open in sudo
 command SudoWrite execute "w !sudo tee %"
 
-"copy all occureances to the a buffer, and show results
-function! CopyResults(text)
-    :let @a=''
-    :execute "g/" . a:text . "/y A"
-    :reg a
-endfunction
-
-command! -nargs=1 CopyResults call CopyResults(<f-args>)
-
-"copy all occureances and past into a vsplit
-function! CopyResultsSplit(text)
-    "figure out how to update vim to check for the buffer
-    ":bdelete \'scratchpad.txt\'
-    :let @a=''
-    :execute "g/" . a:text . "/y A"
-    :vsplit
-    :edit scratchpad.txt
-    :normal "aP
-endfunction
-
-command! -nargs=1 CopyResultsSplit call CopyResultsSplit(<f-args>)
-
-"get the word count for a string in the current file
-function! WordCount(text)
-   :execute "%s/" . a:text . "//gn"
-endfunction
-
-command! -nargs=1 WordCount call WordCount(<f-args>)
-
-"" This highlights all words the cursor is under
-"function! HighlightMatchingWord()
-  "if !exists('#Highlight#CursorMoved')
-    "augroup Highlight
-      "autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
-    "augroup END
-  "else
-    "augroup Highlight
-      "autocmd!
-    "augroup END
-  "endif
-"endfunction
-
-"nnoremap <C-y> :call HighlightMatchingWord()<CR>
  "_ __ | |_   _  __ _(_)_ __  ___
 "| '_ \| | | | |/ _` | | '_ \/ __|
 "| |_) | | |_| | (_| | | | | \__ \
 "| .__/|_|\__,_|\__, |_|_| |_|___/
 "|_|            |___/
 
-
-"This is my plugin list
 call plug#begin()
+"heads up display
 Plug 'dbeniamine/cheat.sh-vim'
-Plug 'josa42/coc-sh'
-Plug 'honza/vim-snippets'
-Plug 'sheerun/vim-polyglot'
 Plug 'airblade/vim-gitgutter'
+Plug 'scrooloose/nerdtree'
+Plug 'vim-airline/vim-airline'
+Plug 'ap/vim-buftabline'
+Plug 'lilydjwg/colorizer'
+"IDE
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'instant-markdown/vim-instant-markdown', {'for': 'markdown'}
-Plug 'scrooloose/nerdtree'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
-Plug 'vim-airline/vim-airline'
+Plug 'francoiscabrol/ranger.vim'
+Plug 'puremourning/vimspector'
+Plug 'szw/vim-maximizer'
+"Tools
 Plug 'scrooloose/nerdcommenter'
 Plug 'mileszs/ack.vim'
-Plug 'drewtempelmeyer/palenight.vim'
 Plug 'tpope/vim-fugitive'
 Plug 'vimwiki/vimwiki'
 Plug 'junegunn/goyo.vim'
-Plug 'francoiscabrol/ranger.vim'
-Plug 'ap/vim-buftabline'
-Plug 'rigellute/shades-of-purple.vim'
 Plug 'lervag/vimtex'
+"Color Schemes
+Plug 'drewtempelmeyer/palenight.vim'
+Plug 'rigellute/shades-of-purple.vim'
 Plug 'dracula/vim', { 'as': 'dracula' }
-Plug 'StanAngeloff/php.vim'
-Plug 'lilydjwg/colorizer'
-Plug 'puremourning/vimspector'
-Plug 'joonty/vdebug'
-Plug 'szw/vim-maximizer'
 call plug#end()
 
  "_ __ ___ (_)___  ___
@@ -288,7 +240,7 @@ call plug#end()
 "| | | | | | \__ \ (__
 "|_| |_| |_|_|___/\___|
 set background=dark
-colorscheme dracula
+colorscheme palenight
 "let g:shades_of_purple_lightline = 1
 "let g:lightline = { 'colorscheme': 'shades_of_purple' }
 
@@ -296,7 +248,6 @@ let g:tex_flavor = 'latex'
 let g:vimtex_view_use_temp_files='zathura'
 let g:vimtex_view_method = 'zathura'
 filetype plugin on
-
 
 hi SpellBad guibg=#ff2929 ctermbg=224
 
