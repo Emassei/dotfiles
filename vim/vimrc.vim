@@ -224,6 +224,7 @@ Plug 'tpope/vim-fugitive'
 Plug 'vimwiki/vimwiki'
 Plug 'junegunn/goyo.vim'
 Plug 'lervag/vimtex'
+Plug '2072/PHP-Indenting-for-VIm'
 "Color Schemes
 Plug 'drewtempelmeyer/palenight.vim'
 Plug 'rigellute/shades-of-purple.vim'
