@@ -26,7 +26,7 @@ set wildmenu
 "Now the clipboard will work across environments, mac or linux
 set clipboard=unnamedplus
 " Automatically deletes all trailing whitespace on save.
-autocmd BufWritePre * %s/\s\+$//e
+autocmd BufWritePre * :%s/\s\+$//e
 autocmd Filetype javascript setlocal sw=2 expandtab
 " So I can view unicode characters
 set encoding=utf-8
@@ -217,6 +217,7 @@ Plug 'junegunn/fzf.vim'
 Plug 'francoiscabrol/ranger.vim'
 Plug 'puremourning/vimspector'
 Plug 'szw/vim-maximizer'
+Plug 'sbdchd/neoformat'
 "Tools
 Plug 'scrooloose/nerdcommenter'
 Plug 'mileszs/ack.vim'

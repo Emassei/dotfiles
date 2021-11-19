@@ -27,15 +27,20 @@ twomirroredscreens() {
   xrandr --output $hdmi_screen --auto --output $laptop_screen --auto
 }
 
+#This is for the hdmi tv
+xrandr --output HDMI-1 --auto
+
 # Get user choice including multi-monitor and manual selection:
-chosen=$(printf "External Monitor\\nLaptop Display\\nTwo Monitors\\nMirrored" "$screens" | dmenu -i -p "Select Display Option:") &&
+chosen=$(printf "External Monitor\\nLaptop Display\\nTwo Monitors\\nTV\\nMirrored" "$screens" | dmenu -i -p "Select Display Option:") &&
 
 if [ "$chosen" == "External Monitor" ]; then
        	onescreen $hdmi_screen $laptop_screen
 elif [ "$chosen" == "Laptop Display" ]; then
        	onescreen  $laptop_screen $hdmi_screen
 elif [ "$chosen" == "Two Monitors" ]; then
-  twoscreens
+        twoscreens
+elif [ "$chosen" == "TV" ]; then
+	xrandr --output HDMI-1 --auto
 else
   twomirroredscreens
 fi

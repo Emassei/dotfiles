@@ -61,11 +61,7 @@ alias local_mysql='mycli -u wordpress_user -p password -P 3306'
 
 alias hdmi_speaker='pactl set-card-profile alsa_card.pci-0000_00_1f.3 output:hdmi-stereo-extra1+input:analog-stereo; pactl set-card-profile alsa_card.usb-Lenovo_ThinkPad_USB-C_Dock_Gen2_USB_Audio_000000000000-00 off'
 
-
-
-
 alias headphones='pactl set-card-profile alsa_card.pci-0000_00_1f.3 off; pactl set-card-profile alsa_card.usb-Lenovo_ThinkPad_USB-C_Dock_Gen2_USB_Audio_000000000000-00 output:analog-stereo+input:mono-fallback'
-
 
 
 # Vim Mode in Zsh
