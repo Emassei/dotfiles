@@ -218,6 +218,7 @@ Plug 'francoiscabrol/ranger.vim'
 Plug 'puremourning/vimspector'
 Plug 'szw/vim-maximizer'
 Plug 'sbdchd/neoformat'
+Plug 'evidens/vim-twig'
 "Tools
 Plug 'scrooloose/nerdcommenter'
 Plug 'mileszs/ack.vim'

@@ -160,7 +160,7 @@ if [ -x "$(command -v pacman)" ]; then
 	makepkg -si
 
 	# This is for the icons to appear on suckless tools
-	yay -S libxft-bgra-git
+	yay -S libxft-bgra-git simple-mtpfs
 	# Brave install
 	yay -S brave-bin
 
