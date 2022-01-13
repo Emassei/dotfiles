@@ -150,6 +150,9 @@ if [ -x "$(command -v pacman)" ]; then
 	# Install packages
 	sudo pacman -S flameshot dunst picom base base-devel neovim networkmanager grub xorg-server xorg-xinit git noto-fonts ntfs-3g xbindkeys libnotify tldr ttf-joypixels ranger mpv ueberzug xclip pavucontrol pulseaudio zathura zathura-pdf-mupdf libreoffice-fresh calibre neofetch fzf arp-scan node bc intel-ucode perl-xml-xpath clipmenu xsel gimp aws-cli pavucontrol lazygit yubikey-manager yubioauth-desktop ykman aws-sam-cli pam-u2f yubico-pam keepassxc virtualbox virtualbox-host-modules-arch virtualbox-host-dkms feh zathura-pdf-mupdf
 
+	# this is so the time is accurate and the yubikey OTP codes work
+	timedatectl set-ntp true
+
 	ln ~/dotfiles/apps/zathura/zathurarc ~/.config/zathura/zathurarc
 	ln ~/dotfiles/xbindkeys ~/.xbindkeysrc
 
