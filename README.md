@@ -97,3 +97,11 @@ sudo service proftpd status
 # 21
 # using both udp and tcp
 ```
+
+## For mycli client pspg pager add to .my.cnf, this will make pspg the default pager
+```
+[client]
+pager = pspg -X --quit-if-one-screen
+```
+
+
