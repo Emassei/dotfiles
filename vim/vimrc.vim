@@ -122,7 +122,7 @@ nnoremap <leader>v :vsplit<CR>:w<CR>:Ex<CR>
 nnoremap <leader>s :split<CR>:w<CR>:Ex<CR>
 
 "Remove current buffer
-map <leader>k :bd!<CR>
+map <C-w> :bd!<CR>
 "to start a markdown preview
 map <leader>md :InstantMarkdownPreview<CR>
 "Stop auto previewing markdown pages
