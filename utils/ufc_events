@@ -13,6 +13,6 @@ else
 	difference=$(date --date @$(($latest_ufc_date-$today)) +'%-d days')
 fi
 
-ufc_event_name=$(tail -n2 $XDG_CACHE_HOME/ufc_events.txt | head -n1)
+ufc_event_name=$(tail -n3 $XDG_CACHE_HOME/ufc_events.txt | head -n 1)
 echo "${difference}:${ufc_event_name}"
 
