@@ -4,7 +4,7 @@ curl -s "https://en.wikipedia.org/wiki/List_of_UFC_events" | xpath -q -e '//tabl
 
 today=$(date -d $(date +"%Y%m%d") +%s)
 
-latest_ufc_date=$(date -d $(tail -n 2 $XDG_CACHE_HOME/ufc_events.txt | head -n 1 | sed "s/,//g; s/ /-/g") +%s)
+latest_ufc_date=$(date -d $(tail -n 3 $XDG_CACHE_HOME/ufc_events.txt | head -n 1 | sed "s/,//g; s/ /-/g") +%s)
 
 
 if [[ $today == $latest_ufc_date ]]; then
@@ -13,6 +13,6 @@ else
 	difference=$(date --date @$(($latest_ufc_date-$today)) +'%-d days')
 fi
 
-ufc_event_name=$(tail -n3 $XDG_CACHE_HOME/ufc_events.txt | head -n 1)
+ufc_event_name=$(tail -n4 $XDG_CACHE_HOME/ufc_events.txt | head -n 1)
 echo "${difference}:${ufc_event_name}"
 
