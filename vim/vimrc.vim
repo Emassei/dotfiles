@@ -27,10 +27,13 @@ set wildmenu
 set clipboard=unnamedplus
 " Automatically deletes all trailing whitespace on save.
 autocmd BufWritePre * :%s/\s\+$//e
-autocmd Filetype javascript setlocal sw=2 expandtab
+autocmd Filetype javascript setlocal sw=2
 " So I can view unicode characters
 set encoding=utf-8
 
+set tabstop=4
+set shiftwidth=4
+set expandtab
  "_ __ ___   __ _ _ __  _ __ (_)_ __   __ _ ___
 "| '_ ` _ \ / _` | '_ \| '_ \| | '_ \ / _` / __|
 "| | | | | | (_| | |_) | |_) | | | | | (_| \__ \
