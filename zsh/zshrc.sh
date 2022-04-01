@@ -19,6 +19,7 @@ git config --global push.default current
 # Aliases
 alias tmux='tmux -f "$HOME/dotfiles/tmux/tmux.conf"'
 alias v="nvim -p"
+alias vim="nvim -p"
 alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
 alias r='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
 alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
