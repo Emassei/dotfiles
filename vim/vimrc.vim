@@ -222,6 +222,8 @@ Plug 'puremourning/vimspector'
 Plug 'szw/vim-maximizer'
 Plug 'sbdchd/neoformat'
 Plug 'evidens/vim-twig'
+Plug 'SirVer/ultisnips'
+Plug 'honza/vim-snippets'
 "Tools
 Plug 'scrooloose/nerdcommenter'
 Plug 'mileszs/ack.vim'
