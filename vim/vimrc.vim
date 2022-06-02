@@ -151,6 +151,8 @@ map <leader>e :'<,'>terminal bash<CR>
 "Pretty Print a selection
 map <leader>p :'<,'>!python -m json.tool<CR>
 
+let g:vimspector_variables_display_mode = 'full'
+
 "Stole this from ThePrimeagen, vimspector debug bindings
 fun! GotoWindow(id)
     call win_gotoid(a:id)
@@ -175,6 +177,7 @@ nnoremap <leader>d<space> :call vimspector#Continue()<CR>
 nmap <leader>dbp <Plug>VimspectorToggleBreakpoint
 nmap <leader>dcbp <Plug>VimspectorToggleConditionalBreakpoint
 
+nmap <Leader>di <Plug>VimspectorBalloonEval
 
 
 "Python Formatting
