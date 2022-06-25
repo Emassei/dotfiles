@@ -52,7 +52,7 @@ nnoremap <C-e> :nohl<CR><C-l>:echo "Search Cleared"<CR>
 
 " this is to search, through out all files under the
 " current directory
-nnoremap <C-f> :Ack
+nnoremap <C-f> :Rg
 
 
 " Cycle through buffers
@@ -217,7 +217,7 @@ Plug 'ap/vim-buftabline'
 Plug 'lilydjwg/colorizer'
 "IDE
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-Plug 'instant-markdown/vim-instant-markdown', {'for': 'markdown'}
+Plug 'instant-markdown/vim-instant-markdown', {'for': 'markdown', 'do': 'yarn install'}
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 Plug 'francoiscabrol/ranger.vim'
