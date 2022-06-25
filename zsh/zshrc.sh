@@ -23,6 +23,7 @@ alias vim="nvim -p"
 alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
 alias r='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
 alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
+alias cat='bat'
 
 alias colombia="curl https://corona-stats.online/co"
 
