@@ -102,6 +102,8 @@ export PATH=$PATH:$HOME/dotfiles/utils
 export PATH="$HOME/.local/bin:$PATH"
 #this is for python plugins to work with coc
 export PATH="$PATH:/usr/bin/python"
+#add node packages to be executable
+export PATH=$PATH:/home/ernie/.local/share/npm/bin
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 if systemctl -q is-active graphical.target && [[ ! $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
   exec startx ~/dotfiles/xinitrc_dwm
