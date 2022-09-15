@@ -62,8 +62,6 @@ port_range(){
   seq -s, $arg1
 }
 
-
-
 # Custom cd
 c() {
 	cd $1;
