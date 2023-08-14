@@ -153,6 +153,8 @@ map <leader>p :'<,'>!python -m json.tool<CR>
 
 let g:vimspector_variables_display_mode = 'full'
 
+g:tagbar_ctags_bin
+
 "Stole this from ThePrimeagen, vimspector debug bindings
 fun! GotoWindow(id)
     call win_gotoid(a:id)
@@ -225,8 +227,11 @@ Plug 'puremourning/vimspector'
 Plug 'szw/vim-maximizer'
 Plug 'sbdchd/neoformat'
 Plug 'evidens/vim-twig'
-Plug 'SirVer/ultisnips'
+"Plug 'SirVer/ultisnips'
 Plug 'honza/vim-snippets'
+Plug 'majutsushi/tagbar'
+Plug 'universal-ctags/ctags'
+
 "Tools
 Plug 'scrooloose/nerdcommenter'
 Plug 'mileszs/ack.vim'
