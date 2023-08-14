@@ -24,6 +24,7 @@ alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir
 alias r='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
 alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
 alias cat='bat'
+alias codes='ykman oath accounts code'
 
 alias colombia="curl https://corona-stats.online/co"
 
