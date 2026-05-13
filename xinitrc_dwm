@@ -1,5 +1,17 @@
 #!/bin/sh
 
+# Monitor setup - external monitor primary, laptop to the right
+hdmi_screen=$(xrandr -q | grep -w "connected" | grep -i "DP-2-1" | awk '{print $1}')
+laptop_screen=$(xrandr -q | grep -w "connected" | grep -i "edp" | awk '{print $1}')
+if [ -n "$hdmi_screen" ] && [ -n "$laptop_screen" ]; then
+    xrandr --output "$hdmi_screen" --auto --primary \
+           --output "$laptop_screen" --auto --right-of "$hdmi_screen"
+fi
+
+export GTK_USE_PORTAL=0
+systemctl --user import-environment DISPLAY XAUTHORITY
+dbus-update-activation-environment --systemd DISPLAY XAUTHORITY
+
 setxkbmap -option "caps:swapescape"
 xbindkeys -f $HOME/dotfiles/xbindkeys
 xrdb -merge $HOME/.Xresources
