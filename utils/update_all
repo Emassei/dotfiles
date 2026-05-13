@@ -85,11 +85,14 @@ update_nvim() {
     fi
     nvim --headless "+Lazy! sync" +qa
     nvim --headless "+MasonUpdate" +qa
-    nvim --headless "+TSUpdateSync" +qa
+    nvim --headless "+TSUpdate" +qa
 }
 
 update_gcloud() {
     if [[ -x "$HOME/google-cloud-sdk/bin/gcloud" ]]; then
+        # Unset stale env vars left over from the old AUR google-cloud-cli package
+        unset CLOUDSDK_PYTHON CLOUDSDK_BQ_PYTHON CLOUDSDK_GSUTIL_PYTHON \
+              CLOUDSDK_ROOT_DIR GOOGLE_CLOUD_SDK_HOME
         "$HOME/google-cloud-sdk/bin/gcloud" components update --quiet
     else
         warn "gcloud SDK not found at ~/google-cloud-sdk"
