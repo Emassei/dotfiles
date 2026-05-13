@@ -1,12 +1,9 @@
 #!/bin/sh
 
-# Monitor setup - external monitor primary, laptop to the right
-hdmi_screen=$(xrandr -q | grep -w "connected" | grep -i "DP-2-1" | awk '{print $1}')
-laptop_screen=$(xrandr -q | grep -w "connected" | grep -i "edp" | awk '{print $1}')
-if [ -n "$hdmi_screen" ] && [ -n "$laptop_screen" ]; then
-    xrandr --output "$hdmi_screen" --auto --primary \
-           --output "$laptop_screen" --auto --right-of "$hdmi_screen"
-fi
+# Monitor layout: autorandr handles dock/undock profiles.
+# Save a profile from a working layout with:  autorandr --save <name>
+# To re-apply on the fly mid-session:         autorandr --change
+autorandr --change --default docked 2>/dev/null || true
 
 export GTK_USE_PORTAL=0
 systemctl --user import-environment DISPLAY XAUTHORITY
