@@ -80,8 +80,22 @@ update_tmux() {
 }
 
 update_nvim() {
-    if [[ -d "$HOME/.config/nvim/.git" ]]; then
-        git -C "$HOME/.config/nvim" pull --ff-only || warn "nvim config pull skipped"
+    local nvim_dir="$HOME/.config/nvim"
+    if [[ -d "$nvim_dir/.git" ]]; then
+        info "  pulling origin"
+        git -C "$nvim_dir" pull --ff-only || warn "  nvim origin pull skipped (dirty/diverged)"
+
+        # If an 'upstream' remote exists (NvChad/NvChad fork setup),
+        # fetch and try to fast-forward merge new upstream changes too.
+        if git -C "$nvim_dir" remote | grep -qx upstream; then
+            info "  fetching upstream"
+            git -C "$nvim_dir" fetch upstream --quiet
+            local branch
+            branch=$(git -C "$nvim_dir" symbolic-ref --short HEAD 2>/dev/null || echo "v2.5")
+            info "  merging upstream/$branch (ff-only)"
+            git -C "$nvim_dir" merge --ff-only "upstream/$branch" 2>/dev/null \
+                || warn "  upstream merge skipped (needs manual merge — local commits ahead)"
+        fi
     fi
     nvim --headless "+Lazy! sync" +qa
     nvim --headless "+MasonUpdate" +qa
