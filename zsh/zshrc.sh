@@ -17,6 +17,8 @@ setopt share_history # setopt inc_append_history
 git config --global push.default current
 
 # Aliases
+# Exclude fuse.rclone mounts (gdrive) — they hit the network and hang df
+alias df='df -h -x fuse.rclone -x fuse.portal'
 alias tmux='tmux -f "$HOME/dotfiles/tmux/tmux.conf"'
 alias v="nvim -p"
 alias vim="nvim -p"
