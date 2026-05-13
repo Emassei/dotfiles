@@ -6,10 +6,6 @@ export EDITOR="nvim"
 export TERMINAL="st"
 export BROWSER="brave"
 
-# Bypass xdg-desktop-portal for file pickers — fixes silent
-# "Save As" / download dialogs in Brave/Chromium under DWM.
-export GTK_USE_PORTAL=0
-
 # ~/ Clean-up:
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"

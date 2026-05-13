@@ -1,0 +1,21 @@
+#!/bin/sh
+# Turn wifi off when an ethernet device is up, back on when it goes down.
+# NM calls this script with: $1 = interface, $2 = action
+
+iface="$1"
+action="$2"
+
+# Only react to ethernet up/down events
+case "$iface" in
+    eth*|en*) ;;
+    *) exit 0 ;;
+esac
+
+case "$action" in
+    up)
+        nmcli radio wifi off
+        ;;
+    down)
+        nmcli radio wifi on
+        ;;
+esac

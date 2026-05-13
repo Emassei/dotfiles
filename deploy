@@ -1,184 +1,358 @@
-#!/bin/sh
+#!/bin/bash
+#
+# Bootstrap a new Arch machine to match Ernie's working setup.
+# Idempotent — safe to re-run.
+#
+# What this does:
+#   1. Installs pacman packages (core OS + dev tools + DWM stack)
+#   2. Installs paru (AUR helper) if missing
+#   3. Installs AUR packages
+#   4. Clones + builds suckless tools (dwm, dwmblocks, dmenu)
+#   5. Clones NvChad nvim config
+#   6. Sets up tmux TPM
+#   7. Initializes git submodules (oh-my-zsh)
+#   8. Creates dotfile symlinks
+#   9. Installs Google Cloud SDK (official, not AUR)
+#  10. Installs system files (NetworkManager dispatcher, reflector config)
+#  11. Enables systemd timers (reflector, fstrim, autorandr)
+#  12. Sets shell to zsh
 
-declare -A repos=(
-	[st]='https://github.com:Emassei/st.git'
-	[dwm]='https://github.com:Emassei/dwm.git'
-	[dwmblocks]='https://github.com:Emassei/dwmblocks.git'
-	[slock]='https://git.suckless.org/slock'
+set -e
+
+DOTFILES="$HOME/dotfiles"
+CODE_DIR="$HOME/code"
+SUCKLESS_DIR="$CODE_DIR/suckless"
+
+GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
+info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+confirm() {
+    read -r -p "$1 [y/N] " response
+    [[ "$response" =~ ^[Yy]$ ]]
+}
+
+# =============================================================================
+# Git repositories (your forks of suckless tools + NvChad)
+# =============================================================================
+declare -A suckless_repos=(
+    [dwm]='git@github.com:Emassei/dwm.git'
+    [dwmblocks]='git@github.com:Emassei/dwmblocks.git'
+    [dmenu]='git@github.com:Emassei/dmenu.git'
+)
+NVCHAD_REPO='git@github.com:Emassei/NvChad.git'
+
+# =============================================================================
+# Package lists
+# =============================================================================
+PACKAGES=(
+    # Base
+    base-devel git pacman-contrib
+
+    # Shell & terminal
+    zsh zsh-autosuggestions zsh-syntax-highlighting alacritty tmux
+
+    # Editor
+    neovim
+
+    # X11 + DWM stack
+    xorg-server xorg-xinit xorg-xrandr xbindkeys picom dunst libnotify
+    autorandr feh flameshot
+
+    # Portal (needed for Brave file dialogs)
+    xdg-desktop-portal xdg-desktop-portal-gtk
+
+    # Fonts
+    noto-fonts ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols ttf-lekton-nerd
+
+    # File management & TUI
+    ranger fzf ripgrep bat tree ncdu
+
+    # Media & PDF
+    mpv feh zathura zathura-pdf-poppler
+
+    # Utils
+    tldr xclip xsel bc htop jq pwgen lsof rsync
+
+    # Network
+    networkmanager network-manager-applet networkmanager-l2tp networkmanager-openvpn
+    nm-connection-editor reflector
+
+    # Audio
+    pavucontrol pipewire pipewire-pulse pamixer
+
+    # Dev tools
+    lazygit lazydocker nodejs-lts-jod npm docker docker-compose docker-buildx
+    python-pip pgcli mariadb postgresql-libs
+
+    # Cloud / infra
+    aws-cli-v2 azure-cli ansible-core
+
+    # Security / Yubikey
+    yubikey-personalization-gui keepassxc pass libfido2
+
+    # Other
+    gimp libreoffice-fresh ntfs-3g
 )
 
-suckless_tools=('st' 'dmenu' 'dwm' 'dwmblocks' 'slock')
+AUR_PACKAGES=(
+    brave-bin
+    simple-mtpfs
+    pspg
+    libxft-bgra
+    networkmanager-dmenu-git
+    ttf-joypixels
+    ranger-git
+    yubico-authenticator-bin
+    yubikey-manager-qt
+    slack-desktop
+    aws-session-manager-plugin
+    ack
+)
 
-prompt_install() {
-	echo -n "$1 is not installed. Would you like to install it? (y/n) " >&2
-	old_stty_cfg=$(stty -g)
-	stty raw -echo
-	answer=$( while ! head -c 1 | grep -i '[ny]' ;do true ;done )
-	stty $old_stty_cfg && echo
-	if echo "$answer" | grep -iq "^y" ;then
-		# This could def use community support
-		if [[ " ${suckless_tools[@]}"  =~ " $1 " ]]; then
-			cd $HOME/code/
-			git clone ${repos[$1]}
-			cd $1
-			sudo make install
-		elif [ -x "$(command -v apt-get)" ]; then
-			sudo apt-get install $1 -y
-
-		elif [ -x "$(command -v brew)" ]; then
-			brew install $1
-
-		elif [ -x "$(command -v pkg)" ]; then
-			sudo pkg install $1
-
-		elif [ -x "$(command -v pacman)" ]; then
-			sudo pacman -S $1
-	else
-			echo "I'm not sure what your package manager is! Please install $1 on your own and run this deploy script again. Tests for package managers are in the deploy script you just ran starting at line 13. Feel free to make a pull request at https://github.com/parth/dotfiles :)"
-		fi
-	fi
+# =============================================================================
+# Functions
+# =============================================================================
+check_arch() {
+    if ! command -v pacman &> /dev/null; then
+        error "This script is for Arch Linux only."
+        exit 1
+    fi
 }
 
-check_for_software() {
-	echo "Checking to see if $1 is installed"
-	if ! [ -x "$(command -v $1)" ]; then
-		prompt_install $1
-	else
-		echo "$1 is installed."
-	fi
+check_ssh() {
+    if ! ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+        error "SSH authentication to GitHub failed."
+        error "Set up your SSH keys first, then re-run this script."
+        exit 1
+    fi
 }
 
-check_for_directory() {
-	echo "Check for directory structure"
-	DIR='code'
-	if [ -d "$DIR" ]; then
-		echo "$DIR exists"
-	else
-		echo "Making code directory"
-		mkdir $HOME/$DIR
-	fi
+refresh_mirrorlist() {
+    info "Refreshing pacman mirrorlist with reflector..."
+    sudo reflector --country 'United States' --age 6 --latest 20 \
+        --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 }
 
-check_default_shell() {
-	if [ -z "${SHELL##*zsh*}" ] ;then
-			echo "Default shell is zsh."
-	else
-		echo -n "Default shell is not zsh. Do you want to chsh -s \$(which zsh)? (y/n)"
-		old_stty_cfg=$(stty -g)
-		stty raw -echo
-		answer=$( while ! head -c 1 | grep -i '[ny]' ;do true ;done )
-		stty $old_stty_cfg && echo
-		if echo "$answer" | grep -iq "^y" ;then
-			chsh -s $(which zsh)
-		else
-			echo "Warning: Your configuration won't work properly. If you exec zsh, it'll exec tmux which will exec your default shell which isn't zsh."
-		fi
-	fi
+install_pacman_packages() {
+    info "Installing pacman packages..."
+    sudo pacman -Syu --needed --noconfirm "${PACKAGES[@]}"
 }
 
-echo "We're going to do the following:"
-echo "1. Check to make sure you have zsh, vim, and tmux installed"
-echo "2. We'll help you install them if you don't"
-echo "3. We're going to check to see if your default shell is zsh"
-echo "4. We'll try to change it if it's not"
+install_paru() {
+    if command -v paru &> /dev/null; then
+        info "paru already installed"
+        return
+    fi
+    info "Installing paru (AUR helper)..."
+    mkdir -p "$CODE_DIR"
+    git clone https://aur.archlinux.org/paru.git "$CODE_DIR/paru"
+    (cd "$CODE_DIR/paru" && makepkg -si --noconfirm)
+}
 
-echo "Let's get started? (y/n)"
-old_stty_cfg=$(stty -g)
-stty raw -echo
-answer=$( while ! head -c 1 | grep -i '[ny]' ;do true ;done )
-stty $old_stty_cfg
-if echo "$answer" | grep -iq "^y" ;then
-	echo
-else
-	echo "Quitting, nothing was changed."
-	exit 0
-fi
+install_aur_packages() {
+    info "Installing AUR packages..."
+    paru -S --needed --noconfirm "${AUR_PACKAGES[@]}"
+}
 
+setup_directories() {
+    info "Creating directory structure..."
+    mkdir -p "$CODE_DIR" "$SUCKLESS_DIR"
+    mkdir -p "$HOME/.config/zsh"
+    mkdir -p "$HOME/.config/alacritty"
+    mkdir -p "$HOME/.config/zathura"
+    mkdir -p "$HOME/.config/clipmenu"
+    mkdir -p "$HOME/.local/share/zsh/history"
+    mkdir -p "$HOME/.local/bin"
+}
 
-check_for_software zsh
-echo
-check_for_software vim
-echo
-check_for_software tmux
-echo
-check_for_directory
-echo
-check_for_software st
-echo
-check_for_software dmenu
-echo
-check_for_software dwm
-echo
-check_for_software dwmblocks
-echo
-check_for_software slock
-echo
+clone_or_pull() {
+    local repo=$1 dest=$2
+    if [[ -d "$dest/.git" ]]; then
+        info "Updating $dest..."
+        git -C "$dest" pull --ff-only || warn "$dest pull skipped (dirty/diverged)"
+    else
+        info "Cloning $repo to $dest..."
+        git clone "$repo" "$dest"
+    fi
+}
 
-check_default_shell
+setup_submodules() {
+    info "Initializing git submodules (oh-my-zsh)..."
+    (cd "$DOTFILES" && git submodule update --init --recursive)
+}
 
-echo
-echo -n "Would you like to backup your current dotfiles? (y/n) "
-old_stty_cfg=$(stty -g)
-stty raw -echo
-answer=$( while ! head -c 1 | grep -i '[ny]' ;do true ;done )
-stty $old_stty_cfg
-if echo "$answer" | grep -iq "^y" ;then
-	mv ~/.zshrc ~/.zshrc.old
-	mv ~/.tmux.conf ~/.tmux.conf.old
-	mv ~/.vimrc ~/.vimrc.old
-else
-	echo -e "\nNot backing up old dotfiles."
-fi
+setup_tmux() {
+    info "Setting up tmux plugin manager..."
+    local tpm_dir="$HOME/.tmux/plugins/tpm"
+    if [[ ! -d "$tpm_dir" ]]; then
+        git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
+    else
+        info "TPM already installed"
+    fi
+}
 
-mkdir $HOME/.config/zsh
-mkdir -p $HOME/.local/share/zsh/history/
-touch $HOME/.local/share/zsh/history/.zsh_history
-printf "source '$HOME/dotfiles/zsh/zshrc_manager.sh'" > ~/.config/zsh/.zshrc
-printf "so $HOME/dotfiles/vim/vimrc.vim" > ~/.vimrc
-printf "source-file $HOME/dotfiles/tmux/tmux.conf" > ~/.config/tmux/.tmux.conf
-printf "#!/bin/sh\nsource $HOME/dotfiles/xinitrc" > ~/.xinitrc
-printf "#!/bin/zsh\nsource $HOME/dotfiles/zprofile" > ~/.zprofile
-printf "[include]" "%s\n" "    path = $HOME/dotfiles/gitconfig/.gitconfig" > ~/.gitconfig
-mkdir $HOME/.config/nvim
-printf "so $HOME/dotfiles/vim/vimrc.vim" > ~/.config/nvim/init.vim
+setup_suckless() {
+    info "Setting up suckless tools (dwm, dwmblocks, dmenu)..."
+    for tool in "${!suckless_repos[@]}"; do
+        clone_or_pull "${suckless_repos[$tool]}" "$SUCKLESS_DIR/$tool"
+        info "Compiling $tool..."
+        (cd "$SUCKLESS_DIR/$tool" && sudo make clean install)
+    done
+}
 
-# see https://github.com/junegunn/vim-plug if this is outdated.
-sh -c 'curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim --create-dirs \
-       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+setup_nvchad() {
+    info "Setting up NvChad..."
+    clone_or_pull "$NVCHAD_REPO" "$HOME/.config/nvim"
+}
 
-if [ -x "$(command -v pacman)" ]; then
-	# Install packages
-	sudo pacman -S flameshot dunst picom base base-devel neovim networkmanager grub xorg-server xorg-xinit git noto-fonts ntfs-3g xbindkeys libnotify tldr ttf-joypixels ranger mpv ueberzug xclip pavucontrol pulseaudio zathura zathura-pdf-mupdf libreoffice-fresh calibre neofetch fzf arp-scan node bc intel-ucode perl-xml-xpath clipmenu xsel gimp aws-cli pavucontrol lazygit yubikey-manager yubioauth-desktop ykman aws-sam-cli pam-u2f yubico-pam keepassxc virtualbox virtualbox-host-modules-arch virtualbox-host-dkms feh zathura-pdf-mupdf xfce4 xfce4-goodies
+create_symlink() {
+    local src=$1 dest=$2
+    if [[ -L "$dest" ]]; then
+        info "Symlink already exists: $dest"
+    elif [[ -e "$dest" ]]; then
+        warn "Backing up existing $dest to ${dest}.bak"
+        mv "$dest" "${dest}.bak"
+        ln -s "$src" "$dest"
+        info "Created symlink: $dest -> $src"
+    else
+        ln -s "$src" "$dest"
+        info "Created symlink: $dest -> $src"
+    fi
+}
 
-	# this is so the time is accurate and the yubikey OTP codes work
-	timedatectl set-ntp true
+setup_symlinks() {
+    info "Creating symlinks..."
+    create_symlink "$DOTFILES/zsh/zshrc_manager.sh" "$HOME/.config/zsh/.zshrc"
+    create_symlink "$DOTFILES/zprofile" "$HOME/.zprofile"
+    create_symlink "$DOTFILES/alacritty/alacritty.toml" "$HOME/.config/alacritty/alacritty.toml"
+    create_symlink "$DOTFILES/gitconfig/.gitconfig" "$HOME/.gitconfig"
+    create_symlink "$DOTFILES/xinitrc_dwm" "$HOME/.xinitrc"
+    create_symlink "$DOTFILES/xbindkeys" "$HOME/.xbindkeysrc"
+    create_symlink "$DOTFILES/Xresources" "$HOME/.Xresources"
+    create_symlink "$DOTFILES/apps/zathura/zathurarc" "$HOME/.config/zathura/zathurarc"
+}
 
-	ln ~/dotfiles/apps/zathura/zathurarc ~/.config/zathura/zathurarc
-	ln ~/dotfiles/xbindkeys ~/.xbindkeysrc
+setup_zsh() {
+    if [[ "$SHELL" != *"zsh"* ]]; then
+        info "Changing default shell to zsh..."
+        chsh -s "$(which zsh)"
+    else
+        info "zsh is already the default shell"
+    fi
+    touch "$HOME/.local/share/zsh/history/.zsh_history"
+}
 
-	# AUR installer
-	cd $HOME/code
-	git clone https://aur.archlinux.org/yay.git
-	cd yay
-	makepkg -si
+install_gcloud() {
+    if [[ -d "$HOME/google-cloud-sdk" ]]; then
+        info "gcloud SDK already installed"
+        return
+    fi
+    info "Installing Google Cloud SDK (official, not AUR)..."
+    curl -sSL https://sdk.cloud.google.com -o /tmp/gcloud_install.sh
+    bash /tmp/gcloud_install.sh --disable-prompts --install-dir="$HOME"
+    rm -f /tmp/gcloud_install.sh
+}
 
-	# This is for the icons to appear on suckless tools
-	yay -S libxft-bgra-git simple-mtpfs
-	# Brave install
-	yay -S brave-bin
-	# Install sql client viwer
-	yay -S pspg
+install_system_files() {
+    info "Installing system files..."
 
-  # getting image preview to work
-	ranger --copy-config=all
-	sed -i -e 's/set preview_images_method w3m/set preview_images_method ueberzug/' $HOME/.config/ranger/rc.conf
+    # NetworkManager: turn wifi off when ethernet is connected
+    if [[ -f "$DOTFILES/system/NetworkManager-dispatcher/10-wifi-off-on-ethernet" ]]; then
+        sudo install -o root -g root -m 755 \
+            "$DOTFILES/system/NetworkManager-dispatcher/10-wifi-off-on-ethernet" \
+            /etc/NetworkManager/dispatcher.d/10-wifi-off-on-ethernet
+    fi
 
-	# Putting in the arch logo
-	cp $HOME/dotfiles/arch_logo /etc/issue
-fi
+    # Reflector config: keep mirrorlist fresh weekly
+    sudo tee /etc/xdg/reflector/reflector.conf > /dev/null <<'EOF'
+--save /etc/pacman.d/mirrorlist
+--country 'United States'
+--age 6
+--latest 20
+--protocol https
+--sort rate
+EOF
+}
 
-# for instant markdown to work
-npm -g install instant-markdown-d
+enable_services() {
+    info "Enabling systemd timers and services..."
 
-echo
-echo "Please log out and log back in for default shell to be initialized."
+    # Weekly mirrorlist refresh
+    sudo systemctl enable --now reflector.timer
+
+    # Weekly SSD TRIM
+    sudo systemctl enable --now fstrim.timer
+
+    # Auto-switch monitor profile on plug/unplug
+    sudo systemctl enable autorandr.service
+
+    # NetworkManager dispatcher
+    sudo systemctl enable --now NetworkManager-dispatcher.service
+
+    # Time sync (needed for Yubikey TOTP)
+    sudo timedatectl set-ntp true
+}
+
+setup_system() {
+    info "Configuring system settings..."
+    # Arch logo in /etc/issue
+    if [[ -f "$DOTFILES/arch_logo" ]]; then
+        sudo cp "$DOTFILES/arch_logo" /etc/issue
+    fi
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+main() {
+    echo "========================================"
+    echo "  Ernie's Dotfiles Deploy Script"
+    echo "========================================"
+    echo ""
+    echo "This will install and configure:"
+    echo "  - pacman + AUR packages (DWM stack, dev tools, fonts)"
+    echo "  - Suckless tools (dwm, dwmblocks, dmenu)"
+    echo "  - NvChad (neovim config)"
+    echo "  - Alacritty, Zsh, tmux configs"
+    echo "  - Google Cloud SDK (official installer)"
+    echo "  - NetworkManager dispatcher (wifi off on ethernet)"
+    echo "  - Systemd timers: reflector (weekly), fstrim (weekly), autorandr"
+    echo ""
+    echo "After deploy, save autorandr profiles per machine:"
+    echo "  - With external monitor:     autorandr --save docked"
+    echo "  - On laptop alone:           autorandr --save mobile"
+    echo ""
+
+    if ! confirm "Continue?"; then
+        echo "Aborted."
+        exit 0
+    fi
+
+    check_arch
+    check_ssh
+    refresh_mirrorlist
+    setup_directories
+    install_pacman_packages
+    install_paru
+    install_aur_packages
+    setup_submodules
+    setup_tmux
+    setup_suckless
+    setup_nvchad
+    setup_symlinks
+    install_gcloud
+    install_system_files
+    enable_services
+    setup_zsh
+    setup_system
+
+    echo ""
+    echo "========================================"
+    info "Done. Log out and back in for shell changes."
+    info "Then save autorandr profiles (see above)."
+    echo "========================================"
+}
+
+main "$@"
