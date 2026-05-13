@@ -41,7 +41,7 @@ declare -A suckless_repos=(
     [dwmblocks]='git@github.com:Emassei/dwmblocks.git'
     [dmenu]='git@github.com:Emassei/dmenu.git'
 )
-NVCHAD_REPO='git@github.com:Emassei/NvChad.git'
+NVCHAD_REPO='git@github.com:NvChad/starter.git'
 
 # =============================================================================
 # Package lists
@@ -109,6 +109,7 @@ AUR_PACKAGES=(
     slack-desktop
     aws-session-manager-plugin
     ack
+    rofi-greenclip
 )
 
 # =============================================================================
@@ -290,6 +291,9 @@ enable_services() {
 
     # NetworkManager dispatcher
     sudo systemctl enable --now NetworkManager-dispatcher.service
+
+    # User services
+    systemctl --user enable --now greenclip.service
 
     # Time sync (needed for Yubikey TOTP)
     sudo timedatectl set-ntp true
