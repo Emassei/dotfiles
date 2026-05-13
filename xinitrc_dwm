@@ -5,9 +5,8 @@
 # To re-apply on the fly mid-session:         autorandr --change
 autorandr --change --default docked 2>/dev/null || true
 
-export GTK_USE_PORTAL=0
-systemctl --user import-environment DISPLAY XAUTHORITY
-dbus-update-activation-environment --systemd DISPLAY XAUTHORITY
+systemctl --user import-environment DISPLAY XAUTHORITY GTK_USE_PORTAL
+dbus-update-activation-environment --systemd DISPLAY XAUTHORITY GTK_USE_PORTAL
 
 setxkbmap -option "caps:swapescape"
 xbindkeys -f $HOME/dotfiles/xbindkeys
