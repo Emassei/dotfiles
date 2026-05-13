@@ -266,6 +266,14 @@ install_system_files() {
             /etc/NetworkManager/dispatcher.d/10-wifi-off-on-ethernet
     fi
 
+    # Pacman hook: auto-trim cache after every transaction (keep last 2 versions)
+    if [[ -f "$DOTFILES/system/pacman-hooks/auto-paccache.hook" ]]; then
+        sudo mkdir -p /etc/pacman.d/hooks
+        sudo install -o root -g root -m 644 \
+            "$DOTFILES/system/pacman-hooks/auto-paccache.hook" \
+            /etc/pacman.d/hooks/auto-paccache.hook
+    fi
+
     # Reflector config: keep mirrorlist fresh weekly
     sudo tee /etc/xdg/reflector/reflector.conf > /dev/null <<'EOF'
 --save /etc/pacman.d/mirrorlist

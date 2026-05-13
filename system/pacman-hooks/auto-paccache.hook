@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Cleaning pacman cache (keeping 2 most recent versions)...
+When = PostTransaction
+Exec = /usr/bin/paccache -rk2
