@@ -1,0 +1,22 @@
+[font]
+size = 14.0
+
+# [font.normal]
+# family = "JetBrains Mono"
+
+[window]
+opacity = 1.0
+padding = { x = 8, y = 8 }
+decorations = "None"    # no title bar (good for dwm)
+dynamic_title = true
+
+[scrolling]
+history = 10000         # scrollback lines
+
+[cursor]
+style = { shape = "Block", blinking = "Off" }
+vi_mode_style = { shape = "Block", blinking = "On" }
+
+[selection]
+save_to_clipboard = true  # auto-copy selection to clipboard
+

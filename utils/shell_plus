@@ -1,0 +1,10 @@
+CONTAINER_ID=$(docker ps | grep "django" | awk '{print $1}')
+
+# Check if the container ID was found
+if [[ -z "$CONTAINER_ID" ]]; then
+    echo "No Django-based container found."
+    exit 1
+fi
+
+# Execute shell_plus --ipython inside the container
+docker exec -it "$CONTAINER_ID" python manage.py shell_plus --ipython

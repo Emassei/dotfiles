@@ -1,0 +1,2 @@
+#!/bin/sh
+sudo openvpn --config ~/work/jamestown/tech_services/certs/certs/ncps_aws_vpn/ncps.ovpn --auth-user-pass ~/work/jamestown/tech_services/certs/certs/ncps_aws_vpn/credentials.txt

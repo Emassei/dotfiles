@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# http localhost/chatbot/conversation-create/ chat=1 author=1 subject=stuff2;
+# http localhost/chatbot/chat/;
+# http localhost/chatbot/chat-message-create/ message="what is the capital of oregon?"
+#
+# curl -s -X GET  \
+#     'localhost/chatbot/chat/' \
+#     | python -m json.tool
+#
+
+curl -s -X POST  \
+    --header "Content-Type: application/json" \
+    --data '{"message": "what is the capital of oregon"}' \
+    'localhost/chatbot/chat-message-create/' \
+    | python -m json.tool
+
+# curl -s -X POST  \
+#     --header "Content-Type: application/json" \
+#     --data '{"chat": "1", "author":"1", "subject":"stuff3"}' \
+#     'localhost/chatbot/conversation-create/' \
+#     | python -m json.tool

@@ -1,0 +1,18 @@
+echo "Enter "prod" or "test" environment:"
+read environment
+source .env
+# Check if the entered environment is valid
+if [ "$environment" != "prod" ] && [ "$environment" != "test" ]; then
+    echo "Invalid environment. Exiting..."
+    exit 1
+fi
+
+# Define the command to create the remote connection
+if [ "$environment" == "prod" ]; then
+    cmd="az webapp create-remote-connection --subscription "$AZURE_SUBSCRIPTION_ID_PROD" --resource-group "$AZURE_RESOURCE_GROUP_PROD" -n "$AZURE_APP_NAME_PROD""
+elif [ "$environment" == "test" ]; then
+    cmd="az webapp create-remote-connection --subscription "$AZURE_SUBSCRIPTION_ID_TEST" --resource-group "$AZURE_RESOURCE_GROUP_TEST" -n "$AZURE_APP_NAME_TEST""
+fi
+
+# Execute the command
+$cmd

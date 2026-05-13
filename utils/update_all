@@ -1,0 +1,107 @@
+#!/bin/bash
+#
+# Update everything Ernie actually uses, based on dotfiles/deploy.
+# Run interactively; sudo will prompt as needed.
+
+set -u
+
+DOTFILES="$HOME/dotfiles"
+SUCKLESS_DIR="$HOME/code/suckless"
+
+GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
+info() { echo -e "${GREEN}[==>]${NC} $1"; }
+warn() { echo -e "${YELLOW}[!!]${NC} $1"; }
+
+step() {
+    echo
+    info "$1"
+    shift
+    "$@" || warn "step failed: $*"
+}
+
+update_pacman() {
+    sudo pacman -Syu
+}
+
+update_aur() {
+    if command -v paru >/dev/null; then
+        paru -Sua
+    elif command -v yay >/dev/null; then
+        yay -Sua
+    else
+        warn "no AUR helper found"
+    fi
+}
+
+update_suckless() {
+    for tool in dwm dwmblocks dmenu; do
+        dir="$SUCKLESS_DIR/$tool"
+        if [[ -d "$dir/.git" ]]; then
+            info "  $tool: pulling"
+            git -C "$dir" pull --ff-only || { warn "  $tool: pull failed, skipping rebuild"; continue; }
+            info "  $tool: rebuilding"
+            (cd "$dir" && sudo make clean install)
+        else
+            warn "  $tool: not cloned at $dir"
+        fi
+    done
+}
+
+# Sync dotfiles: pull, update submodules, push committed work if clean.
+sync_dotfiles() {
+    cd "$DOTFILES" || return 1
+
+    git pull --ff-only || warn "dotfiles pull skipped (dirty/diverged)"
+    git submodule update --remote --merge
+
+    if [[ -n "$(git status --porcelain)" ]]; then
+        warn "dotfiles has uncommitted changes — push skipped"
+        git status --short
+        return 0
+    fi
+
+    local ahead
+    ahead=$(git rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)
+    if [[ "$ahead" -gt 0 ]]; then
+        info "pushing $ahead commit(s) to origin"
+        git push
+    else
+        info "dotfiles already in sync with origin"
+    fi
+}
+
+update_tmux() {
+    local tpm="$HOME/.tmux/plugins/tpm"
+    if [[ -x "$tpm/bin/update_plugins" ]]; then
+        "$tpm/bin/update_plugins" all
+    else
+        warn "TPM not installed at $tpm"
+    fi
+}
+
+update_nvim() {
+    if [[ -d "$HOME/.config/nvim/.git" ]]; then
+        git -C "$HOME/.config/nvim" pull --ff-only || warn "nvim config pull skipped"
+    fi
+    nvim --headless "+Lazy! sync" +qa
+    nvim --headless "+MasonUpdate" +qa
+    nvim --headless "+TSUpdateSync" +qa
+}
+
+main() {
+    echo "===================================="
+    echo "  update_all — system + dotfiles"
+    echo "===================================="
+
+    step "pacman -Syu"                    update_pacman
+    step "AUR"                            update_aur
+    step "dotfiles sync (pull/push)"      sync_dotfiles
+    step "suckless (dwm/dwmblocks/dmenu)" update_suckless
+    step "tmux plugins (TPM)"             update_tmux
+    step "neovim (NvChad)"                update_nvim
+
+    echo
+    info "All done. Reboot if kernel or drivers were upgraded."
+}
+
+main "$@"

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Get Django container id
+container_id=$(docker ps | grep django | awk '{print $1}')
+
+# Check if container id was found
+if [[ -z "$container_id" ]]; then
+    echo "No Django container found"
+    exit 1
+fi
+
+# Execute shell_plus command in the django container
+docker exec -it $container_id bash -c "python manage.py migrate"

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Define the resolv.conf file path
+RESOLV_CONF="/etc/resolv.conf"
+
+# Backup the current DNS settings
+echo "Backing up existing DNS settings..."
+sudo cp $RESOLV_CONF ${RESOLV_CONF}.backup
+
+# Set the new DNS servers
+echo "Setting DNS to Google (8.8.8.8, 8.8.4.4)..."
+echo -e "nameserver 8.8.8.8\nnameserver 8.8.4.4" | sudo tee $RESOLV_CONF > /dev/null
+
+# Prevent resolv.conf from being overwritten by DHCP or NetworkManager
+echo "Making resolv.conf immutable to prevent overwrites..."
+sudo chattr +i $RESOLV_CONF
+
+# Verify the change
+echo "Current DNS settings:"
+cat $RESOLV_CONF
+
+echo "DNS has been permanently set."

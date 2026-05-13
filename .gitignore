@@ -1,3 +1,34 @@
+# OS / editor cruft
 .DS_Store
 *.swp
+*.swo
+*~
+
+# Existing local-only config
 .gitconfig
+
+# Data / screenshots / binaries that shouldn't live in a dotfiles repo
+*.csv
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.pptx
+*.xlsx
+*.zip
+*.tar
+*.tar.gz
+
+# Secrets
+.env
+.env.*
+*.env
+*.key
+*.pem
+id_rsa
+id_ed25519
+credentials.json
+.netrc
+
+# Logs
+*.log

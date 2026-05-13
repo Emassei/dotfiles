@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Function to stop all running Docker containers
+stop_containers() {
+    docker stop $(docker ps -a -q) 2>/dev/null
+}
+
+# Removes all stopped containers
+remove_containers() {
+    docker container prune -f
+}
+
+# Removes all Docker images
+remove_images() {
+    docker rmi $(docker images -q) -f 2>/dev/null
+}
+
+# Cleans up any objects (images, containers, volumes, and networks) that are dangling and not associated with a container
+system_prune() {
+    docker system prune -f
+}
+
+# Displays the Docker containers information
+display_info() {
+    docker info 2>/dev/null | grep --after-context=3 "Containers"
+}
+
+# Clears the pacman cache
+clear_pacman() {
+    sudo pacman -Sc --noconfirm
+}
+
+show_space(){
+    df -Th
+}
+
+# Call the functions
+stop_containers
+remove_containers
+remove_images
+system_prune
+display_info
+clear_pacman
+show_space

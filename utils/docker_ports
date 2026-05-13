@@ -1,0 +1,126 @@
+#!/bin/bash
+
+# Shows running docker services grouped by app in side-by-side boxes.
+# Refreshes every 60 seconds.
+
+bold="\033[1m"
+dim="\033[2m"
+cyan="\033[36m"
+green="\033[32m"
+yellow="\033[33m"
+red="\033[31m"
+reset="\033[0m"
+
+COLS=3
+INNER=28
+GAP=2
+
+hline() {
+	local i
+	for ((i = 0; i < $1; i++)); do printf '─'; done
+}
+
+render_box_line() {
+	local app="$1" line_idx="$2" total="$3"
+	shift 3
+	local lines=("$@")
+
+	local box_w=$((INNER + 2))
+
+	if [ "$line_idx" -eq 0 ]; then
+		local label=" $app "
+		local label_len=${#label}
+		local right=$((INNER - label_len))
+		printf "${dim}┌${reset}${cyan}${bold}%s${reset}${dim}%s┐${reset}" "$label" "$(hline "$right")"
+	elif [ "$line_idx" -le "$total" ]; then
+		local entry="${lines[$((line_idx - 1))]}"
+		local service="${entry%%	*}"
+		local ports="${entry#*	}"
+		local svc_len=${#service}
+		local port_len=${#ports}
+
+		if [ "$port_len" -eq 0 ]; then
+			local gap=$((INNER - svc_len - 1))
+			printf "${dim}│${reset} ${green}%s${reset}%*s${dim}│${reset}" "$service" "$gap" ""
+		else
+			local gap=$((INNER - svc_len - port_len - 2))
+			[ "$gap" -lt 1 ] && gap=1
+			printf "${dim}│${reset} ${green}%s${reset}%*s${yellow}%s${reset} ${dim}│${reset}" "$service" "$gap" "" "$ports"
+		fi
+	elif [ "$line_idx" -eq $((total + 1)) ]; then
+		printf "${dim}└%s┘${reset}" "$(hline "$INNER")"
+	else
+		printf "%*s" "$box_w" ""
+	fi
+}
+
+while true; do
+	clear
+	echo -e "  ${bold}DOCKER PORTS${reset}  ${dim}$(date '+%H:%M')${reset}"
+	echo ""
+
+	if ! docker info &>/dev/null; then
+		echo -e "  ${red}Docker is not running.${reset}"
+	else
+		data=$(docker ps --format '{{.Label "com.docker.compose.project"}}\t{{.Label "com.docker.compose.service"}}\t{{.Ports}}' 2>/dev/null)
+
+		if [ -z "$data" ]; then
+			echo -e "  ${dim}No services running.${reset}"
+		else
+			declare -A apps app_lines
+			declare -a app_order
+
+			while IFS=$'\t' read -r app service raw; do
+				[ -z "$app" ] && app="standalone"
+				[ -z "$service" ] && service="unknown"
+				ports=$(echo "$raw" | grep -oP '\d+(?=->)' | sort -un | tr '\n' ' ' | sed 's/ $//')
+
+				if [ -z "${apps[$app]+x}" ]; then
+					app_order+=("$app")
+					apps[$app]=0
+				fi
+				apps[$app]=$(( ${apps[$app]} + 1 ))
+				app_lines["${app}_${apps[$app]}"]="${service}	${ports}"
+			done <<< "$data"
+
+			num_apps=${#app_order[@]}
+			for ((chunk = 0; chunk < num_apps; chunk += COLS)); do
+				# find max height in this row of boxes
+				max_h=0
+				for ((c = 0; c < COLS && chunk + c < num_apps; c++)); do
+					app="${app_order[$((chunk + c))]}"
+					h=$((${apps[$app]} + 2))
+					[ "$h" -gt "$max_h" ] && max_h=$h
+				done
+
+				# render line by line across all boxes in this chunk
+				for ((row = 0; row < max_h; row++)); do
+					printf "  "
+					for ((c = 0; c < COLS && chunk + c < num_apps; c++)); do
+						app="${app_order[$((chunk + c))]}"
+						total=${apps[$app]}
+
+						# collect lines for this app
+						local_lines=()
+						for ((s = 1; s <= total; s++)); do
+							local_lines+=("${app_lines["${app}_${s}"]}")
+						done
+
+						render_box_line "$app" "$row" "$total" "${local_lines[@]}"
+						# gap between boxes
+						if ((c < COLS - 1 && chunk + c + 1 < num_apps)); then
+							printf "%*s" "$GAP" ""
+						fi
+					done
+					echo ""
+				done
+				echo ""
+			done
+
+			unset apps app_lines app_order
+		fi
+	fi
+
+	echo -e "  ${dim}~60s refresh${reset}"
+	sleep 60
+done

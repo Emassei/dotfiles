@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Check if the script is run as root
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root. Please use sudo to format the drive initially." 
+   exit 1
+fi
+
+# List available drives and ask the user to specify the USB drive
+echo "Available drives:"
+lsblk
+
+read -p "Enter the device name for the USB drive (e.g., /dev/sda or /dev/sdb): " USB_DEVICE
+
+# Ensure the device name includes /dev/
+if [[ "$USB_DEVICE" != /dev/* ]]; then
+    USB_DEVICE="/dev/$USB_DEVICE"
+fi
+
+# Confirm the device
+read -p "WARNING: This will erase all data on $USB_DEVICE. Are you sure? (y/n): " CONFIRM
+if [[ $CONFIRM != "y" ]]; then
+    echo "Operation cancelled."
+    exit 1
+fi
+
+# Unmount any mounted partitions on the USB drive
+echo "Unmounting all partitions on $USB_DEVICE..."
+for partition in $(lsblk -ln -o NAME "$USB_DEVICE" | grep -v "^$(basename $USB_DEVICE)$"); do
+    umount "/dev/$partition" 2>/dev/null
+done
+
+# Format the drive with FAT32 to ensure cross-platform compatibility
+echo "Formatting $USB_DEVICE to FAT32..."
+mkfs.vfat -I -F 32 -n "USB_DRIVE" $USB_DEVICE
+
+# Confirm successful formatting
+if [[ $? -eq 0 ]]; then
+    echo "USB drive formatted successfully! You can now use it on any machine, including Windows."
+else
+    echo "Failed to format the USB drive."
+    exit 1
+fi

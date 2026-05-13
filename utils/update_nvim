@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -e
+
+NVIM_DIR="${HOME}/.config/nvim"
+
+echo ">> Pulling NvChad config in ${NVIM_DIR}"
+if [ -d "${NVIM_DIR}/.git" ]; then
+    git -C "${NVIM_DIR}" pull --ff-only || echo "!! git pull failed (uncommitted changes?)"
+else
+    echo "!! ${NVIM_DIR} is not a git repo, skipping pull"
+fi
+
+echo ">> Syncing Lazy plugins"
+nvim --headless "+Lazy! sync" +qa
+
+echo ">> Updating Mason registry + installed tools"
+nvim --headless "+MasonUpdate" "+MasonToolsUpdate" +qa 2>/dev/null \
+    || nvim --headless "+MasonUpdate" +qa
+
+echo ">> Updating Treesitter parsers"
+nvim --headless "+TSUpdateSync" +qa
+
+echo ">> Done. Run :checkhealth inside nvim if anything looks off."
