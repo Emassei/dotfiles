@@ -25,3 +25,9 @@ export NPM_CONFIG_USERCONFIG=$XDG_CONFIG_HOME/npm/npmrc
 export PYTHONSTARTUP="$XDG_CONFIG_HOME"/pythonrc
 export TEXMFVAR=$XDG_CACHE_HOME/texlive/texmf-var
 #source $XDG_DATA_BIN'/virtualenvwrapper.sh'
+
+# Google Cloud SDK (installed via official installer, not AUR)
+if [ -d "$HOME/google-cloud-sdk" ]; then
+    source "$HOME/google-cloud-sdk/path.zsh.inc"
+    source "$HOME/google-cloud-sdk/completion.zsh.inc"
+fi

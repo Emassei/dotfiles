@@ -88,6 +88,14 @@ update_nvim() {
     nvim --headless "+TSUpdateSync" +qa
 }
 
+update_gcloud() {
+    if [[ -x "$HOME/google-cloud-sdk/bin/gcloud" ]]; then
+        "$HOME/google-cloud-sdk/bin/gcloud" components update --quiet
+    else
+        warn "gcloud SDK not found at ~/google-cloud-sdk"
+    fi
+}
+
 main() {
     echo "===================================="
     echo "  update_all — system + dotfiles"
@@ -99,6 +107,7 @@ main() {
     step "suckless (dwm/dwmblocks/dmenu)" update_suckless
     step "tmux plugins (TPM)"             update_tmux
     step "neovim (NvChad)"                update_nvim
+    step "gcloud SDK"                     update_gcloud
 
     echo
     info "All done. Reboot if kernel or drivers were upgraded."
