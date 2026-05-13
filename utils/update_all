@@ -85,7 +85,7 @@ update_nvim() {
     fi
     nvim --headless "+Lazy! sync" +qa
     nvim --headless "+MasonUpdate" +qa
-    nvim --headless "+TSUpdate" +qa
+    nvim --headless "+Lazy load nvim-treesitter" "+TSUpdate" +qa
 }
 
 update_gcloud() {
