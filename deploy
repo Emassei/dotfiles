@@ -48,7 +48,7 @@ NVCHAD_REPO='git@github.com:NvChad/starter.git'
 # =============================================================================
 PACKAGES=(
     # Base
-    base-devel git pacman-contrib
+    base-devel git pacman-contrib rclone
 
     # Shell & terminal
     zsh zsh-autosuggestions zsh-syntax-highlighting alacritty tmux
@@ -270,6 +270,15 @@ install_system_files() {
             /etc/pacman.d/hooks/auto-paccache.hook
     fi
 
+    # systemd user services: rclone gdrive mounts
+    if [[ -d "$DOTFILES/system/systemd-user" ]]; then
+        mkdir -p "$HOME/.config/systemd/user"
+        cp "$DOTFILES/system/systemd-user/"*.service "$HOME/.config/systemd/user/"
+        # Ensure mount points exist (services AssertPathIsDirectory)
+        mkdir -p "$HOME/gdrive"
+        mkdir -p "$HOME/code/python/philosophy/kindle-notes"
+    fi
+
     # Reflector config: keep mirrorlist fresh weekly
     sudo tee /etc/xdg/reflector/reflector.conf > /dev/null <<'EOF'
 --save /etc/pacman.d/mirrorlist
@@ -298,6 +307,16 @@ enable_services() {
 
     # User services
     systemctl --user enable --now greenclip.service
+
+    # rclone mounts: enable only (needs `rclone config` first to set up auth)
+    if [[ -f "$HOME/.config/rclone/rclone.conf" ]]; then
+        systemctl --user enable --now rclone-gdrive-t490.service rclone-kindle-notes.service 2>/dev/null || \
+            warn "rclone services not started — run 'rclone config' first, then enable manually"
+    else
+        warn "~/.config/rclone/rclone.conf missing — skip rclone services."
+        warn "Run 'rclone config' to set up 'gdrive' remote, then:"
+        warn "  systemctl --user enable --now rclone-gdrive-t490.service rclone-kindle-notes.service"
+    fi
 
     # Time sync (needed for Yubikey TOTP)
     sudo timedatectl set-ntp true
