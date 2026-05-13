@@ -1,6 +1,6 @@
-source ~/dotfiles/zsh/plugins/oh-my-zsh/lib/history.zsh
-source ~/dotfiles/zsh/plugins/oh-my-zsh/lib/key-bindings.zsh
-source ~/dotfiles/zsh/plugins/oh-my-zsh/lib/completion.zsh
+source /usr/share/oh-my-zsh/lib/history.zsh
+source /usr/share/oh-my-zsh/lib/key-bindings.zsh
+source /usr/share/oh-my-zsh/lib/completion.zsh
 source ~/dotfiles/zsh/plugins/vi-mode.plugin.zsh
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
@@ -79,7 +79,7 @@ plugins=(
 )
 
 for plugin ($plugins); do
-    fpath=(~/dotfiles/zsh/plugins/oh-my-zsh/plugins/$plugin $fpath)
+    fpath=(/usr/share/oh-my-zsh/plugins/$plugin $fpath)
 done
 
 compinit

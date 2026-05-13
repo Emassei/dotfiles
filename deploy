@@ -110,6 +110,7 @@ AUR_PACKAGES=(
     aws-session-manager-plugin
     ack
     rofi-greenclip
+    oh-my-zsh-git
 )
 
 # =============================================================================
@@ -177,11 +178,6 @@ clone_or_pull() {
         info "Cloning $repo to $dest..."
         git clone "$repo" "$dest"
     fi
-}
-
-setup_submodules() {
-    info "Initializing git submodules (oh-my-zsh)..."
-    (cd "$DOTFILES" && git submodule update --init --recursive)
 }
 
 setup_tmux() {
@@ -349,7 +345,6 @@ main() {
     install_pacman_packages
     install_paru
     install_aur_packages
-    setup_submodules
     setup_tmux
     setup_suckless
     setup_nvchad
