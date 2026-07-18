@@ -17,5 +17,6 @@ dunst &
 picom &
 # clipmenud disabled — was causing Brave paste freezes (form fields)
 # clipmenud &
+greenclip daemon &
 dwm
 
