@@ -27,6 +27,7 @@ alias r='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd
 alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
 alias cat='bat'
 alias codes='ykman oath accounts code'
+alias almanac='~/dotfiles/utils/almanac'
 
 alias colombia="curl https://corona-stats.online/co"
 
@@ -115,3 +116,10 @@ elif systemctl -q is-active graphical.target && [[ ! $DISPLAY ]] && [[ $(tty) = 
 fi
 
 #mkdir -p /tmp/log
+
+# Google Cloud SDK (also in zprofile, but zprofile only runs in login shells
+# and dwm-launched terminals aren't login shells)
+if [ -d "$HOME/google-cloud-sdk" ] && [[ ":$PATH:" != *":$HOME/google-cloud-sdk/bin:"* ]]; then
+    source "$HOME/google-cloud-sdk/path.zsh.inc"
+    source "$HOME/google-cloud-sdk/completion.zsh.inc"
+fi
