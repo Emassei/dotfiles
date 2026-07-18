@@ -1,0 +1,22 @@
+#!/bin/sh
+# Serve a directory over HTTP on the LAN. Prints the URL and a QR code.
+# Usage: serve-files [DIR] [PORT]
+#   DIR  - directory to serve (default: current dir)
+#   PORT - port to listen on (default: 8000)
+
+set -eu
+
+dir="${1:-.}"
+port="${2:-8000}"
+
+cd "$dir"
+
+ip=$(ip -4 -o addr show scope global | awk '{print $4}' | cut -d/ -f1 | head -n1)
+url="http://${ip}:${port}/"
+
+printf '\nServing %s\n' "$(pwd)"
+printf '   at %s\n\n' "$url"
+qrencode -t ANSIUTF8 "$url"
+printf '\nCtrl-C to stop.\n\n'
+
+exec python -m http.server "$port"

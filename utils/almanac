@@ -1,0 +1,567 @@
+#!/usr/bin/env python3
+"""almanac — the day as a medieval computist would render it.
+
+Usage:
+  almanac          interactive almanac (vim keys scrub time; q quits)
+  almanac splash   animated one-shot page, then exit
+  almanac dies     Roman calendar date
+  almanac sol      sunrise/sunset
+  almanac horae    canonical hour (from real sun times, unequal hours)
+  almanac hora     planetary hour (Chaldean order)
+  almanac signum   the sun's zodiac sign
+  almanac caelum   where the seven classical bodies stand in the zodiac
+  almanac luna     moon phase
+
+Location comes from ~/.config/almanac/location ("LAT LON"), created with
+defaults on first run.
+"""
+import math
+import os
+import sys
+import datetime as dt
+
+DEFAULT_LAT, DEFAULT_LON = 41.88, -87.63  # Chicago
+WIDTH = 42
+TITLE = "☧ · A L M A N A C H · ☧"
+HELP = "‹h l› dies   ‹j k› horae   ‹w b› hebdomades   ‹t› nunc   ‹q› exire"
+
+
+def location():
+    path = os.path.expanduser("~/.config/almanac/location")
+    try:
+        lat, lon = map(float, open(path).read().split())
+        return lat, lon
+    except (OSError, ValueError):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            f.write(f"{DEFAULT_LAT} {DEFAULT_LON}\n")
+        return DEFAULT_LAT, DEFAULT_LON
+
+
+def solar_events(date, lat, lon):
+    """Sunrise/sunset as local aware datetimes (NOAA-style approximation)."""
+    epoch = dt.datetime(2000, 1, 1, 12, tzinfo=dt.timezone.utc)
+    noon_utc = dt.datetime(date.year, date.month, date.day, 12,
+                           tzinfo=dt.timezone.utc)
+    n = (noon_utc - epoch).total_seconds() / 86400
+    jstar = n - lon / 360
+    m = (357.5291 + 0.98560028 * jstar) % 360
+    c = (1.9148 * math.sin(math.radians(m))
+         + 0.02 * math.sin(math.radians(2 * m))
+         + 0.0003 * math.sin(math.radians(3 * m)))
+    lam = (m + c + 180 + 102.9372) % 360
+    jtransit = (jstar + 0.0053 * math.sin(math.radians(m))
+                - 0.0069 * math.sin(math.radians(2 * lam)))
+    decl = math.asin(math.sin(math.radians(lam)) * math.sin(math.radians(23.4397)))
+    cosw = ((math.sin(math.radians(-0.833)) - math.sin(math.radians(lat)) * math.sin(decl))
+            / (math.cos(math.radians(lat)) * math.cos(decl)))
+    if not -1 <= cosw <= 1:
+        return None, None  # polar day/night
+    w = math.degrees(math.acos(cosw)) / 360
+    rise = (epoch + dt.timedelta(days=jtransit - w)).astimezone()
+    sett = (epoch + dt.timedelta(days=jtransit + w)).astimezone()
+    return rise, sett
+
+
+ROMAN_MONTHS = ["Ian.", "Feb.", "Mart.", "Apr.", "Mai.", "Iun.",
+                "Iul.", "Aug.", "Sept.", "Oct.", "Nov.", "Dec."]
+DIES = ["Lunae", "Martis", "Mercurii", "Iovis", "Veneris", "Saturni", "Solis"]
+
+
+def roman_numeral(num):
+    vals = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"),
+            (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"),
+            (5, "V"), (4, "IV"), (1, "I")]
+    out = ""
+    for v, s in vals:
+        while num >= v:
+            out += s
+            num -= v
+    return out
+
+
+def roman_parts(d):
+    ides = 15 if d.month in (3, 5, 7, 10) else 13
+    nones = ides - 8
+    auc = f"{roman_numeral(d.year + 753)} A.U.C."
+    day = DIES[d.weekday()]
+    month = ROMAN_MONTHS[d.month - 1]
+    if d.day == 1:
+        marker = f"Kalendis {month}"
+    elif d.day == nones:
+        marker = f"Nonis {month}"
+    elif d.day == ides:
+        marker = f"Idibus {month}"
+    else:
+        if d.day < nones:
+            count, name = nones - d.day + 1, f"Non. {month}"
+        elif d.day < ides:
+            count, name = ides - d.day + 1, f"Id. {month}"
+        else:
+            nxt = dt.date(d.year + (d.month == 12), d.month % 12 + 1, 1)
+            days_in_month = (nxt - dt.date(d.year, d.month, 1)).days
+            count = days_in_month - d.day + 2
+            name = f"Kal. {ROMAN_MONTHS[nxt.month - 1]}"
+        marker = "pridie " + name if count == 2 else f"a.d. {roman_numeral(count)} {name}"
+    return day, marker, auc
+
+
+def roman_date(d):
+    day, marker, auc = roman_parts(d)
+    return f"dies {day} · {marker} · {auc}"
+
+
+# Chaldean order, and the glyph/genitive for each planet
+CHALDEAN = [("♄", "Saturni"), ("♃", "Iovis"), ("♂", "Martis"),
+            ("☉", "Solis"), ("♀", "Veneris"), ("☿", "Mercurii"),
+            ("☽", "Lunae")]
+# index into CHALDEAN of each weekday's ruler, Monday-first like weekday()
+DAY_RULER = [6, 2, 5, 1, 4, 0, 3]
+
+# tropical zodiac: glyph, Latin ablative, start date of the sun's transit
+ZODIAC = [("♈", "Ariete", (3, 21)), ("♉", "Tauro", (4, 20)),
+          ("♊", "Geminis", (5, 21)), ("♋", "Cancro", (6, 21)),
+          ("♌", "Leone", (7, 23)), ("♍", "Virgine", (8, 23)),
+          ("♎", "Libra", (9, 23)), ("♏", "Scorpione", (10, 23)),
+          ("♐", "Sagittario", (11, 22)), ("♑", "Capricorno", (12, 22)),
+          ("♒", "Aquario", (1, 20)), ("♓", "Piscibus", (2, 19))]
+ZODIAC_GLYPHS = [g for g, _, _ in ZODIAC]
+PLANET_GLYPHS = [g for g, _ in CHALDEAN]
+
+
+def sun_sign(d):
+    md = (d.month, d.day)
+    started = [(start, i) for i, (_, _, start) in enumerate(ZODIAC) if start <= md]
+    return max(started)[1] if started else 9  # before Jan 20 → Capricornus
+
+
+def sun_frame(now, lat, lon):
+    """The sunrise-to-sunrise frame containing `now`, plus that day's sunset."""
+    rise, sett = solar_events(now.date(), lat, lon)
+    if rise is None:
+        return None
+    if now < rise:
+        rise, sett = solar_events(now.date() - dt.timedelta(days=1), lat, lon)
+    next_rise, _ = solar_events(rise.date() + dt.timedelta(days=1), lat, lon)
+    return rise, sett, next_rise
+
+
+def planetary_hour(now, lat, lon):
+    frame = sun_frame(now, lat, lon)
+    if frame is None:
+        return None
+    rise, sett, next_rise = frame
+    if now < sett:
+        hour = int((now - rise) / ((sett - rise) / 12))
+    else:
+        hour = 12 + int((now - sett) / ((next_rise - sett) / 12))
+    ruler = CHALDEAN[(DAY_RULER[rise.weekday()] + hour) % 7]
+    return ruler, hour
+
+
+def canonical_hour(now, lat, lon):
+    frame = sun_frame(now, lat, lon)
+    if frame is None:
+        return "?"
+    rise, sett, next_rise = frame
+    if now < sett:
+        h = int((now - rise) / ((sett - rise) / 12))
+        for bound, name in ((1, "Laudes"), (3, "Prima"), (6, "Tertia"),
+                            (9, "Sexta"), (11, "Nona")):
+            if h < bound:
+                return name
+        return "Vesperae"
+    h = int((now - sett) / ((next_rise - sett) / 12))
+    return "Completorium" if h < 3 else "Vigiliae"
+
+
+SYNODIC = 29.530588861
+LUNAR_EPOCH = dt.datetime(2000, 1, 6, 18, 14, tzinfo=dt.timezone.utc)
+PHASES = [(1.5, "luna nova"), (6.0, "luna crescens"), (8.9, "quadra prima"),
+          (13.5, "gibbosa crescens"), (16.1, "luna plena"),
+          (21.1, "gibbosa decrescens"), (23.7, "quadra ultima"),
+          (28.1, "luna decrescens"), (SYNODIC, "luna nova")]
+
+
+def moon(now):
+    age = ((now - LUNAR_EPOCH).total_seconds() / 86400) % SYNODIC
+    illum = round((1 - math.cos(2 * math.pi * age / SYNODIC)) / 2 * 100)
+    name = next(n for bound, n in PHASES if age < bound)
+    return name, illum
+
+
+PLANET_LATIN = {"☉": "Sol", "☽": "Luna", "☿": "Mercurius", "♀": "Venus",
+                "♂": "Mars", "♃": "Iuppiter", "♄": "Saturnus"}
+
+# Keplerian elements at epoch d=0 (2000-01-01 UT), per-day rates folded in.
+# Schlyter's low-precision method: fine to a fraction of a degree.
+ORBITS = {
+    "☿": (48.3313, 3.24587e-5, 7.0047, 29.1241, 1.01444e-5,
+          0.387098, 0.205635, 168.6562, 4.0923344368),
+    "♀": (76.6799, 2.4659e-5, 3.3946, 54.8910, 1.38374e-5,
+          0.723330, 0.006773, 48.0052, 1.6021302244),
+    "♂": (49.5574, 2.11081e-5, 1.8497, 286.5016, 2.92961e-5,
+          1.523688, 0.093405, 18.6021, 0.5240207766),
+    "♃": (100.4542, 2.76854e-5, 1.3030, 273.8777, 1.64505e-5,
+          5.20256, 0.048498, 19.8950, 0.0830853001),
+    "♄": (113.6634, 2.3898e-5, 2.4886, 339.3939, 2.97661e-5,
+          9.55475, 0.055546, 316.9670, 0.0334442282),
+}
+
+
+def _kepler(M, e):
+    E = M + e * math.sin(M) * (1 + e * math.cos(M))
+    for _ in range(6):
+        E -= (E - e * math.sin(E) - M) / (1 - e * math.cos(E))
+    return E
+
+
+def ephemeris(t):
+    """Geocentric tropical ecliptic longitudes of the seven classical bodies."""
+    ut = t.astimezone(dt.timezone.utc)
+    d = (ut - dt.datetime(1999, 12, 31, tzinfo=dt.timezone.utc)).total_seconds() / 86400
+    R = math.radians
+
+    # the Sun (Earth's orbit reflected)
+    ws = R(282.9404 + 4.70935e-5 * d)
+    es = 0.016709 - 1.151e-9 * d
+    E = _kepler(R((356.0470 + 0.9856002585 * d) % 360), es)
+    x, y = math.cos(E) - es, math.sin(E) * math.sqrt(1 - es * es)
+    lon_sun = (math.atan2(y, x) + ws) % (2 * math.pi)
+    rs = math.hypot(x, y)
+    xs, ys = rs * math.cos(lon_sun), rs * math.sin(lon_sun)
+
+    # the Moon (already geocentric)
+    Nm = R(125.1228 - 0.0529538083 * d)
+    im, em, am = R(5.1454), 0.054900, 60.2666
+    wm = R(318.0634 + 0.1643573223 * d)
+    E = _kepler(R((115.3654 + 13.0649929509 * d) % 360), em)
+    x, y = am * (math.cos(E) - em), am * math.sin(E) * math.sqrt(1 - em * em)
+    v, r = math.atan2(y, x), math.hypot(x, y)
+    xe = r * (math.cos(Nm) * math.cos(v + wm) - math.sin(Nm) * math.sin(v + wm) * math.cos(im))
+    ye = r * (math.sin(Nm) * math.cos(v + wm) + math.cos(Nm) * math.sin(v + wm) * math.cos(im))
+    lons = {"☉": math.degrees(lon_sun), "☽": math.degrees(math.atan2(ye, xe)) % 360}
+
+    # the five wandering stars, heliocentric then shifted to Earth's view
+    for glyph, (N0, Nr, i0, w0, wr, a, e, M0, Mr) in ORBITS.items():
+        N, i, w = R(N0 + Nr * d), R(i0), R(w0 + wr * d)
+        E = _kepler(R((M0 + Mr * d) % 360), e)
+        x, y = a * (math.cos(E) - e), a * math.sin(E) * math.sqrt(1 - e * e)
+        v, r = math.atan2(y, x), math.hypot(x, y)
+        xh = r * (math.cos(N) * math.cos(v + w) - math.sin(N) * math.sin(v + w) * math.cos(i))
+        yh = r * (math.sin(N) * math.cos(v + w) + math.cos(N) * math.sin(v + w) * math.cos(i))
+        lons[glyph] = math.degrees(math.atan2(yh + ys, xh + xs)) % 360
+    return lons
+
+
+def compose_rows(t, lat, lon):
+    """The page's rows for any moment in time."""
+    rise, sett = solar_events(t.date(), lat, lon)
+    sol = f"↑{rise:%H:%M} · ↓{sett:%H:%M}" if rise else "sol non oritur nec occidit"
+    ph = planetary_hour(t, lat, lon)
+    mname, illum = moon(t)
+    day, marker, auc = roman_parts(t.date())
+    sign_i = sun_sign(t.date())
+    hour_i = CHALDEAN.index(ph[0]) if ph else -1
+    day_glyph = CHALDEAN[DAY_RULER[t.weekday()]][0]
+    rows = [
+        ("dies", f"{day_glyph} {day}", "gold" if day == "Solis" else "norm"),
+        ("kalendae", marker, "norm"),
+        ("annus", auc, "norm"),
+        ("signum", f"{ZODIAC[sign_i][0]} sol in {ZODIAC[sign_i][1]}", "norm"),
+        ("sol", sol, "norm"),
+        ("hora canonica", canonical_hour(t, lat, lon), "gold"),
+        ("hora planetaria", f"{ph[0][0]} {ph[0][1]}" if ph else "?", "norm"),
+        ("luna", f"☽ {mname.removeprefix('luna ')} · {roman_numeral(illum) or 'nihil'}%",
+         "norm"),
+    ]
+    return rows, sign_i, hour_i
+
+
+def palette(on):
+    return {
+        "dark": "\033[38;2;122;59;63m" if on else "",
+        "mid": "\033[38;2;160;96;96m" if on else "",
+        "bright": "\033[38;2;224;122;122m" if on else "",
+        "gold": "\033[38;2;201;162;39m" if on else "",
+        "reset": "\033[0m" if on else "",
+    }
+
+
+def _paint(chars, colors, reset):
+    out, last = [], None
+    for ch, c in zip(chars, colors):
+        if ch != " " and c != last:
+            out.append(c)
+            last = c
+        out.append(ch)
+    return "".join(out) + reset
+
+
+def ribbon(t, cols, pal, wheel_turn=0):
+    """Two full-width lines: the zodiac road, and the wanderers upon it."""
+    w = max(cols - 1, 24)
+    seg = w / 12
+    lons = ephemeris(t)
+    hot = int(lons["☉"] // 30)
+
+    signs, sign_col = [" "] * w, [pal["dark"]] * w
+    for i in range(12):
+        signs[int(i * seg)] = "┊"
+        c = int(i * seg + seg / 2)
+        signs[c] = ZODIAC_GLYPHS[(i + wheel_turn) % 12]
+        sign_col[c] = (pal["gold"] if wheel_turn == 0 and i == hot
+                       else pal["mid"])
+
+    bodies, body_col = [" "] * w, [pal["dark"]] * w
+    if wheel_turn == 0:
+        # sun placed first so it keeps its true column in a collision
+        for g in ("☉", "☽", "☿", "♀", "♂", "♃", "♄"):
+            col = int(lons[g] / 360 * w) % w
+            while bodies[col] != " ":
+                col = (col + 1) % w
+            bodies[col] = g
+            body_col[col] = (pal["gold"] if g == "☉"
+                             else pal["bright"] if g == "☽" else pal["mid"])
+    return (signs, sign_col), (bodies, body_col)
+
+
+def band(glyphs, cols, pal, hot=-1):
+    """A centered band of glyphs, one optionally lit in gold."""
+    inner = " ".join(
+        f"{pal['gold'] if i == hot else pal['dark']}{g}"
+        for i, g in enumerate(glyphs))
+    lead = " " * max((cols - (2 * len(glyphs) - 1)) // 2, 0)
+    return f"{lead}{inner}{pal['reset']}"
+
+
+def static_block(now, lat, lon):
+    rows, _, _ = compose_rows(now, lat, lon)
+    print()
+    print(TITLE.center(WIDTH))
+    print(" ".join(ZODIAC_GLYPHS).center(WIDTH))
+    for label, value, _ in rows:
+        print(f"  {label:<16}{value}")
+    print(" ".join(PLANET_GLYPHS).center(WIDTH))
+
+
+def splash(now, lat, lon):
+    """Animated one-shot page: comet, fade, wheel, scribe, planets. Exits."""
+    import shutil
+    import time
+
+    pal = palette(True)
+    dark, mid, bright, gold, reset = (pal[k] for k in
+                                      ("dark", "mid", "bright", "gold", "reset"))
+    rows, sign_i, hour_i = compose_rows(now, lat, lon)
+    out = sys.stdout
+    cols = shutil.get_terminal_size().columns
+    pad = " " * max((cols - WIDTH) // 2, 0)
+
+    out.write("\033[?25l")
+    try:
+        print()
+        for p in range(0, cols - 1, 3):  # zodiac comet draws the rule
+            head = ZODIAC_GLYPHS[(p // 3) % 12]
+            out.write(f"\r{dark}{'─' * p}{gold}{head}{reset}")
+            out.flush()
+            time.sleep(0.006)
+        out.write(f"\r{dark}{'─' * (cols - 1)}{reset}\n")
+        for color in (dark, mid, bright, gold):
+            out.write(f"\r{color}{TITLE.center(cols)}{reset}")
+            out.flush()
+            time.sleep(0.09)
+        out.write("\n")
+        for turn in range(12, -1, -1):  # the wheel spins to rest
+            wheel = ZODIAC_GLYPHS[turn % 12:] + ZODIAC_GLYPHS[:turn % 12]
+            out.write(f"\r{band(wheel, cols, pal, hot=sign_i if turn == 0 else -1)}")
+            out.flush()
+            time.sleep(0.045)
+        out.write("\n\n")
+        for label, value, kind in rows:
+            color = gold if kind == "gold" else bright
+            out.write(f"{pad}  {mid}{label:<16}{reset}{color}")
+            out.flush()
+            time.sleep(0.04)
+            for ch in value:
+                out.write(ch)
+                out.flush()
+                time.sleep(0.008)
+            out.write(f"{reset}\n")
+        out.write("\n")
+        for turn in range(7):  # the planets assemble in Chaldean order
+            out.write(f"\r{band(PLANET_GLYPHS[:turn + 1], cols, pal)}")
+            out.flush()
+            time.sleep(0.05)
+        out.write(f"\r{band(PLANET_GLYPHS, cols, pal, hot=hour_i)}\n")
+        out.write(f"{dark}{'─' * (cols - 1)}{reset}\n")
+    except KeyboardInterrupt:
+        out.write(f"{reset}\n")
+    finally:
+        out.write("\033[?25h")
+        out.flush()
+
+
+def build_grid(view, lat, lon, cols, live, pal, wheel_turn=0, tphase=0.0):
+    """One full frame: the page composited over a slowly rotating starfield."""
+    W = max(cols - 1, 44)
+    rows, sign_i, hour_i = compose_rows(view, lat, lon)
+    tempus = f"{view:%H:%M}" + (" · nunc" if live else "")
+    rows.insert(3, ("tempus", tempus, "gold" if live else "norm"))
+    (signs, sign_col), (bodies, body_col) = ribbon(view, W + 1, pal, wheel_turn)
+    top = 6
+    nrows = top + len(rows) + 4
+    grid = [[" "] * W for _ in range(nrows)]
+    colg = [[pal["dark"]] * W for _ in range(nrows)]
+
+    def put(r, c, text, color):
+        for k, ch in enumerate(text):
+            if 0 <= c + k < W:
+                grid[r][c + k] = ch
+                colg[r][c + k] = color
+
+    put(1, 0, "─" * W, pal["dark"])
+    put(2, (W - len(TITLE)) // 2, TITLE, pal["gold"])
+    grid[3], colg[3] = signs[:W], sign_col[:W]
+    grid[4], colg[4] = bodies[:W], body_col[:W]
+    pad = max((W - WIDTH) // 2, 0)
+    for idx, (label, value, kind) in enumerate(rows):
+        put(top + idx, pad + 2, label, pal["mid"])
+        put(top + idx, pad + 18, value,
+            pal["gold"] if kind == "gold" else pal["bright"])
+    band_row = top + len(rows) + 1
+    start = (W - (2 * len(PLANET_GLYPHS) - 1)) // 2
+    for i, g in enumerate(PLANET_GLYPHS):
+        put(band_row, start + 2 * i, g,
+            pal["gold"] if i == hour_i else pal["dark"])
+    put(band_row + 1, 0, "─" * W, pal["dark"])
+    put(band_row + 2, (W - len(HELP)) // 2, HELP, pal["dark"])
+
+    # the sphere of fixed stars turns behind everything
+    def h(s, k):
+        return (math.sin(s * 127.1 + k * 311.7) * 43758.5453) % 1
+    for s in range(max(W * nrows // 28, 24)):
+        r = int(h(s, 1) * nrows)
+        speed = 1.0 + 5.0 * h(s, 2)          # parallax: near stars run faster
+        c = int(h(s, 3) * W + tphase * speed) % W
+        if grid[r][c] == " ":
+            tw = int(tphase * (1 + 2 * h(s, 4)) + h(s, 5) * 9) % 9
+            grid[r][c] = "·" if tw < 7 else "✧"
+            colg[r][c] = pal["mid"] if tw == 8 else pal["dark"]
+
+    return [_paint(grid[r], colg[r], pal["reset"]) for r in range(nrows)]
+
+
+def interactive(lat, lon):
+    import select
+    import shutil
+    import termios
+    import time
+    import tty
+
+    pal = palette(True)
+    out = sys.stdout
+    fd = sys.stdin.fileno()
+    old_attrs = termios.tcgetattr(fd)
+
+    t0 = time.monotonic()
+
+    def draw(view, live, wheel_turn=0):
+        cols = shutil.get_terminal_size().columns
+        lines = build_grid(view, lat, lon, cols, live, pal, wheel_turn,
+                           tphase=time.monotonic() - t0)
+        out.write("\033[H" + "\n".join(f"{ln}\033[K" for ln in lines) + "\033[J")
+        out.flush()
+
+    def getkey(timeout):
+        r, _, _ = select.select([fd], [], [], timeout)
+        if not r:
+            return None
+        ch = os.read(fd, 1).decode(errors="replace")
+        if ch == "\x1b":
+            r, _, _ = select.select([fd], [], [], 0.05)
+            if not r:
+                return "ESC"
+            seq = os.read(fd, 2).decode(errors="replace")
+            return {"[A": "UP", "[B": "DOWN",
+                    "[C": "RIGHT", "[D": "LEFT"}.get(seq, "ESC")
+        return ch
+
+    pinned = None  # None = follow the living present
+    step = dt.timedelta
+    out.write("\033[?1049h\033[?25l")  # alternate screen, no cursor
+    tty.setcbreak(fd)
+    try:
+        for turn in range(12, -1, -1):  # entry: the wheel spins to rest
+            draw(dt.datetime.now().astimezone(), True, wheel_turn=turn)
+            time.sleep(0.045)
+        while True:
+            now = dt.datetime.now().astimezone()
+            view = pinned if pinned else now
+            draw(view, pinned is None)
+            key = getkey(0.1)
+            if key in ("q", "ESC"):
+                break
+            elif key in ("h", "LEFT"):
+                pinned = view - step(days=1)
+            elif key in ("l", "RIGHT"):
+                pinned = view + step(days=1)
+            elif key in ("j", "DOWN"):
+                pinned = view - step(hours=1)
+            elif key in ("k", "UP"):
+                pinned = view + step(hours=1)
+            elif key == "b":
+                pinned = view - step(days=7)
+            elif key == "w":
+                pinned = view + step(days=7)
+            elif key in ("t", "g"):
+                pinned = None
+    except KeyboardInterrupt:
+        pass
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_attrs)
+        out.write("\033[?25h\033[?1049l")  # cursor back, leave alt screen
+        out.flush()
+
+
+def main():
+    now = dt.datetime.now().astimezone()
+    lat, lon = location()
+    what = sys.argv[1] if len(sys.argv) > 1 else ""
+
+    if what == "dies":
+        print(roman_date(now.date()))
+    elif what == "sol":
+        rise, sett = solar_events(now.date(), lat, lon)
+        print(f"☉ ortus {rise:%H:%M} · occasus {sett:%H:%M}" if rise
+              else "☉ sol non oritur nec occidit")
+    elif what == "horae":
+        print(canonical_hour(now, lat, lon))
+    elif what == "hora":
+        ph = planetary_hour(now, lat, lon)
+        print(f"{ph[0][0]} hora {ph[0][1]}" if ph else "? hora incognita")
+    elif what == "signum":
+        g, sign, _ = ZODIAC[sun_sign(now.date())]
+        print(f"{g} sol in {sign}")
+    elif what == "caelum":
+        lons = ephemeris(now)
+        for g in PLANET_GLYPHS:
+            sign = ZODIAC[int(lons[g] // 30)]
+            deg = roman_numeral(int(lons[g] % 30)) or "0"
+            print(f"{g} {PLANET_LATIN[g]:<10} in {sign[1]:<11} {deg}°")
+    elif what == "luna":
+        name, illum = moon(now)
+        print(f"☽ {name} ({illum}%)")
+    elif what == "splash":
+        if sys.stdout.isatty():
+            splash(now, lat, lon)
+        else:
+            static_block(now, lat, lon)
+    elif sys.stdout.isatty() and sys.stdin.isatty():
+        interactive(lat, lon)
+    else:
+        static_block(now, lat, lon)
+
+
+if __name__ == "__main__":
+    main()
