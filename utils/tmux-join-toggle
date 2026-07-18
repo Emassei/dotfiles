@@ -1,0 +1,26 @@
+#!/bin/sh
+# Toggle for prefix+J: pull the next window in as a right-hand pane, or
+# break that pane back out into its own window, keeping a manually set
+# window name across the round trip.
+# $1 = id of the pane the binding fired in.
+p="$1"
+sess=$(tmux display -p -t "$p" '#S')
+idx=$(tmux display -p -t "$p" '#I')
+
+if [ "$(tmux display -p -t "$p" '#{window_panes}')" -gt 1 ]; then
+    right="$sess:$idx.1"
+    name=$(tmux display -p -t "$right" '#{@joined_name}')
+    tmux break-pane -d -a -s "$right" -t "$sess:$idx"
+    if [ -n "$name" ]; then
+        tmux rename-window -t "$sess:+" "$name"
+    fi
+else
+    # automatic-rename (0 = off) is off only when the window was named by hand
+    if [ "$(tmux display -p -t "$sess:+" '#{automatic-rename}')" = "0" ]; then
+        name=$(tmux display -p -t "$sess:+" '#{window_name}')
+    else
+        name=""
+    fi
+    tmux join-pane -h -s "$sess:+" -t "$p"
+    tmux set -p -t "$sess:$idx.1" @joined_name "$name"
+fi

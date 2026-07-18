@@ -1,0 +1,8 @@
+#!/bin/sh
+# Print a quote for the tmux status bar, chosen randomly once per
+# session (cached by session id; /tmp cache means a new draw per boot).
+cache="/tmp/tmux-quote-cache-$1"
+if [ ! -s "$cache" ]; then
+    shuf -n 1 "$HOME/dotfiles/tmux/quotes.txt" > "$cache" 2>/dev/null
+fi
+cat "$cache"

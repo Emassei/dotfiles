@@ -20,3 +20,8 @@ vi_mode_style = { shape = "Block", blinking = "On" }
 [selection]
 save_to_clipboard = true  # auto-copy selection to clipboard
 
+[keyboard]
+bindings = [
+  # Send Ctrl+Space (NUL) so tmux enters copy mode; replaces Alacritty vi mode
+  { key = "Space", mods = "Control|Shift", chars = "\u0000" },
+]

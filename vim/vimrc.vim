@@ -41,11 +41,8 @@ set expandtab
                 "|_|   |_|            |___/
 
 
-" Shortcutting split navigation, saving a eypress:
-map <C-h> <C-w>h
-map <C-j> <C-w>j
-map <C-k> <C-w>k
-map <C-l> <C-w>l
+" Split navigation is handled by vim-tmux-navigator (C-h/j/k/l moves
+" across vim splits and tmux panes seamlessly)
 
 " Clear search
 nnoremap <C-e> :nohl<CR><C-l>:echo "Search Cleared"<CR>
@@ -233,6 +230,7 @@ Plug 'majutsushi/tagbar'
 Plug 'universal-ctags/ctags'
 
 "Tools
+Plug 'christoomey/vim-tmux-navigator'
 Plug 'scrooloose/nerdcommenter'
 Plug 'mileszs/ack.vim'
 Plug 'tpope/vim-fugitive'
@@ -251,6 +249,7 @@ call plug#end()
 "| | | | | | \__ \ (__
 "|_| |_| |_|_|___/\___|
 set background=dark
+set termguicolors
 colorscheme palenight
 "let g:shades_of_purple_lightline = 1
 "let g:lightline = { 'colorscheme': 'shades_of_purple' }
