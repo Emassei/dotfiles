@@ -1,22 +1,31 @@
 #!/bin/sh
 
-# Show wifi 📶 and percent strength or 📡 if none.
-# Show 🌐 if connected to ethernet or ❎ if none.
+# Show the active internet connection: wired or wireless.
+# 🌐: wired  📶+%: wireless  ❎: none  ⚠️: link up but no internet
 
 case $BLOCK_BUTTON in
 	1) "$TERMINAL" -e nmtui; pkill -RTMIN+4 dwmblocks ;;
 	3) notify-send "🌐 Internet module" "\- Click to connect
-📡: no wifi connection
-📶: wifi connection with quality
-❎: no ethernet
-🌐: ethernet working
+🌐: wired connection
+📶: wireless connection with quality
+⚠️: connected but no internet
+❎: no connection
 " ;;
 	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
-case "$(cat /sys/class/net/w*/operstate 2>/dev/null)" in
-	down) wifiicon="📡 " ;;
-	up) wifiicon="$(awk '/^\s*w/ { print "📶", int($3 * 100 / 70) "% " }' /proc/net/wireless)" ;;
+# Multiple ethernet devices can exist (built-in + dock); wired if any is up.
+if grep -qx up /sys/class/net/e*/operstate 2>/dev/null; then
+	icon="🌐"
+elif grep -qx up /sys/class/net/w*/operstate 2>/dev/null; then
+	icon="$(awk '/^\s*w/ { print "📶", int($3 * 100 / 70) "%" }' /proc/net/wireless)"
+else
+	icon="❎"
+fi
+
+# NetworkManager's cached connectivity check: warn if the link carries no internet.
+case "$(nmcli -t -f CONNECTIVITY general 2>/dev/null)" in
+	none|limited|portal) [ "$icon" != "❎" ] && icon="$icon ⚠️" ;;
 esac
 
-printf "%s%s\n" "$wifiicon" "$(sed "s/down/❎/;s/up/🌐/" /sys/class/net/e*/operstate 2>/dev/null)"
+printf "%s\n" "$icon"
