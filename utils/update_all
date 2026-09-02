@@ -103,13 +103,13 @@ update_nvim() {
 }
 
 update_gcloud() {
-    if [[ -x "$HOME/google-cloud-sdk/bin/gcloud" ]]; then
+    if [[ -x "$HOME/.local/opt/google-cloud-sdk/bin/gcloud" ]]; then
         # Unset stale env vars left over from the old AUR google-cloud-cli package
         unset CLOUDSDK_PYTHON CLOUDSDK_BQ_PYTHON CLOUDSDK_GSUTIL_PYTHON \
               CLOUDSDK_ROOT_DIR GOOGLE_CLOUD_SDK_HOME
-        "$HOME/google-cloud-sdk/bin/gcloud" components update --quiet
+        "$HOME/.local/opt/google-cloud-sdk/bin/gcloud" components update --quiet
     else
-        warn "gcloud SDK not found at ~/google-cloud-sdk"
+        warn "gcloud SDK not found at ~/.local/opt/google-cloud-sdk"
     fi
 }
 

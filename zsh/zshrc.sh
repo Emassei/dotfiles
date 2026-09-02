@@ -119,7 +119,7 @@ fi
 
 # Google Cloud SDK (also in zprofile, but zprofile only runs in login shells
 # and dwm-launched terminals aren't login shells)
-if [ -d "$HOME/google-cloud-sdk" ] && [[ ":$PATH:" != *":$HOME/google-cloud-sdk/bin:"* ]]; then
-    source "$HOME/google-cloud-sdk/path.zsh.inc"
-    source "$HOME/google-cloud-sdk/completion.zsh.inc"
+if [ -d "$HOME/.local/opt/google-cloud-sdk" ] && [[ ":$PATH:" != *":$HOME/.local/opt/google-cloud-sdk/bin:"* ]]; then
+    source "$HOME/.local/opt/google-cloud-sdk/path.zsh.inc"
+    source "$HOME/.local/opt/google-cloud-sdk/completion.zsh.inc"
 fi
