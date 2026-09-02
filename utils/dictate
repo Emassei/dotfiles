@@ -1,0 +1,154 @@
+#!/bin/bash
+# dictate — live whisper dictation for the terminal.
+#
+# Streams the mic through whisper-stream in sliding-window mode: text
+# prints as you talk, refining itself every ~3s. Enter pastes the full
+# transcript into a tmux pane — so it lands at whatever prompt is
+# waiting there (claude, codex, a shell, vim insert mode...).
+#
+# Usage:
+#   dictate [pane_id]     transcribe and paste into the given tmux pane
+#                         (no pane: print transcript to stdout)
+#   dictate -a            paste into the client's active pane — what the
+#                         tmux popup binding uses (a popup sits over the
+#                         active pane, so that's the pane below it)
+#   dictate -l es         force a language instead of auto-detect
+#
+# Meant to be driven from tmux (prefix D opens it in a popup over the
+# current pane), but works standalone too.  Troubles: ~/.cache/dictate.log
+#
+# Model: ggml-base.bin — the only one fast enough to transcribe live on
+# this CPU (~2.75x realtime; the sliding window re-decodes 9s every 3s).
+# ggml-small.bin in ~/.local/share/whisper is better for Spanish but
+# cannot keep up in stream mode; don't point $WHISPER_MODEL at it here.
+
+set -u
+
+DARK=$'\033[38;2;122;59;63m'
+MID=$'\033[38;2;160;96;96m'
+BRIGHT=$'\033[38;2;224;122;122m'
+GOLD=$'\033[38;2;201;162;39m'
+WARM=$'\033[38;2;224;200;200m'
+RST=$'\033[0m'
+
+MODEL="${WHISPER_MODEL:-$HOME/.local/share/whisper/ggml-base.bin}"
+LANG_OPT="auto"
+PANE=""
+LOG="$HOME/.cache/dictate.log"
+
+log() { printf '%s %s\n' "$(date '+%F %T')" "$*" >>"$LOG"; }
+
+# Print the error, log it, and hold the window open so a popup doesn't
+# vanish before the message can be read.
+die() {
+    printf '\n  %s%s%s\n' "$BRIGHT" "$1" "$RST"
+    log "die: $1"
+    read -rsn1 -t 15
+    exit 1
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -l) LANG_OPT="$2"; shift 2 ;;
+        -a) PANE=$(tmux display-message -p '#{pane_id}'); shift ;;
+        %*) PANE="$1"; shift ;;
+        *)  die "unknown argument: $1" ;;
+    esac
+done
+
+log "start pane=${PANE:-none} lang=$LANG_OPT"
+
+command -v whisper-stream >/dev/null || die "whisper-stream not found"
+[ -f "$MODEL" ] || die "model not found: $MODEL"
+
+raw=$(mktemp)
+stream=""
+tailpid=""
+cleanup() {
+    [ -n "$stream" ]  && kill "$stream"  2>/dev/null
+    [ -n "$tailpid" ] && kill "$tailpid" 2>/dev/null
+    rm -f "$raw"
+}
+trap cleanup EXIT
+
+masthead() {
+    local cols title="☧ · D I C T A T E · ☧"
+    cols=$(tput cols 2>/dev/null || echo 60)
+    printf '\n%s%*s%s\n' "$GOLD" $(( (cols + ${#title}) / 2 )) "$title" "$RST"
+    printf '%s%s%s\n' "$DARK" "$(printf '─%.0s' $(seq 1 "$cols"))" "$RST"
+}
+
+masthead
+printf '  %s● loquere%s   %s‹Enter›%s finis   %s‹Esc›%s abire%s\n\n' \
+    "$BRIGHT" "$RST" "$GOLD" "$WARM" "$GOLD" "$WARM" "$RST"
+
+# Sliding-window mode: re-transcribes the last 9s every 3s, printing as
+# it goes (\r-overwrites refine the current line, \n commits it).
+whisper-stream -m "$MODEL" --step 3000 --length 9000 -l "$LANG_OPT" -t 6 \
+    >"$raw" 2>>"$LOG" &
+stream=$!
+sleep 0.3
+kill -0 "$stream" 2>/dev/null || die "whisper-stream died — mic busy? (~/.cache/dictate.log)"
+
+# Mirror its output into the popup live, in warm text.
+printf '%s' "$WARM"
+tail -f "$raw" &
+tailpid=$!
+
+aborted=no
+while :; do
+    IFS= read -rsn1 -t 1 key
+    rc=$?
+    if [ $rc -eq 0 ]; then
+        case "$key" in
+            ""|$'\n') break ;;                # Enter
+            $'\e'|q)  aborted=yes; break ;;   # Esc / q
+        esac
+    elif [ $rc -le 128 ]; then                # EOF, not timeout
+        log "stdin read failed rc=$rc — aborting"
+        aborted=yes
+        break
+    fi
+    kill -0 "$stream" 2>/dev/null || die "whisper-stream died mid-run (~/.cache/dictate.log)"
+done
+
+[ "$aborted" = yes ] && exit 0
+
+# The last ~3s of speech may not be transcribed yet — wait for one more
+# window pass (the file grows every step) before killing the stream.
+# Say so right away, and let another keypress skip the wait.
+printf '%s\n  %sΔ verba fiunt…%s\n' "$RST" "$MID" "$RST"
+size=$(stat -c %s "$raw")
+for _ in $(seq 1 14); do
+    read -rsn1 -t 0.3 && break
+    [ "$(stat -c %s "$raw")" -gt "$size" ] && break
+done
+kill "$stream" "$tailpid" 2>/dev/null
+wait "$stream" "$tailpid" 2>/dev/null
+stream=""; tailpid=""
+
+# Assemble the transcript: committed lines keep only their final
+# \r-overwrite; drop the banner; strip whisper's non-speech annotations
+# like "(gentle music)" or "[BLANK_AUDIO]" so noise never gets pasted.
+# The Latin-1 round-trip drops hallucinated CJK/Cyrillic (whisper invents
+# these from background noise under -l auto) that would paste as tofu.
+text=$(sed 's/\x1b\[2K//g; s/.*\r//; /^\[Start speaking\]$/d' "$raw" \
+    | sed 's/([^)]*)//g; s/\[[^]]*\]//g' \
+    | iconv -c -f UTF-8 -t ISO-8859-1 | iconv -f ISO-8859-1 -t UTF-8 \
+    | tr '\n' ' ' \
+    | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/  */ /g')
+log "transcript: ${text:0:120}"
+
+if [ -z "$text" ]; then
+    printf '  %ssilentium — nothing transcribed%s\n' "$DARK" "$RST"
+    read -rsn1 -t 2
+    exit 1
+fi
+
+if [ -n "$PANE" ]; then
+    printf '%s' "$text" | tmux load-buffer -b dictate -
+    tmux paste-buffer -p -d -b dictate -t "$PANE"
+    log "pasted into $PANE"
+else
+    printf '%s\n' "$text"
+fi
