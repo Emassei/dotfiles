@@ -1,0 +1,69 @@
+#!/bin/sh
+# agent-notify — desktop notification when a coding agent stops and wants attention.
+#
+# Codex:       set  notify = ["/home/ernie/dotfiles/utils/agent-notify"]  in
+#              ~/.codex/config.toml; codex passes an event JSON as argv[1].
+# Claude Code: used as a Stop / Notification hook in ~/.claude/settings.json;
+#              the hook JSON arrives on stdin.
+#
+# Suppressed when the user is already looking at the agent: the focused dwm
+# window must be the terminal displaying this pane's tmux window.
+
+# PID that owns the focused X window (dwm sets _NET_ACTIVE_WINDOW).
+focused_pid() {
+    id=$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | awk '{print $NF}')
+    [ -n "$id" ] && [ "$id" != "0x0" ] || return 1
+    xprop -id "$id" _NET_WM_PID 2>/dev/null | awk '/_NET_WM_PID/ {print $NF}'
+}
+
+is_descendant_of() { # $1 = pid, $2 = candidate ancestor
+    p=$1
+    while [ -n "$p" ] && [ "$p" -gt 1 ] 2>/dev/null; do
+        [ "$p" = "$2" ] && return 0
+        # ppid is the 2nd field after the (comm), which may contain spaces
+        p=$(cut -d')' -f2- /proc/"$p"/stat 2>/dev/null | awk '{print $2}')
+    done
+    return 1
+}
+
+user_is_watching() {
+    fpid=$(focused_pid) || return 1
+    if [ -n "$TMUX" ] && [ -n "$TMUX_PANE" ]; then
+        # this pane's tmux window must be the one its session is displaying
+        [ "$(tmux display -p -t "$TMUX_PANE" '#{window_active}' 2>/dev/null)" = 1 ] || return 1
+        sess=$(tmux display -p -t "$TMUX_PANE" '#{session_name}' 2>/dev/null) || return 1
+        # ...and some client attached to that session must live in the focused terminal
+        for cpid in $(tmux list-clients -t "$sess" -F '#{client_pid}' 2>/dev/null); do
+            is_descendant_of "$cpid" "$fpid" && return 0
+        done
+        return 1
+    fi
+    is_descendant_of $$ "$fpid"
+}
+
+if [ $# -gt 0 ]; then
+    json=$1
+else
+    json=$(cat)
+fi
+
+user_is_watching && exit 0
+
+title=$(printf '%s' "$json" | jq -r '
+    if .type == "agent-turn-complete" then "Codex"
+    elif .hook_event_name then "Claude Code"
+    else "Agent" end')
+
+body=$(printf '%s' "$json" | jq -r '
+    if .type == "agent-turn-complete" then
+        (."last-assistant-message" // "Turn complete")
+    elif .hook_event_name == "Notification" then
+        (.message // "Waiting for input")
+    elif .hook_event_name == "Stop" then
+        "Finished — waiting for you"
+    else "Done" end' | head -c 200)
+
+cwd=$(printf '%s' "$json" | jq -r '.cwd // empty')
+[ -n "$cwd" ] && title="$title · $(basename "$cwd")"
+
+notify-send -a agent-notify "$title" "$body"
