@@ -1,0 +1,24 @@
+#!/bin/sh
+# Toggle the default audio output to the next sink (headphones <-> speakers)
+# and move all playing streams over so the switch is instant.
+
+current=$(pactl get-default-sink)
+sinks=$(pactl list short sinks | cut -f2)
+
+# next sink after the current one, wrapping around
+next=$(printf '%s\n%s\n' "$sinks" "$sinks" \
+    | awk -v cur="$current" 'found && $0 != cur {print; exit} $0 == cur {found=1}')
+[ -n "$next" ] || exit 0
+
+pactl set-default-sink "$next"
+pactl list short sink-inputs | cut -f1 | while read -r stream; do
+    pactl move-sink-input "$stream" "$next"
+done
+
+desc=$(pactl list sinks | awk -v n="$next" '
+    /^\tName:/ {name=$2}
+    /^\tDescription:/ {sub(/^\tDescription: /, ""); if (name == n) {print; exit}}')
+
+command -v notify-send >/dev/null &&
+    notify-send -h string:x-canonical-private-synchronous:audio-toggle \
+        " Audio output" "${desc:-$next}"

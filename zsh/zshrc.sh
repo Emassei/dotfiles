@@ -28,6 +28,10 @@ alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
 alias cat='bat'
 alias codes='ykman oath accounts code'
 alias almanac='~/dotfiles/utils/almanac'
+alias audio='~/dotfiles/utils/audio-toggle'
+alias loeb='~/dotfiles/utils/loeb'
+alias lector='~/dotfiles/utils/lector'
+alias scriptorium='~/code/python/scriptorium/.venv/bin/scriptorium'
 
 alias colombia="curl https://corona-stats.online/co"
 

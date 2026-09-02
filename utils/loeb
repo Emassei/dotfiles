@@ -1,0 +1,561 @@
+#!/usr/bin/env python3
+"""loeb — side-by-side Latin/English reader for Seneca's Epistulae Morales.
+
+Latin from la.wikisource.org; English from Richard Gummere's public-domain
+Loeb translation on en.wikisource.org; aligned by classical section numbers.
+Texts are cached in ~/.cache/loeb after first fetch.
+
+Usage:
+  loeb            resume where you left off (letter 1 on first run)
+  loeb N          open letter N (1-124)
+  loeb --dump N   print aligned sections as plain text and exit
+
+Keys: j/k scroll   d/u half-page   g/G start/end   J/K next/prev section
+      h/l prev/next letter   r reveal mode (English only for current section)
+      i open the chat panel — a floating window drawn over the reader
+        (type a question, Enter sends, Esc closes; the thread survives
+        closing and follows you to new sections)
+      I same, but wipes the thread and starts a fresh one
+      n edit your note for the current section (noted sections get a mark;
+        notes are included when you ask the AI about that section)
+      w word lookup (whitakers-words, if installed)   q quit
+
+Inside tmux, AI chat and notes open in a popup over the reader so the
+text stays in view; outside tmux they take over the terminal and return.
+"""
+import curses
+import html
+import json
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import textwrap
+import urllib.parse
+import urllib.request
+
+CACHE = os.path.expanduser("~/.cache/loeb")
+LA_INDEX = "Epistulae morales ad Lucilium"
+UA = {"User-Agent": "loeb-reader/1.0 (personal terminal Loeb)"}
+ROMAN = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"),
+         (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"),
+         (5, "V"), (4, "IV"), (1, "I")]
+
+
+def to_roman(n):
+    out = ""
+    for val, sym in ROMAN:
+        while n >= val:
+            out += sym
+            n -= val
+    return out
+
+
+def from_roman(s):
+    vals = {"M": 1000, "D": 500, "C": 100, "L": 50, "X": 10, "V": 5, "I": 1}
+    total = 0
+    for a, b in zip(s, s[1:] + " "):
+        v = vals.get(a, 0)
+        total += -v if vals.get(b, 0) > v else v
+    return total
+
+
+def api(host, page, prop):
+    qs = urllib.parse.urlencode({
+        "action": "parse", "page": page, "prop": prop, "format": "json",
+        "disableeditsection": "1"})
+    req = urllib.request.Request(
+        f"https://{host}/w/api.php?{qs}", headers=UA)
+    with urllib.request.urlopen(req, timeout=30) as r:
+        data = json.load(r)
+    if "error" in data:
+        raise LookupError(data["error"].get("info", "wikisource error"))
+    return data["parse"]
+
+
+def cached(name, build):
+    path = os.path.join(CACHE, name)
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)
+    data = build()
+    os.makedirs(CACHE, exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(data, f)
+    return data
+
+
+def clean_wikitext(t):
+    for _ in range(3):
+        t = re.sub(r"\{\{[^{}]*\}\}", "", t)
+    t = re.sub(r"<ref[^>]*/>", "", t)
+    t = re.sub(r"<ref[^>]*>.*?</ref>", "", t, flags=re.S)
+    t = re.sub(r"<!--.*?-->", "", t, flags=re.S)
+    t = re.sub(r"\[\[[^\]|]*\|([^\]]*)\]\]", r"\1", t)
+    t = re.sub(r"\[\[([^\]]*)\]\]", r"\1", t)
+    t = t.replace("'''", "").replace("''", "")
+    t = re.sub(r"<[^>]+>", " ", t)
+    return re.sub(r"\s+", " ", html.unescape(t)).strip()
+
+
+def latin_libri():
+    def build():
+        text = api("la.wikisource.org", LA_INDEX, "wikitext")["wikitext"]["*"]
+        seen, libri = set(), []
+        for m in re.findall(r"Epistulae morales ad Lucilium/Liber[^|\]\n]*",
+                            text):
+            m = m.strip()
+            if m not in seen:
+                seen.add(m)
+                libri.append(m)
+        return libri
+    return cached("la-libri.json", build)
+
+
+def parse_liber(page):
+    def build():
+        text = api("la.wikisource.org", page, "wikitext")["wikitext"]["*"]
+        letters = {}
+        parts = re.split(r"^==\s*([IVXLCDM]+)\.?\s*(.*?)\s*==\s*$",
+                         text, flags=re.M)
+        for i in range(1, len(parts) - 2, 3):
+            num = from_roman(parts[i])
+            title = clean_wikitext(parts[i + 1])
+            body = parts[i + 2]
+            chunks = re.split(r"\[(\d+)\]", body)
+            secs = []
+            if title:
+                secs.append(["0", title])
+            for j in range(1, len(chunks) - 1, 2):
+                secs.append([chunks[j], clean_wikitext(chunks[j + 1])])
+            letters[str(num)] = secs
+        return letters
+    return cached("la-" + page.split("/")[-1].replace(" ", "_") + ".json",
+                  build)
+
+
+def latin_letter(n):
+    for liber in latin_libri():
+        letters = parse_liber(liber)
+        if str(n) in letters:
+            return letters[str(n)]
+    raise LookupError(f"epistula {n} not found on la.wikisource")
+
+
+def english_letter(n):
+    def build():
+        page = f"Moral letters to Lucilius/Letter {n}"
+        parsed = api("en.wikisource.org", page, "text|wikitext")
+        wt = parsed["wikitext"]["*"]
+        m = re.search(r"section\s*=\s*Letter\s*\d+\.?\s*(.*)", wt)
+        subtitle = m.group(1).strip() if m else ""
+        h = parsed["text"]["*"]
+        if "prp-pages-output" in h:
+            h = h.split("prp-pages-output", 1)[1]
+        h = h.split('<ol class="references"', 1)[0]
+        h = re.sub(r"<style.*?</style>", "", h, flags=re.S)
+        h = re.sub(r"<sup[^>]*>\s*(?:<span[^>]*>\s*)?<b>\s*(\d+)\.?\s*</b>.*?</sup>",
+                   " \x00\\1\x00 ", h, flags=re.S)
+        h = re.sub(r"<sup.*?</sup>", "", h, flags=re.S)
+        h = re.sub(r"<[^>]+>", " ", h)
+        text = re.sub(r"\s+", " ", html.unescape(h)).strip()
+        chunks = re.split(r"\x00(\d+)\x00", text)
+        secs = []
+        pre = chunks[0]
+        m = re.search(r"Greetings.*", pre)
+        if m:
+            secs.append(["0", m.group(0).strip()])
+        for j in range(1, len(chunks) - 1, 2):
+            secs.append([chunks[j], chunks[j + 1].strip()])
+        return {"subtitle": subtitle, "secs": secs}
+    return cached(f"en-{n}.json", build)
+
+
+def load_letter(n):
+    la = dict((k, v) for k, v in latin_letter(n))
+    en_data = english_letter(n)
+    en = dict((k, v) for k, v in en_data["secs"])
+    nums = sorted(set(la) | set(en), key=int)
+    secs = [(k, la.get(k, ""), en.get(k, "")) for k in nums]
+    return en_data["subtitle"], secs
+
+
+def dump(n):
+    subtitle, secs = load_letter(n)
+    print(f"EPISTVLA {to_roman(n)} — {subtitle}\n")
+    for num, la, en in secs:
+        label = "salv" if num == "0" else num
+        print(f"[{label}]")
+        print("  LA  " + la)
+        print("  EN  " + en)
+        print()
+
+
+def state_load():
+    try:
+        with open(os.path.join(CACHE, "state.json")) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {"letter": 1, "top": 0}
+
+
+def state_save(st):
+    os.makedirs(CACHE, exist_ok=True)
+    with open(os.path.join(CACHE, "state.json"), "w") as f:
+        json.dump(st, f)
+
+
+def build_rows(secs, width):
+    gutter = 5
+    col = (width - gutter - 3) // 2
+    rows = []          # (latin_line, english_line, sec_index, sec_label)
+    for i, (num, la, en) in enumerate(secs):
+        left = textwrap.wrap(la, col) or [""]
+        right = textwrap.wrap(en, col) or [""]
+        label = "sal" if num == "0" else num
+        for j in range(max(len(left), len(right))):
+            rows.append((
+                left[j] if j < len(left) else "",
+                right[j] if j < len(right) else "",
+                i, label if j == 0 else ""))
+        rows.append(("", "", i, ""))
+    return rows, col, gutter
+
+
+WORKDIR = os.path.expanduser("~/.local/share/loeb")
+NOTES = os.path.join(WORKDIR, "notes")
+
+
+def note_path(letter, num):
+    return os.path.join(NOTES, f"{letter:03d}-{num}.md")
+
+
+def noted_sections(letter):
+    have = set()
+    if os.path.isdir(NOTES):
+        for f in os.listdir(NOTES):
+            m = re.match(rf"{letter:03d}-(\w+)\.md$", f)
+            if m and os.path.getsize(os.path.join(NOTES, f)):
+                have.add(m.group(1))
+    return have
+
+
+def read_note(letter, num):
+    try:
+        with open(note_path(letter, num)) as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def popup(stdscr, shellcmd):
+    """Run a command in a tmux popup over the reader; fall back to
+    taking over the terminal when not inside tmux."""
+    os.makedirs(WORKDIR, exist_ok=True)
+    if os.environ.get("TMUX"):
+        subprocess.call(["tmux", "display-popup", "-E", "-d", WORKDIR,
+                         "-w", "80%", "-h", "85%", shellcmd])
+    else:
+        curses.endwin()
+        subprocess.call(shellcmd, shell=True, cwd=WORKDIR)
+    stdscr.touchwin()
+
+
+def edit_note(stdscr, letter, num, la):
+    os.makedirs(NOTES, exist_ok=True)
+    path = note_path(letter, num)
+    if not os.path.exists(path):
+        label = "salutatio" if num == "0" else f"sectio {num}"
+        with open(path, "w") as f:
+            f.write(f"# Epistula {to_roman(letter)} · {label}\n\n"
+                    f"> {la}\n\n")
+    editor = os.environ.get("EDITOR", "vim")
+    popup(stdscr, f"{editor} {shlex.quote(path)}")
+
+
+def claude_send(prompt, cont):
+    """Headless claude call; the chat panel renders the reply itself."""
+    os.makedirs(WORKDIR, exist_ok=True)
+    cmd = ["claude", "-p", prompt]
+    if cont:
+        cmd.insert(1, "-c")
+    try:
+        r = subprocess.run(cmd, cwd=WORKDIR, capture_output=True,
+                           text=True, timeout=240)
+    except subprocess.TimeoutExpired:
+        return "(tempus exspiravit — no reply within 240s)"
+    if r.returncode != 0:
+        return "(error: " + (r.stderr.strip()[-300:] or "claude failed") + ")"
+    return r.stdout.strip() or "(empty reply)"
+
+
+def section_prompt(letter, subtitle, num, la, en, question, thread):
+    """Build the outgoing prompt, adding passage context when the thread
+    is new or the reader has moved to a different section."""
+    label = "the salutation" if num == "0" else f"section {num}"
+    where = (f"Seneca's Epistulae Morales, letter {letter} "
+             f"({subtitle or 'untitled'}), {label}")
+    passage = f"Latin:\n{la}\n\nEnglish (Gummere):\n{en}\n\n"
+    note = read_note(letter, num)
+    if note:
+        passage += f"My notes on this section so far:\n{note}\n\n"
+    if not thread["started"]:
+        return (f"I'm reading {where} in a side-by-side Latin/English "
+                f"terminal reader.\n\n{passage}"
+                "You are my Latin tutor and classicist; keep replies "
+                "concise — they render in a small plain-text panel. "
+                f"My question: {question}")
+    if thread["ctx"] != (letter, num):
+        return (f"I've moved on to {where}.\n\n{passage}"
+                f"My question: {question}")
+    return question
+
+
+def chat_panel(stdscr, colors, chat, sendctx):
+    """Vim-style floating chat panel drawn over the reader. Returns on
+    Esc; the conversation (and claude -c thread) survives for reopening."""
+    DARK, MID, BRIGHT, GOLD, WARM = colors
+    letter, subtitle, num, la, en, thread = sendctx
+    inp, scroll = "", 0
+    curses.curs_set(1)
+    try:
+        while True:
+            h, w = stdscr.getmaxyx()
+            cw, chh = min(84, w - 4), min(22, h - 4)
+            x0, y0 = (w - cw) // 2, (h - chh) // 2
+            lines = []
+            for role, text in chat:
+                first = True
+                for para in text.splitlines() or [""]:
+                    for ln in textwrap.wrap(para, cw - 6) or [""]:
+                        pre = "tu › " if role == "u" and first else ""
+                        first = False
+                        lines.append((role, pre + ln))
+                lines.append(("s", ""))
+            area = chh - 4
+            scroll = max(0, min(scroll, max(0, len(lines) - area)))
+            stdscr.addnstr(y0, x0, "┌" + "─" * (cw - 2) + "┐", cw, DARK)
+            t = " · interroga · "
+            stdscr.addnstr(y0, x0 + (cw - len(t)) // 2, t, len(t),
+                           GOLD | curses.A_BOLD)
+            for row in range(1, chh - 1):
+                stdscr.addnstr(y0 + row, x0, "│" + " " * (cw - 2) + "│",
+                               cw, DARK)
+            end = len(lines) - scroll
+            for j, (role, ln) in enumerate(lines[max(0, end - area):end]):
+                attr = BRIGHT if role == "u" else WARM
+                stdscr.addnstr(y0 + 1 + j, x0 + 2, ln, cw - 4, attr)
+            stdscr.addnstr(y0 + chh - 3, x0, "├" + "─" * (cw - 2) + "┤",
+                           cw, DARK)
+            hint = " ‹enter› mitte · ‹↑ ↓› volve · ‹esc› claudere "
+            stdscr.addnstr(y0 + chh - 1, x0, "└" + "─" * (cw - 2) + "┘",
+                           cw, DARK)
+            stdscr.addnstr(y0 + chh - 1, x0 + (cw - len(hint)) // 2, hint,
+                           len(hint), DARK)
+            shown = ("› " + inp)[-(cw - 4):]
+            stdscr.addnstr(y0 + chh - 2, x0 + 2, shown.ljust(cw - 4),
+                           cw - 4, WARM)
+            stdscr.move(y0 + chh - 2, x0 + 2 + len(shown))
+            stdscr.refresh()
+
+            try:
+                c = stdscr.get_wch()
+            except curses.error:
+                continue
+            if c == "\x1b":
+                return
+            elif c in ("\n", "\r", curses.KEY_ENTER):
+                q = inp.strip()
+                if not q:
+                    continue
+                chat.append(("u", q))
+                inp = ""
+                wait = "☧ cogitat…"
+                stdscr.addnstr(y0 + chh - 2, x0 + 2, wait.ljust(cw - 4),
+                               cw - 4, GOLD)
+                stdscr.refresh()
+                prompt = section_prompt(letter, subtitle, num, la, en, q,
+                                        thread)
+                reply = claude_send(prompt, cont=thread["started"])
+                thread["started"] = True
+                thread["ctx"] = (letter, num)
+                chat.append(("a", reply))
+                scroll = 0
+            elif c in (curses.KEY_BACKSPACE, "\x7f", "\x08"):
+                inp = inp[:-1]
+            elif c == curses.KEY_UP:
+                scroll += 1
+            elif c == curses.KEY_DOWN:
+                scroll -= 1
+            elif c == curses.KEY_PPAGE:
+                scroll += area
+            elif c == curses.KEY_NPAGE:
+                scroll -= area
+            elif c == curses.KEY_RESIZE:
+                stdscr.erase()
+            elif isinstance(c, str) and c.isprintable():
+                inp += c
+    finally:
+        curses.curs_set(0)
+        stdscr.touchwin()
+
+
+def word_lookup(stdscr):
+    curses.echo()
+    h, w = stdscr.getmaxyx()
+    stdscr.addstr(h - 1, 0, " verbum: " + " " * (w - 10))
+    word = stdscr.getstr(h - 1, 9, 40).decode(errors="replace").strip()
+    curses.noecho()
+    if not word:
+        return None
+    if not shutil.which("words"):
+        return "whitakers-words not installed (AUR: whitakers-words)"
+    curses.endwin()
+    subprocess.call(f"words {re.escape(word)}; "
+                    "printf '\\n[press enter]'; read _", shell=True)
+    return None
+
+
+def reader(stdscr, letter, top):
+    curses.curs_set(0)
+    curses.start_color()
+    curses.use_default_colors()
+    # the house palette (see utils/almanac): dark/mid/bright oxblood + gold
+    if curses.COLORS >= 256:
+        shades = (95, 131, 174, 178, 181)
+    else:
+        shades = (curses.COLOR_RED, curses.COLOR_RED, curses.COLOR_RED,
+                  curses.COLOR_YELLOW, curses.COLOR_WHITE)
+    for i, fg in enumerate(shades, 1):
+        curses.init_pair(i, fg, -1)
+    DARK, MID, BRIGHT, GOLD, WARM = (curses.color_pair(i)
+                                     for i in range(1, 6))
+    reveal = False
+    chat = []
+    thread = {"started": False, "ctx": None}
+    msg = ""
+    subtitle, secs = load_letter(letter)
+    noted = noted_sections(letter)
+    h, w = stdscr.getmaxyx()
+    rows, col, gutter = build_rows(secs, w)
+
+    while True:
+        h, w = stdscr.getmaxyx()
+        body = h - 6
+        top = max(0, min(top, len(rows) - body))
+        cur_sec = rows[min(top, len(rows) - 1)][2]
+        stdscr.erase()
+        title = f"☧ · E P I S T V L A · {to_roman(letter)} · ☧"
+        stdscr.addnstr(0, 0, "─" * (w - 1), w - 1, DARK)
+        stdscr.addnstr(1, max(0, (w - len(title)) // 2), title, w - 1,
+                       GOLD | curses.A_BOLD)
+        if subtitle:
+            stdscr.addnstr(2, max(0, (w - len(subtitle)) // 2), subtitle,
+                           w - 1, MID)
+        stdscr.addnstr(3, 0, "─" * (w - 1), w - 1, DARK)
+        for i in range(body):
+            if top + i >= len(rows):
+                break
+            la, en, sec, label = rows[top + i]
+            y = i + 4
+            if not la and not en:
+                stdscr.addnstr(y, max(0, (w - 1) // 2), "∴", 1, DARK)
+                continue
+            if label:
+                mark = "·" if secs[sec][0] in noted else ""
+                stdscr.addnstr(y, 0, (label + mark).rjust(gutter - 1),
+                               gutter - 1,
+                               (GOLD if sec == cur_sec else BRIGHT)
+                               | curses.A_BOLD)
+            attr_la = curses.A_BOLD if sec == cur_sec else curses.A_NORMAL
+            stdscr.addnstr(y, gutter, la, col, attr_la)
+            stdscr.addnstr(y, gutter + col + 1, "│", 1, DARK)
+            if not reveal or sec == cur_sec:
+                stdscr.addnstr(y, gutter + col + 3, en, col, WARM)
+        pct = 100 * min(top + body, len(rows)) // max(1, len(rows))
+        stdscr.addnstr(h - 2, 0, "─" * (w - 1), w - 1, DARK)
+        foot = msg or ("‹j k› versus  ‹J K› sectio  ‹h l› epistula  "
+                       "‹r› aperire  ‹i I› interroga  ‹n› nota  "
+                       "‹w› verbum  ‹q› exire")
+        stdscr.addnstr(h - 1, max(0, (w - len(foot)) // 2), foot, w - 1,
+                       MID if msg else DARK)
+        stdscr.addnstr(h - 1, max(0, w - 6), f"{pct:3d}%", 5, GOLD)
+        msg = ""
+        stdscr.refresh()
+
+        c = stdscr.getch()
+        if c in (ord("q"), 27):
+            return letter, top
+        elif c in (ord("j"), curses.KEY_DOWN):
+            top += 1
+        elif c in (ord("k"), curses.KEY_UP):
+            top -= 1
+        elif c in (ord("d"), curses.KEY_NPAGE, ord(" ")):
+            top += body // 2
+        elif c in (ord("u"), curses.KEY_PPAGE):
+            top -= body // 2
+        elif c == ord("g"):
+            top = 0
+        elif c == ord("G"):
+            top = len(rows)
+        elif c == ord("J"):
+            nxt = [i for i, r in enumerate(rows)
+                   if r[2] == cur_sec + 1]
+            top = nxt[0] if nxt else top
+        elif c == ord("K"):
+            prv = [i for i, r in enumerate(rows)
+                   if r[2] == max(0, cur_sec - 1)]
+            top = prv[0] if prv else top
+        elif c == ord("r"):
+            reveal = not reveal
+        elif c == ord("w"):
+            msg = word_lookup(stdscr) or ""
+        elif c in (ord("i"), ord("I")):
+            if not shutil.which("claude"):
+                msg = " claude CLI not found"
+            else:
+                if c == ord("I"):
+                    chat, thread = [], {"started": False, "ctx": None}
+                num, la, en = secs[cur_sec]
+                chat_panel(stdscr, (DARK, MID, BRIGHT, GOLD, WARM), chat,
+                           (letter, subtitle, num, la, en, thread))
+        elif c == ord("n"):
+            num, la, _ = secs[cur_sec]
+            edit_note(stdscr, letter, num, la)
+            noted = noted_sections(letter)
+        elif c in (ord("h"), ord("l")):
+            new = letter + (1 if c == ord("l") else -1)
+            if 1 <= new <= 124:
+                try:
+                    subtitle, secs = load_letter(new)
+                    letter, top = new, 0
+                    noted = noted_sections(letter)
+                    rows, col, gutter = build_rows(secs, w)
+                except LookupError as e:
+                    msg = f" {e}"
+        elif c == curses.KEY_RESIZE:
+            rows, col, gutter = build_rows(secs, w)
+
+
+def main():
+    os.environ.setdefault("ESCDELAY", "25")
+    args = sys.argv[1:]
+    if args and args[0] == "--dump":
+        dump(int(args[1]))
+        return
+    st = state_load()
+    letter = int(args[0]) if args else st["letter"]
+    top = st["top"] if not args or letter == st["letter"] else 0
+    try:
+        letter, top = curses.wrapper(reader, letter, top)
+        state_save({"letter": letter, "top": top})
+    except LookupError as e:
+        sys.exit(f"loeb: {e}")
+    except urllib.error.URLError as e:
+        sys.exit(f"loeb: network error fetching text ({e.reason})")
+
+
+if __name__ == "__main__":
+    main()
