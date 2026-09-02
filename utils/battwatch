@@ -1,0 +1,20 @@
+#!/bin/sh
+# battwatch — audible low-battery alarm.
+# Polls the battery once a minute; below 5% while discharging it posts a
+# critical notification, unmutes the default sink, and plays an alarm so
+# it is heard even through muted headphones. Nags every minute until
+# plugged in. Started from xinitrc_dwm alongside quakewatch.
+
+BAT=/sys/class/power_supply/BAT0
+THRESHOLD=5
+
+while :; do
+    if [ "$(cat "$BAT/status")" = "Discharging" ] \
+        && [ "$(cat "$BAT/capacity")" -lt "$THRESHOLD" ]; then
+        notify-send -u critical "Battery critical" \
+            "$(cat "$BAT/capacity")% remaining — plug in now"
+        pactl set-sink-mute @DEFAULT_SINK@ 0 2>/dev/null
+        paplay --volume=65536 /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga
+    fi
+    sleep 60
+done

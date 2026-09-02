@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vigía Sísmica · Medellín</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  /* House palette: oxblood surfaces, validated gold accent (#b8860b passes
+     band/chroma/contrast on #191110 — dataviz validator, dark mode). */
+  :root {
+    --page:        #100a09;
+    --surface:     #191110;
+    --surface-2:   #201614;
+    --ink:         #f5efe6;
+    --ink-2:       #c9bfb2;
+    --muted:       #8f857b;
+    --grid:        #2c211e;
+    --baseline:    #3a2c28;
+    --border:      rgba(245, 239, 230, 0.08);
+    --gold:        #b8860b;   /* accent: alert-worthy quakes */
+    --gold-dim:    rgba(184, 134, 11, 0.35);
+    --ctx:         #8a7f76;   /* de-emphasis: context quakes  */
+    --critical:    #d03b3b;   /* status — reserved, icon+label */
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--page); color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 20px clamp(12px, 3vw, 36px) 40px;
+  }
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  h1 { font-size: 19px; font-weight: 650; letter-spacing: 0.12em; }
+  h1 .glyph { color: var(--gold); }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  /* ── filter row ─────────────────────────────────────────── */
+  .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 16px 0 18px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .seg button {
+    all: unset; cursor: pointer; padding: 6px 13px; color: var(--ink-2); font-size: 13px;
+  }
+  .seg button:hover { background: rgba(245,239,230,0.05); }
+  .seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--gold); }
+  .filters select {
+    background: var(--surface); color: var(--ink-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; font-size: 13px;
+  }
+  .filters .spacer { flex: 1; }
+  .updated { color: var(--muted); font-size: 12px; }
+  /* ── layout ─────────────────────────────────────────────── */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .card.loading { opacity: 0.55; transition: opacity .2s; }
+  .tile .label { color: var(--muted); font-size: 12.5px; margin-bottom: 4px; }
+  .tile .value { font-size: 30px; font-weight: 600; }
+  .tile .sub { color: var(--ink-2); font-size: 12.5px; margin-top: 2px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 980px) { .grid2 { grid-template-columns: 1fr; } }
+  .card h2 { font-size: 13px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.06em; margin-bottom: 10px; }
+  #map { height: 440px; border-radius: 8px; background: var(--surface-2); }
+  .leaflet-container { font: inherit; }
+  .leaflet-tooltip.qk-tip, .qk-tooltip {
+    background: var(--surface-2); color: var(--ink); border: 1px solid var(--border);
+    border-radius: 8px; box-shadow: 0 4px 18px rgba(0,0,0,.5); padding: 7px 10px; font-size: 12.5px;
+  }
+  .leaflet-tooltip.qk-tip::before { display: none; }
+  .qk-tooltip { position: fixed; pointer-events: none; z-index: 50; display: none; max-width: 260px; }
+  .qk-tooltip .v { font-weight: 650; font-size: 13.5px; }
+  .qk-tooltip .k { color: var(--ink-2); }
+  /* ── timeline ───────────────────────────────────────────── */
+  .legend { display: flex; gap: 16px; align-items: center; margin-top: 8px; color: var(--ink-2); font-size: 12.5px; flex-wrap: wrap; }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .dotkey { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  svg text { fill: var(--muted); font: 11px system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  svg .thresh-label { fill: var(--ink-2); }
+  /* ── tables ─────────────────────────────────────────────── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; padding: 6px 10px; border-bottom: 1px solid var(--grid); }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--grid); color: var(--ink-2); }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; }
+  th.num { text-align: right; }
+  td .mark { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 7px; vertical-align: 1px; }
+  td .mag { color: var(--ink); font-weight: 600; }
+  .chip { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 20px; border: 1px solid var(--gold-dim); color: var(--ink-2); margin-left: 8px; }
+  .chip.crit { border-color: var(--critical); }
+  .chip.crit::before { content: "▲ "; color: var(--critical); }
+  .tablewrap { overflow-x: auto; max-height: 430px; overflow-y: auto; }
+  .empty { color: var(--muted); padding: 18px 4px; font-size: 13px; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 18px; text-align: center; }
+  footer a { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="glyph">⁂</span> VIGÍA SÍSMICA</h1>
+  <span class="subtitle">Medellín · radio de alerta 300 km · EMSC + USGS</span>
+</header>
+
+<div class="filters">
+  <div class="seg" id="rangeSeg" role="group" aria-label="Período">
+    <button data-days="1">24 h</button>
+    <button data-days="7">7 días</button>
+    <button data-days="30" aria-pressed="true">30 días</button>
+    <button data-days="90">90 días</button>
+  </div>
+  <select id="magSel" aria-label="Magnitud mínima">
+    <option value="2.5" selected>M ≥ 2.5</option>
+    <option value="3">M ≥ 3.0</option>
+    <option value="4">M ≥ 4.0</option>
+    <option value="5">M ≥ 5.0</option>
+  </select>
+  <div class="spacer"></div>
+  <span class="updated" id="updated"></span>
+</div>
+
+<div class="tiles">
+  <div class="card tile"><div class="label">Sismos en el período</div><div class="value" id="tCount">–</div><div class="sub" id="tCountSub"></div></div>
+  <div class="card tile"><div class="label">Magnitud máxima</div><div class="value" id="tMax">–</div><div class="sub" id="tMaxSub"></div></div>
+  <div class="card tile"><div class="label">Alertas emitidas</div><div class="value" id="tAlerts">–</div><div class="sub" id="tAlertsSub"></div></div>
+  <div class="card tile"><div class="label">Último sismo</div><div class="value" id="tLast">–</div><div class="sub" id="tLastSub"></div></div>
+</div>
+
+<div class="grid2">
+  <div class="card" id="mapCard">
+    <h2>MAPA</h2>
+    <div id="map"></div>
+    <div class="legend">
+      <span class="key"><span class="dotkey" style="background:var(--gold)"></span> M ≥ 4.0 (umbral de alerta)</span>
+      <span class="key"><span class="dotkey" style="background:var(--ctx)"></span> M &lt; 4.0</span>
+      <span class="key"><span style="color:var(--gold)">⌖</span> casa · <span style="color:var(--gold-dim)">◯</span> radio 300 km</span>
+    </div>
+  </div>
+  <div class="card" id="tlCard">
+    <h2>MAGNITUD EN EL TIEMPO</h2>
+    <div id="timeline"></div>
+    <div class="legend">
+      <span class="key"><span class="dotkey" style="background:var(--gold)"></span> M ≥ 4.0</span>
+      <span class="key"><span class="dotkey" style="background:var(--ctx)"></span> M &lt; 4.0</span>
+    </div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card" id="tableCard">
+    <h2>SISMOS RECIENTES</h2>
+    <div class="tablewrap">
+      <table id="quakeTable">
+        <thead><tr><th>Fecha</th><th class="num">Mag</th><th>Lugar</th><th class="num">Dist.</th><th class="num">Prof.</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty" id="quakeEmpty" hidden>Sin sismos en el período seleccionado.</div>
+  </div>
+  <div class="card">
+    <h2>REGISTRO DE ALERTAS EMITIDAS</h2>
+    <div class="tablewrap">
+      <table id="alertTable">
+        <thead><tr><th>Fecha</th><th>Alerta</th><th>Fuente</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty" id="alertEmpty" hidden>Aún no se han emitido alertas.</div>
+  </div>
+</div>
+
+<div class="qk-tooltip" id="tip"></div>
+
+<footer>⁂ datos: <a href="https://www.emsc-csem.org">EMSC</a> · <a href="https://earthquake.usgs.gov">USGS</a> · mapa © <a href="https://www.openstreetmap.org/copyright">OSM</a>, © <a href="https://carto.com/attributions">CARTO</a></footer>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const GOLD = "#b8860b", CTX = "#8a7f76", SURFACE = "#191110";
+const fmtDate = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Bogota" });
+const state = { days: 30, minMag: 2.5, quakes: [], alerts: [], cfg: { lat: 6.245, lon: -75.5715, radius_km: 300, min_mag: 4 } };
+
+function haversine(la1, lo1, la2, lo2) {
+  const r = Math.PI / 180, R = 6371;
+  const a = Math.sin((la2 - la1) * r / 2) ** 2 + Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin((lo2 - lo1) * r / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+function ago(ts) {
+  const m = Math.round((Date.now() - ts) / 60000);
+  if (m < 60) return `hace ${m} min`;
+  if (m < 48 * 60) return `hace ${Math.round(m / 60)} h`;
+  return `hace ${Math.round(m / 1440)} días`;
+}
+const isAlertMag = m => m >= state.cfg.min_mag;
+
+/* ── map ─────────────────────────────────────────────────── */
+const map = L.map("map", { zoomControl: true, attributionControl: false }).setView([6.245, -75.57], 7);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 12 }).addTo(map);
+let markerLayer = L.layerGroup().addTo(map), homeLayer = L.layerGroup().addTo(map);
+
+function drawHome() {
+  homeLayer.clearLayers();
+  const { lat, lon, radius_km } = state.cfg;
+  L.circle([lat, lon], { radius: radius_km * 1000, color: GOLD, opacity: 0.35, weight: 1, fill: false }).addTo(homeLayer);
+  L.marker([lat, lon], { icon: L.divIcon({ className: "", html: "<div style='color:#b8860b;font-size:18px;line-height:1'>⌖</div>", iconSize: [18, 18], iconAnchor: [9, 9] }) }).addTo(homeLayer);
+  map.setView([lat, lon], 7);
+}
+
+function tipHTMLFor(q) {
+  // built with textContent via a detached node — q.place is untrusted
+  const root = document.createElement("div");
+  const v = document.createElement("div"); v.className = "v";
+  v.textContent = `M${q.mag.toFixed(1)}`;
+  const p = document.createElement("div"); p.className = "k"; p.textContent = q.place;
+  const d = document.createElement("div"); d.className = "k";
+  d.textContent = `${fmtDate.format(q.ts)} · ${Math.round(q.dist)} km · prof. ${Math.round(q.depth)} km`;
+  root.append(v, p, d);
+  return root;
+}
+
+function drawMap() {
+  markerLayer.clearLayers();
+  for (const q of state.quakes) {
+    const alert = isAlertMag(q.mag);
+    L.circleMarker([q.lat, q.lon], {
+      radius: Math.max(4, 3 + (q.mag - 2) * 2.4),
+      fillColor: alert ? GOLD : CTX, fillOpacity: 0.85,
+      color: SURFACE, weight: 2,          /* 2px surface ring */
+    }).bindTooltip(tipHTMLFor(q), { className: "qk-tip", sticky: true }).addTo(markerLayer);
+  }
+}
+
+/* ── timeline (SVG scatter) ──────────────────────────────── */
+function drawTimeline() {
+  const host = $("timeline"); host.replaceChildren();
+  const W = host.clientWidth || 460, H = 300, m = { t: 14, r: 14, b: 34, l: 34 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const now = Date.now(), t0 = now - state.days * 86400e3;
+  const maxMag = Math.max(6, ...state.quakes.map(q => q.mag + 0.4));
+  const y0 = Math.min(2, state.minMag), x = t => m.l + (t - t0) / (now - t0) * iw;
+  const y = v => m.t + ih - (v - y0) / (maxMag - y0) * ih;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", "100%");
+  const add = (tag, attrs, parent = svg) => {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    parent.appendChild(el); return el;
+  };
+  // y grid: integer magnitudes, hairline solid
+  for (let v = Math.ceil(y0); v <= maxMag; v++) {
+    add("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: "#2c211e", "stroke-width": 1 });
+    const t = add("text", { x: m.l - 7, y: y(v) + 4, "text-anchor": "end" }); t.textContent = v;
+  }
+  // x ticks: ~5 clean day steps
+  const stepDays = Math.max(1, Math.round(state.days / 5));
+  for (let d = 0; d <= state.days; d += stepDays) {
+    const t = now - d * 86400e3;
+    const lbl = add("text", { x: x(t), y: H - 12, "text-anchor": d === 0 ? "end" : "middle" });
+    lbl.textContent = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", timeZone: "America/Bogota" }).format(t).replace(".", "");
+  }
+  // alert threshold hairline + label (below the line, at left — dots cluster
+  // above it on the right, so this corner stays clear)
+  if (state.cfg.min_mag > y0) {
+    add("line", { x1: m.l, x2: W - m.r, y1: y(state.cfg.min_mag), y2: y(state.cfg.min_mag), stroke: "#b8860b", "stroke-opacity": 0.45, "stroke-width": 1 });
+    const t = add("text", { x: m.l + 6, y: y(state.cfg.min_mag) + 14, class: "thresh-label" });
+    t.textContent = `umbral de alerta M${state.cfg.min_mag.toFixed(1)}`;
+  }
+  add("line", { x1: m.l, x2: W - m.r, y1: m.t + ih, y2: m.t + ih, stroke: "#3a2c28", "stroke-width": 1 });
+  // dots (2px surface ring), drawn context-first so gold sits on top
+  const pts = [];
+  for (const q of [...state.quakes].sort((a, b) => Number(isAlertMag(a.mag)) - Number(isAlertMag(b.mag)))) {
+    const cx = x(q.ts), cy = y(q.mag);
+    add("circle", { cx, cy, r: 4.5, fill: isAlertMag(q.mag) ? GOLD : CTX, stroke: SURFACE, "stroke-width": 2 });
+    pts.push({ cx, cy, q });
+  }
+  // nearest-point hover (hit target ≫ mark)
+  const tip = $("tip");
+  svg.addEventListener("pointermove", e => {
+    const r = svg.getBoundingClientRect();
+    const px = (e.clientX - r.left) * W / r.width, py = (e.clientY - r.top) * H / r.height;
+    let best = null, bd = 30 ** 2;
+    for (const p of pts) { const d = (p.cx - px) ** 2 + (p.cy - py) ** 2; if (d < bd) { bd = d; best = p; } }
+    if (!best) { tip.style.display = "none"; return; }
+    tip.replaceChildren(tipHTMLFor(best.q));
+    tip.style.display = "block";
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - 270) + "px";
+    tip.style.top = (e.clientY + 14) + "px";
+  });
+  svg.addEventListener("pointerleave", () => { tip.style.display = "none"; });
+  host.appendChild(svg);
+}
+
+/* ── tables & tiles ──────────────────────────────────────── */
+function td(row, text, cls) { const c = document.createElement("td"); if (cls) c.className = cls; c.textContent = text; row.appendChild(c); return c; }
+
+function drawTable() {
+  const tb = $("quakeTable").querySelector("tbody"); tb.replaceChildren();
+  const rows = [...state.quakes].sort((a, b) => b.ts - a.ts).slice(0, 300);
+  $("quakeEmpty").hidden = rows.length > 0;
+  for (const q of rows) {
+    const tr = document.createElement("tr");
+    td(tr, fmtDate.format(q.ts));
+    const mc = document.createElement("td"); mc.className = "num";
+    const dot = document.createElement("span"); dot.className = "mark";
+    dot.style.background = isAlertMag(q.mag) ? GOLD : CTX;
+    const mv = document.createElement("span"); mv.className = "mag"; mv.textContent = q.mag.toFixed(1);
+    mc.append(dot, mv); tr.appendChild(mc);
+    td(tr, q.place);
+    td(tr, `${Math.round(q.dist)} km`, "num");
+    td(tr, `${Math.round(q.depth)} km`, "num");
+    tb.appendChild(tr);
+  }
+}
+
+function drawAlerts() {
+  const tb = $("alertTable").querySelector("tbody"); tb.replaceChildren();
+  const t0 = Date.now() - state.days * 86400e3;
+  const rows = state.alerts.filter(a => a.ts >= t0).sort((a, b) => b.ts - a.ts);
+  $("alertEmpty").hidden = rows.length > 0;
+  for (const a of rows) {
+    const tr = document.createElement("tr");
+    td(tr, fmtDate.format(a.ts));
+    const c = document.createElement("td");
+    const strong = document.createElement("span"); strong.className = "mag";
+    strong.textContent = a.mag != null ? `M${a.mag.toFixed(1)}` : (a.title || "Alerta");
+    c.appendChild(strong);
+    c.append(" " + (a.place != null ? `— ${a.place} · ${Math.round(a.dist_km)} km` : (a.message || "")));
+    if (a.critical) { const ch = document.createElement("span"); ch.className = "chip crit"; ch.textContent = "crítica"; c.appendChild(ch); }
+    tr.appendChild(c);
+    td(tr, a.source || "");
+    tb.appendChild(tr);
+  }
+  $("tAlerts").textContent = rows.length;
+  $("tAlertsSub").textContent = rows.filter(a => a.critical).length + " críticas";
+}
+
+function drawTiles() {
+  const qs = state.quakes;
+  $("tCount").textContent = qs.length;
+  $("tCountSub").textContent = `M ≥ ${state.minMag.toFixed(1)} en 300 km`;
+  if (qs.length) {
+    const mx = qs.reduce((a, b) => (b.mag > a.mag ? b : a));
+    $("tMax").textContent = `M${mx.mag.toFixed(1)}`;
+    $("tMaxSub").textContent = `${Math.round(mx.dist)} km · ${fmtDate.format(mx.ts)}`;
+    const last = qs.reduce((a, b) => (b.ts > a.ts ? b : a));
+    $("tLast").textContent = ago(last.ts);
+    $("tLastSub").textContent = `M${last.mag.toFixed(1)} · ${Math.round(last.dist)} km`;
+  } else {
+    $("tMax").textContent = "–"; $("tMaxSub").textContent = "";
+    $("tLast").textContent = "–"; $("tLastSub").textContent = "";
+  }
+}
+
+/* ── data ────────────────────────────────────────────────── */
+async function loadConfig() {
+  try { state.cfg = await (await fetch("/config.json")).json(); } catch (e) { /* defaults */ }
+  drawHome();
+}
+async function loadAlerts() {
+  try {
+    const text = await (await fetch("/events.jsonl")).text();
+    state.alerts = text.split("\n").filter(Boolean).map(l => JSON.parse(l));
+  } catch (e) { state.alerts = []; }
+}
+async function loadQuakes() {
+  document.querySelectorAll(".card").forEach(c => c.classList.add("loading"));
+  const start = new Date(Date.now() - state.days * 86400e3).toISOString().slice(0, 19);
+  const u = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${state.cfg.lat}&longitude=${state.cfg.lon}&maxradiuskm=${state.cfg.radius_km}&minmagnitude=2.5&starttime=${start}&orderby=time&limit=2000`;
+  try {
+    const gj = await (await fetch(u)).json();
+    state.quakes = gj.features.map(f => ({
+      ts: f.properties.time, mag: f.properties.mag ?? 0,
+      place: f.properties.place || "—",
+      lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1],
+      depth: f.geometry.coordinates[2] ?? 0,
+      dist: haversine(state.cfg.lat, state.cfg.lon, f.geometry.coordinates[1], f.geometry.coordinates[0]),
+    })).filter(q => q.mag >= state.minMag);
+    $("updated").textContent = "actualizado " + new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Bogota" }).format(Date.now());
+  } catch (e) {
+    state.quakes = [];
+    $("updated").textContent = "sin conexión con USGS — mostrando solo el registro local";
+  }
+  drawMap(); drawTimeline(); drawTable(); drawTiles(); drawAlerts();
+  document.querySelectorAll(".card").forEach(c => c.classList.remove("loading"));
+}
+
+/* ── filters (scope everything below) ────────────────────── */
+$("rangeSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  for (const x of $("rangeSeg").children) x.setAttribute("aria-pressed", x === b);
+  state.days = Number(b.dataset.days);
+  loadQuakes();
+});
+$("magSel").addEventListener("change", () => { state.minMag = Number($("magSel").value); loadQuakes(); });
+addEventListener("resize", () => drawTimeline());
+
+(async () => { await loadConfig(); await loadAlerts(); await loadQuakes(); setInterval(loadQuakes, 5 * 60e3); })();
+</script>
+</body>
+</html>

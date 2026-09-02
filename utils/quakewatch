@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+"""quakewatch — desktop alert when an earthquake strikes near Medellín.
+
+Two independent sources for redundancy:
+  * EMSC SeismicPortal WebSocket — pushes events the moment EMSC publishes
+    them (often under a minute for felt quakes, thanks to their
+    crowdsourced flash-sourcing).
+  * USGS FDSN catalog — polled every POLL_SECONDS as a fallback and
+    cross-check (includes Colombian SGC-reported events).
+
+Events from either source within RADIUS_KM and above MIN_MAG raise a dunst
+notification; the [quake-*] rules in dunstrc make it sticky-critical and run
+utils/quake-alarm for the audio. The same physical quake reported by both
+agencies is deduplicated by time+distance, so it only alerts once.
+
+Feeds report quakes seconds-to-minutes after they occur — treat an alert as
+"strong quake just happened, expect shaking or aftershocks", not as advance
+warning.
+
+Usage:
+    quakewatch            run as daemon (started from xinitrc_dwm)
+    quakewatch --dash     open the dashboard (daemon serves it on :8747)
+    quakewatch --once     single USGS poll, print matches to stdout
+    quakewatch --test     fire a fake notification to check dunst
+"""
+
+import collections
+import json
+import math
+import os
+import subprocess
+import sys
+import threading
+import time
+import urllib.request
+from datetime import datetime, timedelta, timezone
+
+LAT, LON = 6.2450, -75.5715      # Medellín
+RADIUS_KM = 300                  # alert radius around LAT/LON
+MIN_MAG = 4.0                    # ignore anything weaker
+CRIT_MAG = 5.0                   # critical (sticky + alarm) at this magnitude…
+NEAR_KM = 100                    # …or at any magnitude this close
+POLL_SECONDS = 60
+LOOKBACK_HOURS = 2               # USGS window to query each poll
+
+USGS_API = "https://earthquake.usgs.gov/fdsnws/event/1/query"
+EMSC_WS = "wss://www.seismicportal.eu/standing_order/websocket"
+SEEN_FILE = os.path.expanduser("~/.cache/quakewatch.seen")
+
+# Alert history + dashboard. Every alert is appended to EVENTS_FILE (one JSON
+# object per line); the daemon serves the dashboard and the log on DASH_PORT.
+DATA_DIR = os.path.expanduser("~/.local/share/quakewatch")
+EVENTS_FILE = os.path.join(DATA_DIR, "events.jsonl")
+DASH_PORT = 8747
+DASH_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         "quakewatch-dashboard.html")
+
+# Push fan-out: every device subscribed to this ntfy topic gets the alert
+# (phone app, browsers, future Raspberry Shake hub). The random suffix is
+# the only access control on ntfy.sh — keep it private.
+NTFY_URL = "https://ntfy.sh"
+NTFY_TOPIC = "sismo-medellin-1a374204bccd55f0"
+
+# Same quake seen by both agencies: dedupe if closer than this in time+space.
+DEDUP_MS = 180_000
+DEDUP_KM = 120
+
+_lock = threading.Lock()
+_recent = collections.deque(maxlen=50)   # (epoch_ms, lat, lon) of alerts sent
+_published = collections.deque(maxlen=20)  # texts we pushed, to skip echoes
+
+
+def haversine_km(lat1, lon1, lat2, lon2):
+    r = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = math.radians(lat2 - lat1)
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
+
+
+def load_seen():
+    try:
+        with open(SEEN_FILE) as f:
+            return set(f.read().split())
+    except OSError:
+        return set()
+
+
+def save_seen(seen):
+    os.makedirs(os.path.dirname(SEEN_FILE), exist_ok=True)
+    with open(SEEN_FILE, "w") as f:
+        f.write("\n".join(list(seen)[-500:]))
+
+
+_seen = load_seen()
+
+
+def log_event(record):
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        with open(EVENTS_FILE, "a") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+
+
+def ntfy_push(title, body, critical):
+    message = body.replace("\n", " · ")
+    _published.append((title, message))
+    payload = json.dumps({
+        "topic": NTFY_TOPIC,
+        "title": title,
+        "message": message,
+        "priority": 5 if critical else 4,
+        "tags": ["rotating_light" if critical else "warning"],
+    }).encode()
+    req = urllib.request.Request(NTFY_URL, data=payload,
+                                 headers={"Content-Type": "application/json"})
+    urllib.request.urlopen(req, timeout=10)
+
+
+def notify(mag, place, t_ms, dist, source):
+    when = datetime.fromtimestamp(t_ms / 1000).strftime("%H:%M")
+    critical = mag >= CRIT_MAG or dist <= NEAR_KM
+    title = f"Sismo M{mag:.1f}"
+    body = (f"{place or 'ubicación desconocida'}\n"
+            f"{dist:.0f} km de distancia · {when} · vía {source}")
+    subprocess.run(["notify-send", "-a", "quakewatch",
+                    "-u", "critical" if critical else "normal",
+                    title, body])
+    def push():
+        try:
+            ntfy_push(title, body, critical)
+        except Exception:
+            pass  # push is best-effort; the local alarm already fired
+    threading.Thread(target=push).start()
+
+
+def handle_event(uid, mag, place, t_ms, lat, lon, source):
+    """Alert once per physical quake, whichever source reports it first."""
+    if mag is None or mag < MIN_MAG:
+        return
+    dist = haversine_km(LAT, LON, lat, lon)
+    if dist > RADIUS_KM:
+        return
+    with _lock:
+        if uid in _seen:
+            return
+        _seen.add(uid)
+        for pt, plat, plon in _recent:
+            if abs(t_ms - pt) < DEDUP_MS and haversine_km(lat, lon, plat, plon) < DEDUP_KM:
+                save_seen(_seen)
+                return
+        _recent.append((t_ms, lat, lon))
+        save_seen(_seen)
+    log_event({"ts": t_ms, "mag": mag, "place": place, "lat": lat, "lon": lon,
+               "dist_km": round(dist, 1), "source": source,
+               "critical": mag >= CRIT_MAG or dist <= NEAR_KM})
+    notify(mag, place, t_ms, dist, source)
+
+
+def usgs_fetch():
+    start = datetime.now(timezone.utc) - timedelta(hours=LOOKBACK_HOURS)
+    url = (f"{USGS_API}?format=geojson&latitude={LAT}&longitude={LON}"
+           f"&maxradiuskm={RADIUS_KM}&minmagnitude={MIN_MAG}"
+           f"&starttime={start.strftime('%Y-%m-%dT%H:%M:%S')}"
+           f"&orderby=time&limit=20")
+    with urllib.request.urlopen(url, timeout=15) as resp:
+        return json.load(resp)["features"]
+
+
+def usgs_loop():
+    while True:
+        try:
+            for ev in sorted(usgs_fetch(), key=lambda e: e["properties"]["time"]):
+                p = ev["properties"]
+                lon, lat = ev["geometry"]["coordinates"][:2]
+                handle_event("usgs:" + ev["id"], p.get("mag"), p.get("place"),
+                             p["time"], lat, lon, "USGS")
+        except Exception:
+            pass  # network blip — try again next cycle
+        time.sleep(POLL_SECONDS)
+
+
+def emsc_loop():
+    import websocket
+
+    def on_message(_ws, msg):
+        try:
+            data = json.loads(msg)["data"]
+            p = data["properties"]
+            lon, lat = data["geometry"]["coordinates"][:2]
+            t_ms = datetime.fromisoformat(
+                p["time"].replace("Z", "+00:00")).timestamp() * 1000
+            handle_event("emsc:" + str(p["unid"]), p.get("mag"),
+                         p.get("flynn_region"), t_ms, lat, lon, "EMSC")
+        except Exception:
+            pass  # malformed message — ignore
+
+    while True:
+        try:
+            ws = websocket.WebSocketApp(EMSC_WS, on_message=on_message)
+            ws.run_forever(ping_interval=25, ping_timeout=10)
+        except Exception:
+            pass
+        time.sleep(10)  # reconnect after drop
+
+
+def ntfy_listen():
+    """Display alerts that OTHER producers publish to the topic (e.g. a
+    dedicated Android box catching Google's early warnings). Display only —
+    never re-pushed, so no echo loop. Our own messages are skipped."""
+    url = f"{NTFY_URL}/{NTFY_TOPIC}/json"
+    while True:
+        try:
+            with urllib.request.urlopen(url, timeout=90) as resp:
+                for line in resp:
+                    msg = json.loads(line)
+                    if msg.get("event") != "message":
+                        continue  # keepalives etc.
+                    key = (msg.get("title", ""), msg.get("message", ""))
+                    if key in _published:
+                        continue
+                    urgency = "critical" if msg.get("priority", 0) >= 5 else "normal"
+                    log_event({"ts": msg.get("time", time.time()) * 1000,
+                               "title": msg.get("title", ""),
+                               "message": msg.get("message", ""),
+                               "source": "ntfy",
+                               "critical": msg.get("priority", 0) >= 5})
+                    subprocess.run(["notify-send", "-a", "quakewatch",
+                                    "-u", urgency,
+                                    msg.get("title", "Alerta"),
+                                    msg.get("message", "")])
+        except Exception:
+            pass
+        time.sleep(5)  # reconnect after drop
+
+
+def dash_serve():
+    """Serve the dashboard on localhost:DASH_PORT (open with --dash)."""
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *_):
+            pass
+
+        def _send(self, code, ctype, body):
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_GET(self):
+            try:
+                if self.path in ("/", "/index.html"):
+                    with open(DASH_HTML, "rb") as f:
+                        self._send(200, "text/html; charset=utf-8", f.read())
+                elif self.path == "/events.jsonl":
+                    try:
+                        with open(EVENTS_FILE, "rb") as f:
+                            body = f.read()
+                    except OSError:
+                        body = b""
+                    self._send(200, "application/x-ndjson", body)
+                elif self.path == "/config.json":
+                    self._send(200, "application/json", json.dumps({
+                        "lat": LAT, "lon": LON, "radius_km": RADIUS_KM,
+                        "min_mag": MIN_MAG, "crit_mag": CRIT_MAG,
+                        "near_km": NEAR_KM}).encode())
+                else:
+                    self._send(404, "text/plain", b"not found")
+            except Exception:
+                pass
+
+    try:
+        ThreadingHTTPServer(("127.0.0.1", DASH_PORT), Handler).serve_forever()
+    except OSError:
+        pass  # port already taken by another quakewatch instance
+
+
+def main():
+    if "--dash" in sys.argv:
+        subprocess.run(["xdg-open", f"http://localhost:{DASH_PORT}"])
+        return
+
+    if "--test" in sys.argv:
+        notify(5.8, "10 km N of Medellín (PRUEBA)", time.time() * 1000, 11, "PRUEBA")
+        return
+
+    if "--once" in sys.argv:
+        for ev in usgs_fetch():
+            p = ev["properties"]
+            print(f"M{p['mag']:.1f}  {p['place']}")
+        return
+
+    threading.Thread(target=emsc_loop, daemon=True).start()
+    threading.Thread(target=ntfy_listen, daemon=True).start()
+    threading.Thread(target=dash_serve, daemon=True).start()
+    usgs_loop()
+
+
+if __name__ == "__main__":
+    main()

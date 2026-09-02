@@ -18,5 +18,8 @@ picom &
 # clipmenud disabled — was causing Brave paste freezes (form fields)
 # clipmenud &
 greenclip daemon &
+$HOME/dotfiles/utils/quakewatch &
+$HOME/dotfiles/utils/battwatch &
+kdeconnectd &
 dwm
 

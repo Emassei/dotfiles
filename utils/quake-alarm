@@ -1,0 +1,12 @@
+#!/bin/sh
+# quake-alarm — audible alarm for earthquake notifications.
+# Run by a dunst rule (see ~/.config/dunst/dunstrc [quake-*]) whenever a
+# notification from any source (quakewatch, KDE Connect phone mirror, …)
+# mentions sismo/temblor/terremoto/earthquake. Unmutes the default sink
+# first so it is heard through headphones even if audio was muted.
+
+pactl set-sink-mute @DEFAULT_SINK@ 0 2>/dev/null
+
+for _ in 1 2 3; do
+    paplay --volume=65536 /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga
+done
