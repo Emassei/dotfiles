@@ -166,6 +166,7 @@ setup_directories() {
     mkdir -p "$HOME/.config/zathura"
     mkdir -p "$HOME/.config/ranger"
     mkdir -p "$HOME/.config/clipmenu"
+    mkdir -p "$HOME/.config/herdr"
     mkdir -p "$HOME/.local/share/zsh/history"
     mkdir -p "$HOME/.local/bin"
 }
@@ -234,6 +235,7 @@ setup_symlinks() {
     create_symlink "$DOTFILES/apps/ranger/rifle.conf" "$HOME/.config/ranger/rifle.conf"
     create_symlink "$DOTFILES/apps/ranger/scope.sh" "$HOME/.config/ranger/scope.sh"
     create_symlink "$DOTFILES/apps/ranger/commands.py" "$HOME/.config/ranger/commands.py"
+    create_symlink "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
 }
 
 setup_zsh() {

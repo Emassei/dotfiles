@@ -1,0 +1,300 @@
+{
+  "version": 3,
+  "workspaces": [
+    {
+      "id": "w1",
+      "custom_name": "realtyads",
+      "identity_cwd": "/home/ernie/code/jamestown_devops",
+      "public_pane_numbers": {
+        "10": 4,
+        "1": 1
+      },
+      "next_public_pane_number": 6,
+      "public_tab_numbers": [
+        1,
+        3
+      ],
+      "next_public_tab_number": 5,
+      "tabs": [
+        {
+          "custom_name": "agent",
+          "layout": {
+            "Pane": 1
+          },
+          "panes": {
+            "1": {
+              "cwd": "/home/ernie/code/jamestown_devops"
+            }
+          },
+          "zoomed": false,
+          "focused": 1,
+          "root_pane": 1
+        },
+        {
+          "custom_name": "docker",
+          "layout": {
+            "Pane": 10
+          },
+          "panes": {
+            "10": {
+              "cwd": "/home/ernie/code/jamestown_devops"
+            }
+          },
+          "zoomed": false,
+          "focused": 10,
+          "root_pane": 10
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w2",
+      "custom_name": "dashboard",
+      "identity_cwd": "/home/ernie/code/python/dashboards.git/main",
+      "public_pane_numbers": {
+        "4": 2,
+        "3": 1
+      },
+      "next_public_pane_number": 3,
+      "public_tab_numbers": [
+        1,
+        2
+      ],
+      "next_public_tab_number": 3,
+      "tabs": [
+        {
+          "custom_name": "agent",
+          "layout": {
+            "Pane": 3
+          },
+          "panes": {
+            "3": {
+              "cwd": "/home/ernie/code/python/dashboards.git/main"
+            }
+          },
+          "zoomed": false,
+          "focused": 3,
+          "root_pane": 3
+        },
+        {
+          "custom_name": "docker",
+          "layout": {
+            "Pane": 4
+          },
+          "panes": {
+            "4": {
+              "cwd": "/home/ernie/code/jamestown_devops"
+            }
+          },
+          "zoomed": false,
+          "focused": 4,
+          "root_pane": 4
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w3",
+      "custom_name": "agents",
+      "identity_cwd": "/home/ernie/code/python/acquisitions-deal-agent",
+      "public_pane_numbers": {
+        "6": 1,
+        "12": 2
+      },
+      "next_public_pane_number": 3,
+      "public_tab_numbers": [
+        1,
+        2
+      ],
+      "next_public_tab_number": 3,
+      "tabs": [
+        {
+          "custom_name": "agent",
+          "layout": {
+            "Pane": 6
+          },
+          "panes": {
+            "6": {
+              "cwd": "/home/ernie/code/python/acquisitions-deal-agent"
+            }
+          },
+          "zoomed": false,
+          "focused": 6,
+          "root_pane": 6
+        },
+        {
+          "custom_name": "docker",
+          "layout": {
+            "Pane": 12
+          },
+          "panes": {
+            "12": {
+              "cwd": "/home/ernie/code/python/acquisitions-deal-agent"
+            }
+          },
+          "zoomed": false,
+          "focused": 12,
+          "root_pane": 12
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w4",
+      "custom_name": "complaince_api",
+      "identity_cwd": "/home/ernie/code/python/anthropic/claude-audit-log.git/main",
+      "public_pane_numbers": {
+        "7": 1,
+        "13": 2
+      },
+      "next_public_pane_number": 3,
+      "public_tab_numbers": [
+        1,
+        2
+      ],
+      "next_public_tab_number": 3,
+      "tabs": [
+        {
+          "custom_name": "agent",
+          "layout": {
+            "Pane": 7
+          },
+          "panes": {
+            "7": {
+              "cwd": "/home/ernie/code/python/anthropic/claude-audit-log.git/main"
+            }
+          },
+          "zoomed": false,
+          "focused": 7,
+          "root_pane": 7
+        },
+        {
+          "custom_name": "docker",
+          "layout": {
+            "Pane": 13
+          },
+          "panes": {
+            "13": {
+              "cwd": "/home/ernie/code/python/anthropic/claude-audit-log.git/main"
+            }
+          },
+          "zoomed": false,
+          "focused": 13,
+          "root_pane": 13
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w5",
+      "custom_name": "datawarehouse",
+      "identity_cwd": "/home/ernie/code/python/DataWarehouse.git/master",
+      "public_pane_numbers": {
+        "8": 1,
+        "14": 2
+      },
+      "next_public_pane_number": 3,
+      "public_tab_numbers": [
+        1,
+        2
+      ],
+      "next_public_tab_number": 3,
+      "tabs": [
+        {
+          "custom_name": "agent",
+          "layout": {
+            "Pane": 8
+          },
+          "panes": {
+            "8": {
+              "cwd": "/home/ernie/code/python/DataWarehouse.git/master"
+            }
+          },
+          "zoomed": false,
+          "focused": 8,
+          "root_pane": 8
+        },
+        {
+          "custom_name": "terminal",
+          "layout": {
+            "Pane": 14
+          },
+          "panes": {
+            "14": {
+              "cwd": "/home/ernie/code/python/DataWarehouse.git/master"
+            }
+          },
+          "zoomed": false,
+          "focused": 14,
+          "root_pane": 14
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w6",
+      "custom_name": "alt",
+      "identity_cwd": "/home/ernie/code/python/altlist.git/main",
+      "public_pane_numbers": {
+        "9": 1
+      },
+      "next_public_pane_number": 2,
+      "public_tab_numbers": [
+        1
+      ],
+      "next_public_tab_number": 2,
+      "tabs": [
+        {
+          "custom_name": null,
+          "layout": {
+            "Pane": 9
+          },
+          "panes": {
+            "9": {
+              "cwd": "/home/ernie/code/python/altlist.git/main"
+            }
+          },
+          "zoomed": false,
+          "focused": 9,
+          "root_pane": 9
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w7",
+      "custom_name": "dot",
+      "identity_cwd": "/home/ernie/dotfiles",
+      "public_pane_numbers": {
+        "15": 1
+      },
+      "next_public_pane_number": 2,
+      "public_tab_numbers": [
+        1
+      ],
+      "next_public_tab_number": 2,
+      "tabs": [
+        {
+          "custom_name": null,
+          "layout": {
+            "Pane": 15
+          },
+          "panes": {
+            "15": {
+              "cwd": "/home/ernie/dotfiles"
+            }
+          },
+          "zoomed": false,
+          "focused": 15,
+          "root_pane": 15
+        }
+      ],
+      "active_tab": 0
+    }
+  ],
+  "active": 0,
+  "selected": 0,
+  "sidebar_width": 26,
+  "sidebar_section_split": 0.5,
+  "collapsed_space_keys": []
+}
