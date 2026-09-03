@@ -36,3 +36,6 @@ credentials.json
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Claude Code local permission rules (client paths - never publish)
+.claude/settings.local.json
