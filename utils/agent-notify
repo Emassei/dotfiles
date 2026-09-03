@@ -9,6 +9,12 @@
 # Suppressed when the user is already looking at the agent: the focused dwm
 # window must be the terminal displaying this pane's tmux window.
 
+# RETIRED 2026-09-03: herdr's sidebar attention queue + herdr-attend replaced
+# desktop popups. Long-running agents launched with the old config still call
+# this script, so it exits silently instead of notifying. Full logic kept
+# below (and in git history) for the dwm focus-detection trick.
+exit 0
+
 # PID that owns the focused X window (dwm sets _NET_ACTIVE_WINDOW).
 focused_pid() {
     id=$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | awk '{print $NF}')

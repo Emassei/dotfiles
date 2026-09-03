@@ -18,8 +18,9 @@ next_tab = "alt+l"
 next_agent = "alt+a"
 previous_agent = "alt+shift+a"
 
-# Jump straight to whatever agent fired the latest notification.
-open_notification_target = "alt+o"
+# alt+o is a custom command (herdr-attend) — see [[keys.command]] at the
+# bottom of this file. Built-in notification jump disabled.
+open_notification_target = ""
 
 # dwm-tag style: alt+1..9 jumps straight to that workspace.
 switch_workspace = "alt+1..9"
@@ -49,9 +50,9 @@ show_agent_labels_on_pane_borders = true
 # Attention queue: blocked agents float to the top of the agent panel.
 agent_panel_sort = "priority"
 
-# Background agent state changes -> dunst -> KDE Connect -> phone.
+# No desktop popups — the sidebar queue and alt+o are the interface.
 [ui.toast]
-delivery = "system"
+delivery = "off"
 
 # Audible ping when an agent finishes or needs input.
 [ui.sound]
@@ -65,3 +66,27 @@ rows = [[
   { token = "agent", fg = "#8be9fd", bold = true, dim = false },
   { token = "workspace", fg = "#f8f8f2", dim = false },
 ]]
+
+# alt+o -> jump to the next agent that needs attention (blocked first,
+# then done, longest-waiting first); skips idle/working. Repeated
+# presses drain the queue.
+[[keys.command]]
+key = "alt+o"
+type = "shell"
+command = "/home/ernie/dotfiles/utils/herdr-attend"
+
+# Whisper dictation popup, same as the tmux `D binding.
+[[keys.command]]
+key = "alt+d"
+type = "popup"
+command = "/home/ernie/dotfiles/utils/dictate -a"
+width = "60%"
+height = 12
+
+# lazygit over the current workspace's repo.
+[[keys.command]]
+key = "alt+g"
+type = "popup"
+command = "lazygit"
+width = "85%"
+height = "85%"

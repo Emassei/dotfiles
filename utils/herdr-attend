@@ -1,0 +1,18 @@
+#!/bin/bash
+# Jump to the next herdr agent that needs attention.
+# blocked (waiting on an answer) beats done (finished unseen); idle and
+# working agents are skipped entirely. The currently focused agent is
+# excluded, so repeated presses cycle through the queue — and focusing a
+# done agent marks it seen, so the queue drains as you go.
+HERDR="$HOME/.local/bin/herdr"
+
+target=$("$HERDR" agent list | jq -r '
+  .result.agents
+  | map(select((.agent_status == "blocked" or .agent_status == "done")
+               and (.focused | not)))
+  | sort_by([.agent_status, .state_change_seq])
+  | .[0].pane_id // empty')
+# sort: "blocked" < "done" alphabetically, then lowest state_change_seq —
+# the agent that has been waiting the longest is first in line.
+
+[ -n "$target" ] && exec "$HERDR" agent focus "$target"
