@@ -29,6 +29,9 @@ switch_workspace = "alt+1..9"
 new_tab = "alt+n"
 rename_tab = "alt+r"
 
+# Quick side-by-side split (spin up a second agent next to the first).
+split_vertical = "alt+v"
+
 # Keyboard scrollback: enter copy/scroll mode (vim-style movement inside).
 # alt+u = "up", like vim's ctrl+u half-page.
 copy_mode = "alt+u"
