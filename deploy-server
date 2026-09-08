@@ -1,0 +1,158 @@
+#!/bin/bash
+#
+# deploy-server — bootstrap a fresh Debian headless box into Ernie's fleet.
+# Codifies the manual steps done on the T420 and pivault (2026-09). Idempotent.
+#
+# Run ON the new box (as the user, with sudo available):
+#   git clone git@github.com:Emassei/dotfiles.git ~/dotfiles
+#   ~/dotfiles/deploy-server
+#
+# After it finishes:
+#   sudo tailscale up      (approve the URL on your phone)
+#   then Ernie/Claude installs the rest of the fleet keys + role (vault/immich/etc)
+#
+# This does NOT set a machine role — it makes a clean, hardened, docker-ready
+# tailnet node. Role-specific setup (rest-server, immich, herdr) comes after.
+
+set -e
+GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
+info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+
+[ "$(id -u)" -eq 0 ] && { echo "run as your normal user, not root (it uses sudo)"; exit 1; }
+command -v apt-get >/dev/null || { echo "this is for Debian/apt systems only"; exit 1; }
+
+# --- 1. base packages (the set we hand-installed on t420 + pi all week) ---
+info "updating apt + installing base packages..."
+sudo apt-get update -qq
+sudo apt-get install -y -qq \
+  git build-essential curl wget rsync \
+  zsh tmux ripgrep fzf jq \
+  nftables restic unzip file \
+  ca-certificates gnupg lsb-release
+
+# --- 2. neovim: static upstream build, NOT apt (apt ships too-old on ARM/stable) ---
+if ! command -v nvim >/dev/null || [ "$(nvim --version | head -1 | grep -oE '0\.[0-9]+' | head -1 | cut -d. -f2)" -lt 11 ]; then
+  info "installing neovim (upstream static build)..."
+  ARCH=$(uname -m); case "$ARCH" in x86_64) NA=x86_64;; aarch64) NA=arm64;; *) NA=x86_64;; esac
+  curl -sfL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NA}.tar.gz" -o /tmp/nvim.tgz \
+    && mkdir -p ~/.local && tar -xzf /tmp/nvim.tgz -C ~/.local --strip-components=1 && rm /tmp/nvim.tgz \
+    && sudo ln -sf ~/.local/bin/nvim /usr/local/bin/nvim
+fi
+
+# --- 3. yazi file manager (upstream binary, not ranger's fragile python) ---
+if ! command -v yazi >/dev/null; then
+  info "installing yazi..."
+  ARCH=$(uname -m); case "$ARCH" in x86_64) YA=x86_64-unknown-linux-gnu;; aarch64) YA=aarch64-unknown-linux-gnu;; esac
+  curl -sfL "https://github.com/sxyazi/yazi/releases/latest/download/yazi-${YA}.zip" -o /tmp/yazi.zip 2>/dev/null \
+    && cd /tmp && unzip -oq yazi.zip && sudo install yazi-*/yazi yazi-*/ya /usr/local/bin/ 2>/dev/null && cd - >/dev/null || warn "yazi skipped"
+fi
+
+# --- 4. docker (official convenience script) ---
+if ! command -v docker >/dev/null; then
+  info "installing docker..."
+  curl -fsSL https://get.docker.com | sudo sh
+  sudo usermod -aG docker "$USER"
+  sudo systemctl enable --now docker
+  warn "log out/in (or reboot) for docker group to take effect"
+fi
+
+# --- 5. tailscale ---
+if ! command -v tailscale >/dev/null; then
+  info "installing tailscale..."
+  curl -fsSL https://tailscale.com/install.sh | sh
+  sudo systemctl enable --now tailscaled
+  warn "run 'sudo tailscale up' and approve on your phone"
+fi
+
+# --- 6. ssh hardening (key-only) — matches t420/pivault ---
+info "hardening sshd (key-only)..."
+sudo mkdir -p /etc/ssh/sshd_config.d
+sudo tee /etc/ssh/sshd_config.d/20-hardening.conf >/dev/null <<'SSHD'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+SSHD
+warn "make sure your key is in ~/.ssh/authorized_keys BEFORE the next sshd restart"
+
+# --- 7. nftables lockdown (tailnet-only) — the fleet firewall ---
+info "writing nftables lockdown (loopback + tailnet only)..."
+sudo tee /etc/nftables.conf >/dev/null <<'NFT'
+#!/usr/sbin/nft -f
+# Fleet lockdown: answers only loopback + tailnet. Applied at boot.
+destroy table inet lockdown
+table inet lockdown {
+  chain input {
+    type filter hook input priority filter; policy drop;
+    ct state invalid drop
+    ct state { established, related } accept
+    iif "lo" accept
+    iifname "tailscale0" accept
+    udp dport 41641 accept comment "tailscale direct"
+    udp sport 67 udp dport 68 accept comment "dhcp"
+    udp sport 547 udp dport 546 accept comment "dhcpv6"
+    meta l4proto ipv6-icmp accept
+    icmp type { destination-unreachable, time-exceeded, parameter-problem } accept
+  }
+  chain forward {
+    type filter hook forward priority filter; policy accept;
+    ct state { established, related } accept
+  }
+}
+NFT
+sudo systemctl enable nftables
+warn "firewall NOT applied yet (would cut LAN ssh before tailscale is up)."
+warn "apply with 'sudo nft -f /etc/nftables.conf' AFTER tailscale is confirmed working."
+
+# --- 8. server posture: no sleep, lid-ignore (harmless on desktop) ---
+info "server posture: masking sleep, lid-ignore drop-in..."
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target 2>/dev/null || true
+sudo mkdir -p /etc/systemd/logind.conf.d
+sudo tee /etc/systemd/logind.conf.d/lid-server.conf >/dev/null <<'LID'
+[Login]
+HandleLidSwitch=ignore
+HandleLidSwitchExternalPower=ignore
+HandleLidSwitchDocked=ignore
+LID
+
+# --- 9. weekly auto-update timer (keeps a rarely-touched box patched) ---
+info "weekly auto-update timer..."
+sudo tee /etc/systemd/system/auto-update.service >/dev/null <<'SVC'
+[Unit]
+Description=Weekly apt update+upgrade
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'apt-get update -qq && apt-get -y -qq upgrade'
+SVC
+sudo tee /etc/systemd/system/auto-update.timer >/dev/null <<'TMR'
+[Unit]
+Description=Weekly system update
+[Timer]
+OnCalendar=Sun 04:13
+Persistent=true
+[Install]
+WantedBy=timers.target
+TMR
+sudo systemctl daemon-reload && sudo systemctl enable auto-update.timer
+
+# --- 10. shell + minimal nvim config (colors + numbers, no plugin manager) ---
+info "shell config + minimal nvim..."
+mkdir -p ~/.config/nvim
+cat > ~/.config/nvim/init.lua <<'VIM'
+vim.o.termguicolors=true; vim.o.number=true; vim.o.relativenumber=true
+vim.o.cursorline=true; vim.o.tabstop=4; vim.o.shiftwidth=4; vim.o.expandtab=true
+vim.o.ignorecase=true; vim.o.smartcase=true; vim.o.mouse="a"; vim.o.clipboard="unnamedplus"
+pcall(vim.cmd.colorscheme,"habamax")
+VIM
+if [ "$SHELL" != *zsh* ] && command -v zsh >/dev/null; then
+  info "setting shell to zsh..."; sudo chsh -s "$(command -v zsh)" "$USER" || warn "chsh skipped"
+fi
+
+info "=== deploy-server done ==="
+echo
+echo "NEXT STEPS (in order):"
+echo "  1. ensure your ssh key is in ~/.ssh/authorized_keys"
+echo "  2. sudo tailscale up   (approve on phone)"
+echo "  3. verify tailnet ssh works, THEN: sudo nft -f /etc/nftables.conf"
+echo "  4. sudo systemctl restart ssh   (locks to key-only)"
+echo "  5. role setup (vault / immich / herdr command center) per the fleet plan"
