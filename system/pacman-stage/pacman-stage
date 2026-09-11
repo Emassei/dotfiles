@@ -1,0 +1,51 @@
+#!/bin/bash
+# Weekly update stager: download everything, install nothing.
+# Refreshes the repos, pre-downloads all pending upgrades, checks the
+# Arch news feed for manual-intervention posts, then notifies the
+# desktop. The actual `pacman -Syu` stays a human action so pacnew
+# prompts, news items, and AUR rebuilds happen with eyes on them.
+# Runs as root from pacman-stage.timer.
+set -u
+STATE_DIR=/var/lib/pacman-stage
+NOTIFY_USER=ernie
+NOTIFY_UID=1000
+mkdir -p "$STATE_DIR"
+
+notify() { # summary, body, urgency
+    sudo -u "$NOTIFY_USER" \
+        DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$NOTIFY_UID/bus" \
+        notify-send -u "${3:-normal}" -a pacman-stage "$1" "$2" 2>/dev/null
+}
+
+# --- Arch news: any post newer than the last run is a red flag ---------
+news_flag=""
+feed=$(curl -sfm 20 https://archlinux.org/feeds/news/) && {
+    # First <title> is the feed's own name; the second is the newest post.
+    latest=$(grep -oP '(?<=<title>)[^<]+' <<<"$feed" | sed -n 2p)
+    last_seen=$(cat "$STATE_DIR/last-news" 2>/dev/null || true)
+    if [[ -n "$latest" && "$latest" != "$last_seen" ]]; then
+        news_flag="$latest"
+        echo "$latest" > "$STATE_DIR/last-news"
+    fi
+}
+
+# --- Refresh + download-only upgrade ----------------------------------
+if ! pacman -Syuw --noconfirm >/dev/null 2>&1; then
+    notify "Update staging FAILED" "pacman -Syuw errored — check journalctl -u pacman-stage" critical
+    exit 1
+fi
+
+repo_count=$(checkupdates 2>/dev/null | wc -l)
+aur_count=$(sudo -u "$NOTIFY_USER" paru -Qua 2>/dev/null | wc -l)
+
+# --- Report ------------------------------------------------------------
+body="$repo_count repo updates downloaded"
+[[ $aur_count -gt 0 ]] && body+=", $aur_count AUR rebuilds pending"
+body+=". Run: paru -Syu"
+if [[ -n "$news_flag" ]]; then
+    notify "Updates staged — READ ARCH NEWS FIRST" "New post: \"$news_flag\"
+$body" critical
+elif [[ $repo_count -gt 0 || $aur_count -gt 0 ]]; then
+    notify "Updates staged" "$body"
+fi
+exit 0

@@ -1,0 +1,26 @@
+#!/bin/bash
+# Fuzzy-jump to any herdr workspace or agent (bound to alt+p as a popup).
+# Workspaces list first (numbered, like the alt+1..9 tags), then every
+# agent with its workspace and status. Picking a line focuses it.
+HERDR="$HOME/.local/bin/herdr"
+
+pick=$("$HERDR" api snapshot | jq -r '
+  .result.snapshot as $s
+  | ($s.workspaces | map({(.workspace_id): .label}) | add) as $wl
+  | ( $s.workspaces[]
+      | ["ws", .workspace_id,
+         "\(.number)  \(.label)  (\(.tab_count) tabs)"] ),
+    ( $s.agents[]
+      | ["ag", .pane_id,
+         "→ \(.agent) [\(.agent_status)]  \($wl[.workspace_id] // .workspace_id)  \(.cwd | split("/") | last)"] )
+  | @tsv' \
+  | fzf --delimiter='\t' --with-nth=3 --no-multi \
+        --prompt='jump ▸ ' --info=hidden --layout=reverse)
+
+[ -n "$pick" ] || exit 0
+kind=$(cut -f1 <<<"$pick")
+id=$(cut -f2 <<<"$pick")
+case "$kind" in
+  ws) exec "$HERDR" workspace focus "$id" ;;
+  ag) exec "$HERDR" agent focus "$id" ;;
+esac

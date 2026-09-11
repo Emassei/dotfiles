@@ -1,0 +1,19 @@
+#!/bin/sh
+# Lid-aware docked layout. Called by the acpid lid hook (and usable by
+# hand). Lid open + external monitor → dual head (monitor primary at 0x0,
+# laptop panel to its right). Lid closed or no monitor → single display.
+# Deliberately raw xrandr for the dual layout: saving it as an autorandr
+# profile would collide with 'docked' (identical output fingerprint —
+# autorandr can't see lid state) and make hotplug detection ambiguous.
+extern=$(xrandr -q | grep -oP '^\S*-2-1(?= connected)' | head -1)
+lid=$(grep -oP 'open|closed' /proc/acpi/button/lid/*/state 2>/dev/null)
+
+if [ -z "$extern" ]; then
+    exec xrandr --output eDP-1 --auto --primary        # mobile: panel only
+elif [ "$lid" = "open" ]; then
+    exec xrandr --output "$extern" --auto --primary --pos 0x0 \
+                --output eDP-1 --auto --right-of "$extern"
+else
+    exec xrandr --output "$extern" --auto --primary --pos 0x0 \
+                --output eDP-1 --off
+fi

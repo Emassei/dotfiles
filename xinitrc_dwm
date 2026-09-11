@@ -1,12 +1,21 @@
 #!/bin/sh
 
+# startx sessions inherit XDG_SESSION_TYPE=tty, which makes portal-aware
+# apps (flameshot 14+) skip native X11 capture and hang on the screenshot
+# portal — which nothing on this box implements. Claim x11 explicitly.
+export XDG_SESSION_TYPE=x11
+
 # Monitor layout: autorandr handles dock/undock profiles.
 # Save a profile from a working layout with:  autorandr --save <name>
 # To re-apply on the fly mid-session:         autorandr --change
 autorandr --change --default docked 2>/dev/null || true
+# Then correct for lid state: booting docked with the lid OPEN means dual
+# head, which autorandr can't express (lid state isn't in its fingerprint).
+# twoscreens is also what the acpid lid hook fires on open/close.
+$HOME/dotfiles/utils/twoscreens 2>/dev/null || true
 
-systemctl --user import-environment DISPLAY XAUTHORITY GTK_USE_PORTAL
-dbus-update-activation-environment --systemd DISPLAY XAUTHORITY GTK_USE_PORTAL
+systemctl --user import-environment DISPLAY XAUTHORITY GTK_USE_PORTAL XDG_SESSION_TYPE
+dbus-update-activation-environment --systemd DISPLAY XAUTHORITY GTK_USE_PORTAL XDG_SESSION_TYPE
 
 setxkbmap -option "caps:swapescape"
 xbindkeys -f $HOME/dotfiles/xbindkeys

@@ -1,0 +1,51 @@
+#!/bin/bash
+# vault — browse the pivault backup results (nightly restic snapshots
+# of the t490). List is instant (snapshot summaries are stored in the
+# repo); Enter runs a real diff against the previous night, which the
+# Pi 3 serves slowly — expect a wait.
+R=(restic -r rest:http://100.93.44.40:8000/t490 -p "$HOME/.config/restic/password")
+gold=$'\033[38;5;178m'; rst=$'\033[0m'
+
+tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
+"${R[@]}" snapshots --json > "$tmp" 2>/dev/null || { echo "vault unreachable — is pivault up?"; exit 1; }
+
+last=$(journalctl --user -u restic-backup.service --no-pager -n 50 2>/dev/null \
+        | grep -oE '(Finished|Failed).*' | tail -1)
+next=$(systemctl --user list-timers restic-backup.timer --no-pager 2>/dev/null \
+        | awk 'NR==2{print $1, $2, $3}')
+
+PREVIEW='jq -r --arg id {1} ".[] | select(.short_id==\$id) |
+  \"id         \(.short_id)\n\" +
+  \"time       \(.time[0:19])\n\" +
+  \"window     \(.summary.backup_start[11:19]) → \(.summary.backup_end[11:19])\n\" +
+  \"paths      \(.paths | join(\", \"))\n\n\" +
+  \"files new       \(.summary.files_new)\n\" +
+  \"files changed   \(.summary.files_changed)\n\" +
+  \"files unmodified\(.summary.files_unmodified | tostring | \"  \" + .)\n\" +
+  \"total files     \(.summary.total_files_processed)\n\" +
+  \"total data      \(.summary.total_bytes_processed / 1073741824 * 100 | round / 100) GiB\n\" +
+  \"added (packed)  \(.summary.data_added_packed / 1048576 | round) MiB\"" '"$tmp"
+
+while :; do
+  sel=$(jq -r 'sort_by(.time) | reverse | .[]
+        | [.short_id, .time[0:16],
+           (.summary.data_added_packed // 0), (.summary.files_new // 0),
+           (.summary.files_changed // 0)] | @tsv' "$tmp" |
+    awk -F'\t' '{printf "%s\t\033[38;5;178m%s\033[0m  \033[1m+%d MiB\033[0m  \033[2m%s new · %s changed\033[0m\n",
+                 $1, $2, $3/1048576, $4, $5}' |
+    fzf --ansi --delimiter='\t' --with-nth=2 --no-multi \
+        --prompt='❦ vault ▸ ' --layout=reverse --info=hidden \
+        --header="last run: ${last:-unknown} · next: ${next:-?}
+enter: what changed that night (diff, slow on the Pi) · esc: quit" \
+        --preview "$PREVIEW" --preview-window=right:52%:wrap) || exit 0
+
+  id=$(cut -f1 <<<"$sel")
+  prev=$(jq -r --arg id "$id" 'sort_by(.time) | map(.short_id) as $a
+         | ($a | index($id)) as $i | if $i > 0 then $a[$i-1] else empty end' "$tmp")
+  if [ -n "$prev" ]; then
+    printf '%sdiffing %s → %s — the Pi is small, give it a minute…%s\n' "$gold" "$prev" "$id" "$rst"
+    "${R[@]}" diff "$prev" "$id" 2>&1 | less -R
+  else
+    printf '%sfirst snapshot — nothing earlier to diff against%s\n' "$gold" "$rst"; sleep 2
+  fi
+done

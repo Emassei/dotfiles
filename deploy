@@ -278,6 +278,25 @@ install_system_files() {
             /etc/pacman.d/hooks/auto-paccache.hook
     fi
 
+    # acpid lid hook: lid open at dock = dual head, closed = monitor only
+    if [[ -d "$DOTFILES/system/acpi" ]]; then
+        sudo install -o root -g root -m 755 \
+            "$DOTFILES/system/acpi/lid-layout.sh" /etc/acpi/lid-layout.sh
+        sudo mkdir -p /etc/acpi/events
+        sudo install -o root -g root -m 644 \
+            "$DOTFILES/system/acpi/lid-layout.rules" /etc/acpi/events/lid-layout
+    fi
+
+    # Weekly update stager: pre-download upgrades + Arch news check, notify
+    if [[ -d "$DOTFILES/system/pacman-stage" ]]; then
+        sudo install -o root -g root -m 755 \
+            "$DOTFILES/system/pacman-stage/pacman-stage" /usr/local/bin/pacman-stage
+        sudo install -o root -g root -m 644 \
+            "$DOTFILES/system/pacman-stage/pacman-stage.service" \
+            "$DOTFILES/system/pacman-stage/pacman-stage.timer" \
+            /etc/systemd/system/
+    fi
+
     # systemd user services: rclone gdrive mounts
     if [[ -d "$DOTFILES/system/systemd-user" ]]; then
         mkdir -p "$HOME/.config/systemd/user"
@@ -306,6 +325,12 @@ enable_services() {
 
     # Weekly SSD TRIM
     sudo systemctl enable --now fstrim.timer
+
+    # Weekly update staging (download-only + notify; install stays manual)
+    sudo systemctl enable --now pacman-stage.timer
+
+    # Lid open/close reruns the screen layout (twoscreens via acpid)
+    sudo systemctl enable --now acpid.service
 
     # Auto-switch monitor profile on plug/unplug
     sudo systemctl enable autorandr.service

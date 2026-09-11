@@ -1,9 +1,17 @@
+onboarding = false
 # herdr keybindings — vim-style direct navigation.
 # dwm owns Super (Mod4), so plain Alt chords are free for herdr.
 # Prefix stays ctrl+b; pane focus is already prefix+h/j/k/l.
 
 [theme]
 name = "dracula"
+
+# Unfocused tab titles render overlay0/overlay1 on surface0 (see herdr
+# src/client/shell/tabs.rs). Dracula ships overlay0 #6272a4 on #44475a —
+# ~2:1 contrast, unreadable. Lift the overlays well clear of the tab bg.
+[theme.custom]
+overlay0 = "#aeb6d8"
+overlay1 = "#ced3ea"
 
 [keys]
 # Bounce between workspaces like vim lines: no prefix needed.
@@ -54,6 +62,7 @@ show_agent_labels_on_pane_borders = true
 agent_panel_sort = "priority"
 
 # No desktop popups — the sidebar queue and alt+o are the interface.
+status_indicators = "symbols"
 [ui.toast]
 delivery = "off"
 
@@ -77,6 +86,14 @@ rows = [[
 key = "alt+o"
 type = "shell"
 command = "/home/ernie/dotfiles/utils/herdr-attend"
+
+# Fuzzy jump: fzf over all workspaces + agents, pick one to focus.
+[[keys.command]]
+key = "alt+p"
+type = "popup"
+command = "/home/ernie/dotfiles/utils/herdr-jump"
+width = "60%"
+height = 20
 
 # Whisper dictation popup, same as the tmux `D binding.
 [[keys.command]]

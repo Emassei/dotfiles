@@ -1,0 +1,272 @@
+#!/bin/bash
+# lowdown — one-shot system update dashboard for the t490.
+#   lowdown         dashboard: what's pending, risk verdict
+#   lowdown --deep  + network checks (nvim plugin / npm outdated details)
+#   lowdown go      update EVERYTHING, attended: paru, nvim plugins,
+#                   npm globals, gcloud, herdr, rustup — then says if
+#                   a reboot is due
+#   lowdown clean   reclaim disk: docker build cache / stopped containers /
+#                   dangling images, pacman cache, old journals, orphans.
+#                   Never touches docker volumes (dev databases live there).
+# Pairs with pacman-stage.timer (weekly download-only staging).
+#   lowdown tui     browse past runs: list + preview + full view
+ox='\033[38;5;88m'; gold='\033[38;5;178m'; b='\033[1m'; d='\033[2m'; rst='\033[0m'
+hdr(){ printf "\n${ox}${b}━━ %s ${rst}${ox}%s${rst}\n" "$1" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; }
+
+# ── run history ─────────────────────────────────────────────────────────
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/lowdown"
+mkdir -p "$STATE/runs"
+log_run(){ # summary — appends this run to the history index
+  [ -n "${LOWDOWN_REC:-}" ] || return 0
+  printf '%s\t%s\t%s\t%s\n' "$(date '+%Y-%m-%d %H:%M')" "${LOWDOWN_MODE:-dash}" \
+    "$LOWDOWN_REC" "$1" >> "$STATE/index.tsv"
+}
+
+if [ "${1:-}" = "tui" ]; then
+  [ -s "$STATE/index.tsv" ] || { echo "no runs recorded yet — run lowdown once first"; exit 0; }
+  while :; do
+    sel=$(tac "$STATE/index.tsv" | awk -F'\t' \
+        '{printf "\033[38;5;178m%s\033[0m  \033[1m%-7s\033[0m %s\t%s\n", $1, $2, $4, $3}' \
+      | fzf --ansi --delimiter='\t' --with-nth=1 --no-multi \
+            --prompt='⁂ lowdown runs ▸ ' --layout=reverse --info=hidden \
+            --header='enter: full view · esc: quit  (fresh scan: run lowdown)' \
+            --preview 'sed "s/\r$//" {2}' --preview-window=right:62%:wrap) || exit 0
+    f=$(cut -f2 <<<"$sel")
+    [ -f "$f" ] && sed 's/\r$//' "$f" | less -R
+  done
+fi
+
+# Record every real (tty) run: re-exec under script(1) so interactive modes
+# (go/clean with their paru/fwupd prompts) are captured faithfully, colors
+# and all. Non-tty invocations (pipes, agents) run unrecorded as before.
+if [ -z "${LOWDOWN_REC:-}" ] && [ -t 1 ] && command -v script >/dev/null; then
+  mode=${1:-dash}; mode=${mode#--}
+  f="$STATE/runs/$(date +%Y%m%d-%H%M%S)-$mode.log"
+  ls -t "$STATE/runs" 2>/dev/null | tail -n +61 | while read -r old; do rm -f "$STATE/runs/$old"; done
+  LOWDOWN_REC="$f" LOWDOWN_MODE="$mode" exec script -qefc "$0 ${1:-}" "$f"
+fi
+
+# ── go: update everything, attended ────────────────────────────────────
+if [ "${1:-}" = "go" ]; then
+  printf "${gold}${b}  ⁂  the low down — updating everything${rst}\n"
+
+  hdr "① repos + AUR (paru -Syu)"
+  paru -Syu || { printf "${ox}${b}paru failed — stopping here; fix that first.${rst}\n"; exit 1; }
+
+  hdr "② nvim plugins (Lazy sync)"
+  timeout 300 nvim --headless "+Lazy! sync" +qa >/dev/null 2>&1 \
+    && echo "  synced $(grep -c '":' ~/.config/nvim/lazy-lock.json 2>/dev/null) plugins" \
+    || printf "  ${gold}headless sync failed — run :Lazy sync inside nvim${rst}\n"
+
+  hdr "③ npm globals"
+  outdated=$(npm outdated -g 2>/dev/null | tail -n+2 | awk '{print $1}')
+  if [ -n "$outdated" ]; then
+    # npm update -g won't cross majors on exact-pinned globals; @latest does
+    xargs -r -n1 -I{} npm install -g {}@latest <<<"$outdated"
+  else echo "  all current"; fi
+
+  hdr "④ gcloud sdk"
+  if [ -d ~/.local/opt/google-cloud-sdk ]; then
+    ~/.local/opt/google-cloud-sdk/bin/gcloud components update --quiet 2>&1 | tail -2
+  else echo "  not installed"; fi
+
+  hdr "⑤ herdr"
+  herdr update 2>&1 | tail -2
+  printf "  ${d}binary updated; the running server keeps the old version until you\n"
+  printf "  restart it or run 'herdr update --handoff' yourself (live sessions).${rst}\n"
+
+  hdr "⑥ rust toolchain"
+  rustup update 2>&1 | grep -E 'updated|unchanged|info: checking' | head -3
+
+  hdr "⑦ firmware (BIOS / SSD / dock)"
+  fwupdmgr refresh --force >/dev/null 2>&1
+  fw_n=$(fwupdmgr get-updates --json 2>/dev/null | jq '.Devices | length' 2>/dev/null || echo 0)
+  if [ "$fw_n" -eq 0 ]; then
+    echo "  nothing pending"
+  elif ! grep -qx 1 /sys/class/power_supply/AC/online 2>/dev/null; then
+    printf "  ${gold}${b}%s update(s) waiting, but you're on battery — skipped.${rst}\n" "$fw_n"
+    printf "  ${d}Plug into AC and run 'lowdown go' (or fwupdmgr update) again;\n"
+    printf "  losing power mid-flash can brick the device.${rst}\n"
+  else
+    printf "  ${gold}%s device(s) to update — fwupd will ask before each flash\n" "$fw_n"
+    printf "  and before any reboot; some updates install during the reboot.${rst}\n"
+    fwupdmgr update
+  fi
+
+  echo
+  if [ "$(pacman -Q linux 2>/dev/null | awk '{print $2}' | tr '-' '.')" != "$(uname -r | tr '-' '.')" ]; then
+    printf "  ${gold}${b}❦ done — REBOOT when convenient${rst} ${d}(running kernel ≠ installed kernel)${rst}\n"
+  else
+    printf "  ${gold}${b}❦ done — no reboot needed${rst}\n"
+  fi
+  printf "  ${d}not touched (by design): pacnew merges, dwm rebuilds, herdr server handoff${rst}\n"
+  log_run "updated everything$( [ "$(pacman -Q linux 2>/dev/null | awk '{print $2}' | tr '-' '.')" != "$(uname -r | tr '-' '.')" ] && echo ' · reboot pending')"
+  exit 0
+fi
+
+# ── clean: reclaim disk space, attended ────────────────────────────────
+if [ "${1:-}" = "clean" ]; then
+  printf "${gold}${b}  ⁂  the low down — cleaning${rst}\n"
+  droot=$(docker info -f '{{.DockerRootDir}}' 2>/dev/null)
+  avail0=$(df --output=avail -B1M "${droot:-/}" | tail -1)
+
+  hdr "① docker build cache"
+  docker builder prune -af 2>&1 | tail -1
+
+  hdr "② docker stopped containers"
+  docker container prune -f 2>&1 | tail -1
+  printf "  ${d}note: this removes the stopped husks, not their named volumes —\n"
+  printf "  old project databases survive and revive on the next compose up.${rst}\n"
+
+  hdr "③ docker dangling images"
+  docker image prune -f 2>&1 | tail -1
+  printf "  ${d}tagged-but-unused images kept (~14G more) — 'docker image prune -a'\n"
+  printf "  if you accept old projects rebuilding from scratch.${rst}\n"
+
+  hdr "④ docker volumes"
+  vol_n=$(docker volume ls -q | wc -l)
+  printf "  ${gold}untouched on purpose${rst} ${d}— %s volumes hold dev databases; cherry-pick\n" "$vol_n"
+  printf "  per dead project if you ever want that space (docker volume rm).${rst}\n"
+
+  hdr "⑤ pacman cache + orphans"
+  sudo paccache -rk2 2>&1 | tail -1
+  orph=$(pacman -Qdtq 2>/dev/null)
+  if [ -n "$orph" ]; then
+    printf "  removing %s orphans (review the list pacman shows):\n" "$(grep -c . <<<"$orph")"
+    sudo pacman -Rns $(tr '\n' ' ' <<<"$orph")
+  else echo "  no orphans"; fi
+
+  hdr "⑥ journals"
+  sudo journalctl --vacuum-size=500M 2>&1 | tail -1
+
+  echo
+  avail1=$(df --output=avail -B1M "${droot:-/}" | tail -1)
+  printf "  ${gold}${b}❦ done — freed ~%s MB${rst} ${d}(on %s)${rst}\n" "$((avail1 - avail0))" "${droot:-/}"
+  log_run "freed ~$((avail1 - avail0)) MB"
+  exit 0
+fi
+
+printf "${gold}${b}  ⁂  the low down${rst}  ${d}%s${rst}\n" "$(date '+%a %d %b %Y, %H:%M')"
+
+# ── § I · pending updates ──────────────────────────────────────────────
+hdr "§ I · updates"
+updates=$(checkupdates 2>/dev/null)
+repo_n=$(grep -c . <<<"$updates")
+aur=$(paru -Qua 2>/dev/null)
+aur_n=$(grep -c . <<<"$aur")
+# Last time a package was actually installed/upgraded — download-only
+# staging runs (pacman -Syuw) log "starting full system upgrade" too, so
+# key off ALPM's upgraded/installed lines instead.
+last_up=$(grep -oP '^\[\K[^\]]+(?=] \[ALPM\] (upgraded|installed) )' /var/log/pacman.log | tail -1)
+printf "  repo pending   ${b}%s${rst}\n" "$repo_n"
+printf "  aur pending    ${b}%s${rst}\n" "$aur_n"
+printf "  last upgrade   %s ${d}(%s)${rst}\n" "${last_up:-unknown}" \
+  "$(date -d "${last_up:-now}" +%s 2>/dev/null | xargs -I{} sh -c 'echo $(( ($(date +%s) - {}) / 86400 )) days ago')"
+risky=$(grep -E '^(linux|linux-lts|systemd|glibc|xorg-server|mesa|ffmpeg|pipewire|wireplumber|grub|pacman) ' <<<"$updates")
+if [ -n "$risky" ]; then
+  printf "  ${gold}${b}handle-with-care in this batch:${rst}\n"
+  sed 's/^/    ❧ /' <<<"$risky"
+fi
+[ -n "$aur" ] && { printf "  ${d}aur:${rst}\n"; sed 's/^/    · /' <<<"$aur"; }
+
+# ── § II · arch news ───────────────────────────────────────────────────
+hdr "§ II · arch news"
+feed=$(curl -sfm 8 https://archlinux.org/feeds/news/)
+news_unread=0
+if [ -n "$feed" ]; then
+  up_epoch=$(date -d "${last_up:-1970-01-01}" +%s 2>/dev/null || echo 0)
+  news_unread=$(grep -oP '(?<=<pubDate>)[^<]+' <<<"$feed" | head -3 | while read -r pub; do
+    [ "$(date -d "$pub" +%s 2>/dev/null || echo 0)" -gt "$up_epoch" ] && echo x; done | grep -c x)
+  paste -d'\t' \
+    <(grep -oP '(?<=<title>)[^<]+' <<<"$feed" | tail -n +2 | head -3 \
+      | sed 's/&gt;/>/g;s/&lt;/</g;s/&amp;/\&/g;s/&quot;/"/g;s/&#39;/'"'"'/g') \
+    <(grep -oP '(?<=<pubDate>)[^<]+' <<<"$feed" | head -3) |
+  while IFS=$'\t' read -r title pub; do
+    pe=$(date -d "$pub" +%s 2>/dev/null || echo 0)
+    if [ "$pe" -gt "$up_epoch" ]; then
+      printf "  ${gold}${b}✦ %s${rst}  ${d}%s — unread, read before upgrading${rst}\n" "$title" "$(date -d "$pub" +'%d %b')"
+    else
+      printf "  ${d}  %s  %s${rst}\n" "$title" "$(date -d "$pub" +'%d %b')"
+    fi
+  done
+else
+  printf "  ${d}feed unreachable${rst}\n"
+fi
+
+# ── § III · system health ──────────────────────────────────────────────
+hdr "§ III · health"
+pacnew=$(pacdiff -o 2>/dev/null)
+[ -n "$pacnew" ] && printf "  ${gold}pacnew to merge:${rst}\n%s\n" "$(sed 's/^/    ❧ /' <<<"$pacnew")" \
+                 || printf "  pacnew          ${d}none${rst}\n"
+orph_n=$(pacman -Qdtq 2>/dev/null | grep -c .)
+printf "  orphans         %s\n" "$orph_n"
+failed=$(systemctl --failed --no-legend --plain 2>/dev/null | awk '{print $1}')
+[ -n "$failed" ] && printf "  ${ox}${b}failed units:${rst}\n%s\n" "$(sed 's/^/    ❧ /' <<<"$failed")" \
+                 || printf "  systemd         ${d}all units happy${rst}\n"
+printf "  root disk       %s used\n" "$(df -h / | awk 'NR==2{print $5" of "$2}')"
+
+# ── § IV · beyond pacman ───────────────────────────────────────────────
+# Update surfaces the package manager can't see. Default = cheap
+# staleness checks; --deep actually asks the network what's outdated.
+hdr "§ IV · beyond pacman"
+age_days(){ echo $(( ($(date +%s) - $(stat -c %Y "$1" 2>/dev/null || date +%s)) / 86400 )); }
+flag_age(){ # label, days, threshold, hint
+  if [ "$2" -gt "$3" ]; then printf "  %-15s ${gold}%s days since update${rst}  ${d}%s${rst}\n" "$1" "$2" "$4"
+  else printf "  %-15s ${d}fresh (%sd)${rst}\n" "$1" "$2"; fi; }
+
+lock=~/.config/nvim/lazy-lock.json
+[ -f "$lock" ] && flag_age "nvim plugins" "$(age_days "$lock")" 30 "→ :Lazy sync in nvim"
+flag_age "npm globals" "$(age_days ~/.npm/_update-notifier-last-checked 2>/dev/null || echo 99)" 60 "→ lowdown --deep"
+[ -x ~/.local/bin/whisper-cli ] && flag_age "whisper-cli" "$(age_days ~/.local/bin/whisper-cli)" 180 "self-built; rebuild at next big upgrade"
+# .install dir mtime tracks component updates (VERSION has a bogus 1980 zip date)
+[ -d ~/.local/opt/google-cloud-sdk ] && flag_age "gcloud sdk" "$(age_days ~/.local/opt/google-cloud-sdk/.install)" 90 "→ gcloud components update"
+printf "  %-15s ${d}v%s (self-updates via herdr update)${rst}\n" "herdr" "$(herdr status client 2>/dev/null | grep -oP 'version: \K.*' | head -1)"
+printf "  %-15s ${d}built %s (patched suckless; updates are manual+rare)${rst}\n" "dwm & friends" "$(date -d @"$(stat -c %Y /usr/local/bin/dwm)" +'%d %b %Y')"
+fw_n=$(fwupdmgr get-updates --json 2>/dev/null | jq '.Devices | length' 2>/dev/null || echo 0)
+if [ "$fw_n" -gt 0 ]; then printf "  %-15s ${gold}%s device(s) have firmware updates${rst}  ${d}→ lowdown go (on AC)${rst}\n" "firmware" "$fw_n"
+else printf "  %-15s ${d}no pending (BIOS/SSD/dock via LVFS)${rst}\n" "firmware"; fi
+printf "  %-15s ${d}dev stacks, pinned on purpose — update by rebuilding projects${rst}\n" "docker (local)"
+printf "  %-15s ${d}immich lives on t420 — update via docker compose there, deliberately${rst}\n" "docker (t420)"
+
+if [ "${1:-}" = "--deep" ]; then
+  printf "\n  ${gold}deep checks…${rst}\n"
+  out=$(timeout 60 nvim --headless "+lua require('lazy').check({show=false}); vim.defer_fn(function() local u=0 for _,p in ipairs(require('lazy').plugins()) do if p._.updates then u=u+1 end end print(u..' plugin updates') vim.cmd('qa!') end, 8000)" 2>&1 | tail -1)
+  out=$(grep -oP '\d+ plugin updates' <<<"$out" | tail -1)
+  printf "  nvim plugins    %s  ${d}→ :Lazy sync${rst}\n" "${out:-check failed}"
+  npm_out=$(timeout 60 npm outdated -g 2>/dev/null | tail -n+2)
+  if [ -n "$npm_out" ]; then printf "  npm globals     ${gold}outdated:${rst}\n%s\n" "$(awk '{print "    · "$1" "$2" → "$4}' <<<"$npm_out")"
+  else printf "  npm globals     ${d}all current${rst}\n"; fi
+  pip_n=$(timeout 60 pip list --user --outdated 2>/dev/null | tail -n+3 | grep -c .)
+  printf "  pip --user      %s outdated  ${d}(update per-package, by hand — pip fights pacman)${rst}\n" "$pip_n"
+fi
+
+# ── verdict: should you update, and how risky is it ────────────────────
+echo
+core_risky=$(grep -E '^(glibc|systemd|xorg-server|mesa|grub|pacman) ' <<<"$risky")
+kernel_only=$(grep -E '^linux(-lts)? ' <<<"$risky")
+verdict="UPDATE NOW"
+if [ "$repo_n" -eq 0 ] && [ "$aur_n" -eq 0 ]; then
+  verdict="NOTHING TO DO"
+  printf "  ${gold}${b}❦ verdict — NOTHING TO DO${rst}  ${d}system is current${rst}\n"
+elif [ "$news_unread" -gt 0 ]; then
+  verdict="HOLD (arch news)"
+  printf "  ${ox}${b}❦ verdict — HOLD ✋${rst}  there are Arch news posts newer than your last\n"
+  printf "    upgrade. Read https://archlinux.org/news/ first — that's where\n"
+  printf "    \"manual intervention required\" breakage is announced. Then update.\n"
+elif [ -n "$core_risky" ]; then
+  verdict="UPDATE ATTENDED"
+  printf "  ${gold}${b}❦ verdict — UPDATE, ATTENDED ⚠${rst}  safe, but this batch touches core\n"
+  printf "    plumbing (%s). Run ${b}lowdown go${rst} when you have\n" "$(awk '{print $1}' <<<"$core_risky" | paste -sd', ')"
+  printf "    20 unhurried minutes, read what pacman prints, reboot after.\n"
+elif [ -n "$kernel_only" ]; then
+  printf "  ${gold}${b}❦ verdict — UPDATE NOW ✓${rst}  routine batch, no news flags. The kernel\n"
+  printf "    is included, so ${b}reboot when convenient afterward${rst} (until you do,\n"
+  printf "    things like new USB devices may not work — that's normal, not breakage).\n"
+  printf "    Run: ${b}lowdown go${rst}\n"
+else
+  printf "  ${gold}${b}❦ verdict — UPDATE NOW ✓${rst}  routine batch, no news flags, no core\n"
+  printf "    packages, no reboot needed. Run: ${b}lowdown go${rst}\n"
+fi
+[ -n "$pacnew" ] && printf "    ${d}separately, someday-soon: merge the pacnew files above (pacdiff)${rst}\n"
+log_run "$verdict · repo $repo_n · aur $aur_n · fw $fw_n"
+echo
