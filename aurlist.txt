@@ -10,7 +10,6 @@ oh-my-zsh-git
 paru
 perl-file-next
 pspg
-python-pyotherside
 ranger-git
 rofi-greenclip
 simple-mtpfs
@@ -19,4 +18,3 @@ slack-desktop
 ttf-share-gf
 usql-bin
 yubico-authenticator-bin
-yubikey-manager-qt
