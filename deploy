@@ -221,10 +221,36 @@ create_symlink() {
     fi
 }
 
+create_wrapper() {
+    # For files that carry machine-local additions (secrets, work aliases):
+    # write a tiny file that SOURCES the repo copy instead of symlinking it,
+    # so local lines survive re-runs. No-op if the wrapper already sources it.
+    local src=$1 dest=$2
+    if [[ -f "$dest" ]] && grep -qF "$src" "$dest"; then
+        info "Wrapper already sources $src: $dest"
+    elif [[ -e "$dest" && ! -L "$dest" ]]; then
+        warn "Backing up existing $dest to ${dest}.bak"
+        mv "$dest" "${dest}.bak"
+        printf 'source %s\n' "$src" > "$dest"
+        info "Created wrapper: $dest -> source $src"
+    else
+        [[ -L "$dest" ]] && rm "$dest"
+        printf 'source %s\n' "$src" > "$dest"
+        info "Created wrapper: $dest -> source $src"
+    fi
+}
+
 setup_symlinks() {
     info "Creating symlinks..."
-    create_symlink "$DOTFILES/zsh/zshrc_manager.sh" "$HOME/.config/zsh/.zshrc"
-    create_symlink "$DOTFILES/zprofile" "$HOME/.zprofile"
+    # Wrappers (source the repo file; keep local secrets/work lines alongside)
+    create_wrapper "$DOTFILES/zsh/zshrc_manager.sh" "$HOME/.config/zsh/.zshrc"
+    for extra in .zshrc.secrets .zshrc.work; do
+        grep -qF "$extra" "$HOME/.config/zsh/.zshrc" || \
+            printf '[ -f ~/.config/zsh/%s ] && source ~/.config/zsh/%s\n' "$extra" "$extra" >> "$HOME/.config/zsh/.zshrc"
+    done
+    create_wrapper "$DOTFILES/zprofile" "$HOME/.zprofile"
+    mkdir -p "$HOME/.config/tmux"
+    create_wrapper "$DOTFILES/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
     create_symlink "$DOTFILES/alacritty/alacritty.toml" "$HOME/.config/alacritty/alacritty.toml"
     create_symlink "$DOTFILES/gitconfig/.gitconfig" "$HOME/.gitconfig"
     create_symlink "$DOTFILES/xinitrc_dwm" "$HOME/.xinitrc"
