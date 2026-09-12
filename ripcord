@@ -33,7 +33,17 @@ git -C ~/dotfiles remote set-url origin git@github.com:Emassei/dotfiles.git
 
 info "4/4 LUKS: is the YubiKey enrolled?"
 LUKS=$(lsblk -rno NAME,FSTYPE | awk '$2=="crypto_LUKS"{print "/dev/"$1; exit}')
-if sudo cryptsetup luksDump "$LUKS" | grep -q systemd-fido2; then info "yes — key already unlocks the disk"
-else warn "no — plug in the key and run: sudo ~/dotfiles/system/luks-fido2/enroll-luks-yubikey $LUKS"; fi
+if sudo cryptsetup luksDump "$LUKS" | grep -q systemd-fido2; then
+  info "key is enrolled in LUKS"
+  # archinstall's LVM path doesn't always put the fido2 option on the cmdline — make sure it's there
+  UUID=$(sudo cryptsetup luksUUID "$LUKS")
+  if ! grep -q 'fido2-device=auto' /etc/default/grub; then
+    warn "GRUB cmdline lacks fido2-device=auto — adding it"
+    sudo sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"|GRUB_CMDLINE_LINUX_DEFAULT=\"\1 rd.luks.options=$UUID=fido2-device=auto\"|" /etc/default/grub
+    sudo grub-mkconfig -o /boot/grub/grub.cfg
+  fi
+  grep -q sd-encrypt /etc/mkinitcpio.conf || warn "mkinitcpio HOOKS lack sd-encrypt — see system/luks-fido2/README.md"
+  info "boot will ask for the key (fallback: passphrase)"
+else warn "not enrolled — plug in the key and run: sudo ~/dotfiles/system/luks-fido2/enroll-luks-yubikey $LUKS"; fi
 
 info "done. 'startx' for dwm. Background restore log: ~/ripcord-restore.log"
