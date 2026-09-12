@@ -10,10 +10,8 @@ nordvpn-bin
 oh-my-zsh-git
 parquet-tools
 paru
-paru-debug
 perl-file-next
 pspg
-psysh
 python-pyotherside
 ranger-git
 rofi-greenclip
