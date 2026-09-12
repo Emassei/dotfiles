@@ -264,7 +264,8 @@ setup_symlinks() {
     create_symlink "$DOTFILES/apps/ranger/commands.py" "$HOME/.config/ranger/commands.py"
     create_symlink "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     create_symlink "$DOTFILES/apps/dunst/dunstrc" "$HOME/.config/dunst/dunstrc"
-    create_symlink "$DOTFILES/apps/flameshot/flameshot.ini" "$HOME/.config/flameshot/flameshot.ini"
+    # flameshot rewrites its ini on every settings change (breaks symlinks): seed once, don't link.
+    [[ -e "$HOME/.config/flameshot/flameshot.ini" ]] || cp "$DOTFILES/apps/flameshot/flameshot.ini" "$HOME/.config/flameshot/flameshot.ini"
     create_symlink "$DOTFILES/apps/fontconfig/fonts.conf" "$HOME/.config/fontconfig/fonts.conf"
     create_symlink "$DOTFILES/apps/greenclip/greenclip.toml" "$HOME/.config/greenclip.toml"
     create_symlink "$DOTFILES/apps/autorandr" "$HOME/.config/autorandr"
