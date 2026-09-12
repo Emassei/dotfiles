@@ -13,7 +13,7 @@
 #   7. Initializes git submodules (oh-my-zsh)
 #   8. Creates dotfile symlinks
 #   9. Installs Google Cloud SDK (official, not AUR)
-#  10. Installs system files (NetworkManager dispatcher, reflector config)
+#  10. Installs herdr (release binary) + system files (NetworkManager dispatcher, reflector config)
 #  11. Enables systemd timers (reflector, fstrim, autorandr)
 #  12. Sets shell to zsh
 
@@ -250,6 +250,19 @@ setup_zsh() {
     touch "$HOME/.local/share/zsh/history/.zsh_history"
 }
 
+setup_herdr() {
+    # herdr (agent workspace manager) is a release binary, not a package.
+    # Installer: stable channel, drops the binary in ~/.local/bin. `herdr update` later.
+    if ! command -v herdr >/dev/null && [[ ! -x "$HOME/.local/bin/herdr" ]]; then
+        info "Installing herdr..."
+        curl -fsSL https://herdr.dev/install.sh | sh
+    else
+        info "herdr already installed"
+    fi
+    # fleet scripts call herdr over non-interactive ssh, where ~/.local/bin isn't on PATH
+    [[ -e /usr/local/bin/herdr ]] || sudo ln -s "$HOME/.local/bin/herdr" /usr/local/bin/herdr
+}
+
 install_gcloud() {
     if [[ -d "$HOME/.local/opt/google-cloud-sdk" ]]; then
         info "gcloud SDK already installed"
@@ -404,6 +417,7 @@ main() {
     setup_nvchad
     setup_symlinks
     setup_user_units
+    setup_herdr
     install_gcloud
     install_system_files
     enable_services
