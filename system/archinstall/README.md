@@ -17,3 +17,22 @@
 Rehearse the whole thing in a VM first (`ripcord` and `install.py` both run there).
 Swap is zram (archinstall's default); no swap LV. /boot is an unencrypted ESP —
 archinstall doesn't do GRUB-cryptodisk, and it's the standard layout anyway.
+
+## Away from home (e.g. the P14s arrives in Atlanta)
+
+Bring: the Arch ISO USB (**make it before leaving**), the YubiKey, the t490, the phone
+(KeePass + tailscale). No ethernet needed.
+
+- **Network on the ISO:** hotel wifi captive portals don't work from a live ISO — use the
+  **phone hotspot**. `iwctl` → `station wlan0 connect <hotspot-ssid>` → `exit`. After the
+  install, NetworkManager handles wifi normally (`nmtui`).
+- **Restore from the t490, not the vault:** the vault is in Medellín behind a home
+  upload link. The t490 next to you has the whole home directory. Both on the hotspot
+  (or both on tailscale), then **on the t490**: `utils/handoff <new-machine-ip>` —
+  pushes essentials in seconds and the bulk in minutes, no key bootstrap needed
+  (the fresh install accepts ernie's password over ssh). Then `ripcord` on the new
+  machine sees `~/.ssh` and skips the vault restore automatically.
+- The vault stays the fallback: if the t490 isn't available, `ripcord` restores from
+  it over tailscale — essentials fast, bulk slow (leave it running, or wait until home).
+- `tailscale up` on the new machine still happens (approve on the phone) — it's how
+  the fleet sees it.

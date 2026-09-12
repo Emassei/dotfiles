@@ -1,0 +1,14 @@
+#!/bin/bash
+# handoff — push this machine's home directory straight to a freshly installed box,
+# for when the vault (Medellín) is far away and the old laptop is right here.
+# Run ON THE OLD MACHINE:  handoff <new-machine-ip-or-tailnet-ip>
+# Uses ssh password auth (the fresh install allows it for ernie; no key bootstrap needed).
+# Essentials first (seconds), then the bulk (uses the restic exclude list, so no caches/media junk).
+set -e
+NEW=${1:?usage: handoff <new-machine ip>}; U=ernie
+R="rsync -aHAX --info=progress2 --no-inc-recursive -e 'ssh -o StrictHostKeyChecking=accept-new'"
+echo ">> essentials (ssh keys, shell config, restic, agent history) → $NEW"
+eval $R ~/.ssh ~/.config/zsh ~/.config/restic ~/.claude ~/.codex ~/.gitconfig $U@$NEW:~/ 2>/dev/null || eval $R ~/.ssh ~/.config/zsh ~/.config/restic ~/.claude ~/.codex $U@$NEW:~/
+echo ">> bulk: the rest of ~ (excluding what the nightly backup excludes) — this is the long one"
+eval $R --exclude-from=$HOME/.config/restic/excludes --exclude='.cache' ~/ $U@$NEW:~/
+echo ">> done. On the new machine: ~/dotfiles/ripcord   (it will see ~/.ssh and skip the vault restore)"
