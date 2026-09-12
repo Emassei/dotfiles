@@ -2,13 +2,11 @@
 ack
 aws-session-manager-plugin
 brave-bin
-libxft-bgra
 localsend-bin
 neofetch
 networkmanager-dmenu-git
 nordvpn-bin
 oh-my-zsh-git
-parquet-tools
 paru
 perl-file-next
 pspg
@@ -18,8 +16,7 @@ rofi-greenclip
 simple-mtpfs
 simplescreenrecorder
 slack-desktop
-ttf-joypixels
 ttf-share-gf
-usql
+usql-bin
 yubico-authenticator-bin
 yubikey-manager-qt

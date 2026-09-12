@@ -22,6 +22,7 @@ touch the key.
 """
 import argparse
 import getpass
+import os
 import sys
 from pathlib import Path
 
@@ -78,7 +79,7 @@ def build_layout(device, luks_pw: str | None, hsm):
     boot = PartitionModification(
         status=ModificationStatus.CREATE, type=PartitionType.PRIMARY,
         start=Size(1, Unit.MiB, sec), length=Size(1, Unit.GiB, sec),
-        mountpoint=Path("/boot"), fs_type=FilesystemType("fat32"), flags=[PartitionFlag.BOOT],
+        mountpoint=Path("/boot"), fs_type=FilesystemType("fat32"), flags=[PartitionFlag.BOOT, PartitionFlag.ESP],  # ESP flag is what archinstall keys on for UEFI
     )
     pv_start = boot.start + boot.length
     pv_len = device.device_info.total_size - pv_start - Size(1, Unit.MiB, sec)
@@ -90,8 +91,9 @@ def build_layout(device, luks_pw: str | None, hsm):
     mod.add_partition(pv)
 
     vg = LvmVolumeGroup("vg", pvs=[pv])
+    root_gib = min(ROOT_GIB, max(20, int(gib(pv_len) * 0.35)))  # 60G on a real disk; scale down on small/VM disks
     root = LvmVolume(status=ModificationStatus.CREATE, name="root", fs_type=FilesystemType("ext4"),
-                     length=Size(ROOT_GIB, Unit.GiB, sec), mountpoint=Path("/"))
+                     length=Size(root_gib, Unit.GiB, sec), mountpoint=Path("/"))
     home_len = pv_len - root.length - Size(512, Unit.MiB, sec)  # LUKS header + LVM metadata margin
     home = LvmVolume(status=ModificationStatus.CREATE, name="home", fs_type=FilesystemType("ext4"),
                      length=home_len, mountpoint=Path("/home"))
@@ -114,12 +116,16 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="build + print the plan, touch nothing")
     ap.add_argument("--disk", help="target device path (skips the confirm prompt)")
     ap.add_argument("--hostname", default=HOSTNAME_DEFAULT)
+    ap.add_argument("--no-yubikey", action="store_true", help="install without a FIDO2 key (udev/encrypt hooks; ripcord can convert later)")
     args = ap.parse_args()
 
     device = pick_disk(args.disk)
     keys = Fido2.get_fido2_devices()
     hsm = keys[0] if keys else None
-    print(f"YubiKey: {hsm.path if hsm else 'NOT plugged in (enroll later with system/luks-fido2/enroll-luks-yubikey)'}")
+    print(f"YubiKey: {hsm.path if hsm else 'NOT plugged in'}")
+    if not hsm and not args.no_yubikey and not args.dry_run:
+        sys.exit("No FIDO2 key detected. Plug in the YubiKey (it gets enrolled during install, with sd-encrypt hooks),\n"
+                 "or pass --no-yubikey to install with passphrase-only unlock (ripcord can enroll + convert hooks later).")
 
     if args.dry_run:
         cfg = build_layout(device, None, hsm)
@@ -128,10 +134,11 @@ def main():
         print("\n(dry run — nothing touched)")
         return
 
-    luks_pw = getpass.getpass("LUKS passphrase (the fallback if the key is lost — put it in KeePass): ")
-    if luks_pw != getpass.getpass("again: "):
+    # Rehearsal hooks (VM only): INSTALL_LUKS_PW / INSTALL_USER_PW / INSTALL_SSH_PUBKEY env vars.
+    luks_pw = os.environ.get("INSTALL_LUKS_PW") or getpass.getpass("LUKS passphrase (the fallback if the key is lost — put it in KeePass): ")
+    if not os.environ.get("INSTALL_LUKS_PW") and luks_pw != getpass.getpass("again: "):
         sys.exit("passphrases differ")
-    user_pw = getpass.getpass(f"password for user {USERNAME}: ")
+    user_pw = os.environ.get("INSTALL_USER_PW") or getpass.getpass(f"password for user {USERNAME}: ")
     cfg = build_layout(device, luks_pw, hsm)
 
     FilesystemHandler(cfg).perform_filesystem_operations()  # partitions, luksFormat (+fido2 enroll), pv/vg/lv, mkfs
@@ -151,6 +158,20 @@ def main():
         inst.set_timezone(TIMEZONE)
         inst.activate_time_synchronization()
         inst.enable_service(SERVICES)
+        if pub := os.environ.get("INSTALL_SSH_PUBKEY"):  # rehearsal: let the harness ssh in as ernie
+            d = Path(f"/mnt/home/{USERNAME}/.ssh"); d.mkdir(parents=True, exist_ok=True)
+            (d / "authorized_keys").write_text(pub + "\n")
+            Path("/mnt/etc/sudoers.d").mkdir(exist_ok=True)
+            Path("/mnt/etc/sudoers.d/rehearsal").write_text(f"{USERNAME} ALL=(ALL) NOPASSWD: ALL\n")  # rehearsal only: deploy runs sudo over ssh
+            for cmd in (f"chown -R {USERNAME}:{USERNAME} /home/{USERNAME}/.ssh",
+                        f"chmod 700 /home/{USERNAME}/.ssh",
+                        f"chmod 600 /home/{USERNAME}/.ssh/authorized_keys"):
+                inst.arch_chroot(cmd)  # arch_chroot runs ONE command, no shell — no && chaining
+        if os.environ.get("INSTALL_SERIAL_CONSOLE"):  # rehearsal (VM) only: let the harness see the LUKS prompt over serial
+            g = Path("/mnt/etc/default/grub"); t = g.read_text()
+            t = t.replace('GRUB_CMDLINE_LINUX_DEFAULT="', 'GRUB_CMDLINE_LINUX_DEFAULT="console=tty0 console=ttyS0,115200 ', 1)
+            g.write_text(t)
+            inst.arch_chroot("grub-mkconfig -o /boot/grub/grub.cfg")
         inst.genfstab()
     print("\nBase install done. Reboot, unlock (key or passphrase), log in as ernie, then:")
     print("  git clone https://github.com/Emassei/dotfiles ~/dotfiles && ~/dotfiles/ripcord")

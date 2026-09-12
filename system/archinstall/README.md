@@ -8,6 +8,7 @@
    - checkpoint: LUKS passphrase (KeePass), user password
    - checkpoint: touch the key when it blinks (FIDO2 enrollment)
 5. `reboot`. Unlock with the key (or passphrase). Log in as ernie.
+   (zsh will offer its new-user config wizard — press `q`; deploy sets up the real config.)
 6. `git clone https://github.com/Emassei/dotfiles ~/dotfiles && ~/dotfiles/ripcord`
    - checkpoint: approve `tailscale up` on the phone
    - checkpoint: vault password (KeePass) for the home-directory restore

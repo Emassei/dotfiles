@@ -11,9 +11,12 @@ G='\033[0;32m'; Y='\033[1;33m'; N='\033[0m'; info(){ echo -e "${G}[ripcord]${N} 
 VAULT=rest:http://100.93.44.40:8000/t490
 
 info "1/4 tailscale (needed to reach the vault)"
-sudo systemctl enable --now tailscaled
-tailscale status >/dev/null 2>&1 || sudo tailscale up
-until ping -c1 -W2 100.93.44.40 >/dev/null 2>&1; do warn "waiting for the tailnet (approve on your phone)..."; sleep 5; done
+if [ -n "$RIPCORD_SKIP_TAILSCALE" ]; then warn "RIPCORD_SKIP_TAILSCALE set (rehearsal) — assuming the vault is reachable via the host"
+else
+  sudo systemctl enable --now tailscaled
+  tailscale status >/dev/null 2>&1 || sudo tailscale up
+fi
+until ping -c1 -W2 100.93.44.40 >/dev/null 2>&1; do warn "waiting to reach the vault (approve tailscale on your phone)..."; sleep 5; done
 
 info "2/4 restore home from the vault"
 mkdir -p ~/.config/restic && chmod 700 ~/.config/restic
@@ -21,15 +24,19 @@ if [ ! -s ~/.config/restic/password ]; then read -rsp "vault password (KeePass):
 export RESTIC_REPOSITORY=$VAULT RESTIC_PASSWORD_FILE=$HOME/.config/restic/password
 restic snapshots --latest 1 --compact
 # first the small, essential bits so deploy can talk to GitHub; the bulk after
-restic restore latest --target / --include "$HOME/.ssh" --include "$HOME/.config" --include "$HOME/.claude" --include "$HOME/.codex"
+restic restore latest --target / --include "$HOME/.ssh" --include "$HOME/.config/zsh" --include "$HOME/.config/restic" --include "$HOME/.claude" --include "$HOME/.codex"
 chmod 700 ~/.ssh; chmod 600 ~/.ssh/* 2>/dev/null || true
-warn "full home restore (code, media, everything) runs in the background — hours over the Pi link"
-nohup restic restore latest --target / --include "$HOME" > ~/ripcord-restore.log 2>&1 &
+if [ -n "$RIPCORD_KEEP_KEY" ]; then grep -qF "$RIPCORD_KEEP_KEY" ~/.ssh/authorized_keys 2>/dev/null || echo "$RIPCORD_KEEP_KEY" >> ~/.ssh/authorized_keys; fi  # rehearsal: keep the harness key
+if [ -n "$RIPCORD_ESSENTIALS_ONLY" ]; then warn "RIPCORD_ESSENTIALS_ONLY set (rehearsal) — skipping the bulk home restore"
+else
+  warn "full home restore (code, media, everything) runs in the background — hours over the Pi link"
+  nohup restic restore latest --target / --include "$HOME" > ~/ripcord-restore.log 2>&1 &
+fi
 
 info "3/4 deploy"
 [ -d ~/dotfiles/.git ] || git clone git@github.com:Emassei/dotfiles.git ~/dotfiles
 git -C ~/dotfiles remote set-url origin git@github.com:Emassei/dotfiles.git
-~/dotfiles/deploy
+~/dotfiles/deploy --yes
 
 info "4/4 LUKS: is the YubiKey enrolled?"
 LUKS=$(lsblk -rno NAME,FSTYPE | awk '$2=="crypto_LUKS"{print "/dev/"$1; exit}')
@@ -44,6 +51,24 @@ if sudo cryptsetup luksDump "$LUKS" | grep -q systemd-fido2; then
   fi
   grep -q sd-encrypt /etc/mkinitcpio.conf || warn "mkinitcpio HOOKS lack sd-encrypt — see system/luks-fido2/README.md"
   info "boot will ask for the key (fallback: passphrase)"
-else warn "not enrolled — plug in the key and run: sudo ~/dotfiles/system/luks-fido2/enroll-luks-yubikey $LUKS"; fi
+else
+  if systemd-cryptenroll --fido2-device=list 2>/dev/null | grep -q /dev; then
+    info "YubiKey present — enrolling it now (you'll type the LUKS passphrase, then touch the key)"
+    sudo systemd-cryptenroll --fido2-device=auto "$LUKS"
+    UUID=$(sudo cryptsetup luksUUID "$LUKS")
+    # installed without a key => udev hooks (encrypt, cryptdevice=). Convert to the systemd set that supports fido2.
+    if grep -q '^HOOKS=.*[( ]encrypt[ )]' /etc/mkinitcpio.conf; then
+      info "converting initramfs hooks udev/encrypt -> systemd/sd-encrypt"
+      sudo sed -i -E '/^HOOKS=/{s/\budev\b/systemd/; s/\bkeymap consolefont\b/sd-vconsole/; s/\bkeymap\b/sd-vconsole/; s/\bconsolefont\b//; s/\bencrypt\b/sd-encrypt/; s/  +/ /g}' /etc/mkinitcpio.conf
+      grep '^HOOKS' /etc/mkinitcpio.conf
+      sudo mkinitcpio -P
+    fi
+    if grep -q 'cryptdevice=' /etc/default/grub; then
+      sudo sed -i -E "s|cryptdevice=UUID=[^:]+:([a-z]+)|rd.luks.name=$UUID=\1 rd.luks.options=$UUID=fido2-device=auto|" /etc/default/grub
+      sudo grub-mkconfig -o /boot/grub/grub.cfg
+    fi
+    info "done — reboot will ask for the key (fallback: passphrase)"
+  else warn "not enrolled and no key plugged in — later: plug it in and run: sudo ~/dotfiles/system/luks-fido2/enroll-luks-yubikey $LUKS"; fi
+fi
 
 info "done. 'startx' for dwm. Background restore log: ~/ripcord-restore.log"
