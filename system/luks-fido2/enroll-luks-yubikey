@@ -1,0 +1,19 @@
+#!/bin/bash
+# Enroll the plugged-in YubiKey as a FIDO2 keyslot on a LUKS2 volume, and print
+# the kernel cmdline + hooks needed to unlock with it at boot.
+# Usage: sudo ./enroll-luks-yubikey /dev/nvme0n1p3
+set -e
+DEV=${1:?usage: enroll-luks-yubikey /dev/<luks-partition>}
+command -v systemd-cryptenroll >/dev/null || { echo "systemd-cryptenroll missing (part of systemd)"; exit 1; }
+pacman -Q libfido2 >/dev/null 2>&1 || { echo "install libfido2 first"; exit 1; }
+echo ">> plug in the YubiKey, then touch it when it blinks (you'll be asked for the existing LUKS passphrase)"
+systemd-cryptenroll --fido2-device=auto "$DEV"
+UUID=$(cryptsetup luksUUID "$DEV")
+echo
+echo ">> enrolled. Now make sure of these two things:"
+echo "   /etc/mkinitcpio.conf HOOKS must contain: systemd ... sd-encrypt lvm2   (then: mkinitcpio -P)"
+echo "   /etc/default/grub GRUB_CMDLINE_LINUX_DEFAULT must contain:"
+echo "     rd.luks.name=$UUID=cryptlvm rd.luks.options=$UUID=fido2-device=auto root=/dev/vg/root"
+echo "   then: grub-mkconfig -o /boot/grub/grub.cfg"
+echo ">> keep the passphrase slot — it's your fallback if the key is lost."
+cryptsetup luksDump "$DEV" | sed -n '/^Tokens:/,/^Digests:/p'
