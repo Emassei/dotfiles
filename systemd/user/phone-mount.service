@@ -1,0 +1,16 @@
+[Unit]
+Description=Auto-mount Samsung phone via simple-mtpfs
+After=default.target
+
+[Service]
+Type=forking
+ExecStartPre=-/bin/fusermount -u %h/phone
+ExecStart=/usr/bin/simple-mtpfs --device 1 %h/phone -o allow_other
+ExecStop=/bin/fusermount -u %h/phone
+Restart=on-failure
+RestartSec=3
+# Give the phone time to be unlocked / switched to MTP mode
+TimeoutStartSec=30
+
+[Install]
+WantedBy=default.target

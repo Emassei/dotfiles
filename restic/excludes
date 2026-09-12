@@ -1,0 +1,25 @@
+# junk — regenerable, bulky, worthless to restore
+/home/ernie/.cache
+/home/ernie/Downloads
+/home/ernie/media/Videos
+/home/ernie/media/iso
+/home/ernie/media/roms
+**/node_modules
+**/.venv
+**/venv
+**/__pycache__
+/home/ernie/.local/share/Trash
+/home/ernie/.local/opt
+/home/ernie/.npm
+/home/ernie/.cargo/registry
+/home/ernie/.rustup
+/home/ernie/.mozilla/firefox/*/cache*
+/home/ernie/.config/*/Cache
+/home/ernie/.config/*/CachedData
+**/meili_data
+**/data-node
+**/docker/mysql/data
+**/claude-audit-log*/**/data/chats
+**/ib_buffer_pool
+**/ib_logfile*
+**/data/chats

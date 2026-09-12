@@ -8,7 +8,7 @@
 #   2. Installs paru (AUR helper) if missing
 #   3. Installs AUR packages
 #   4. Clones + builds suckless tools (dwm, dwmblocks, dmenu)
-#   5. Clones NvChad nvim config
+#   5. Links the vendored nvim config (NvChad-based, dotfiles/nvim)
 #   6. Sets up tmux TPM
 #   7. Initializes git submodules (oh-my-zsh)
 #   8. Creates dotfile symlinks
@@ -41,7 +41,6 @@ declare -A suckless_repos=(
     [dwmblocks]='git@github.com:Emassei/dwmblocks.git'
     [dmenu]='git@github.com:Emassei/dmenu.git'
 )
-NVCHAD_REPO='git@github.com:NvChad/starter.git'
 
 # =============================================================================
 # Package lists
@@ -167,6 +166,8 @@ setup_directories() {
     mkdir -p "$HOME/.config/ranger"
     mkdir -p "$HOME/.config/clipmenu"
     mkdir -p "$HOME/.config/herdr"
+    mkdir -p "$HOME/.config/dunst" "$HOME/.config/flameshot" "$HOME/.config/fontconfig"
+    mkdir -p "$HOME/.config/restic" "$HOME/.config/systemd/user"
     mkdir -p "$HOME/.local/share/zsh/history"
     mkdir -p "$HOME/.local/bin"
 }
@@ -202,8 +203,8 @@ setup_suckless() {
 }
 
 setup_nvchad() {
-    info "Setting up NvChad..."
-    clone_or_pull "$NVCHAD_REPO" "$HOME/.config/nvim"
+    info "Linking nvim config (vendored NvChad, dotfiles/nvim)..."
+    create_symlink "$DOTFILES/nvim" "$HOME/.config/nvim"
 }
 
 create_symlink() {
@@ -262,6 +263,22 @@ setup_symlinks() {
     create_symlink "$DOTFILES/apps/ranger/scope.sh" "$HOME/.config/ranger/scope.sh"
     create_symlink "$DOTFILES/apps/ranger/commands.py" "$HOME/.config/ranger/commands.py"
     create_symlink "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+    create_symlink "$DOTFILES/apps/dunst/dunstrc" "$HOME/.config/dunst/dunstrc"
+    create_symlink "$DOTFILES/apps/flameshot/flameshot.ini" "$HOME/.config/flameshot/flameshot.ini"
+    create_symlink "$DOTFILES/apps/fontconfig/fonts.conf" "$HOME/.config/fontconfig/fonts.conf"
+    create_symlink "$DOTFILES/apps/greenclip/greenclip.toml" "$HOME/.config/greenclip.toml"
+    create_symlink "$DOTFILES/apps/autorandr" "$HOME/.config/autorandr"
+    create_symlink "$DOTFILES/restic/excludes" "$HOME/.config/restic/excludes"
+}
+
+setup_user_units() {
+    info "Installing user systemd units (restic backup, rclone mounts, phone)..."
+    for u in "$DOTFILES"/systemd/user/*; do
+        create_symlink "$u" "$HOME/.config/systemd/user/$(basename "$u")"
+    done
+    systemctl --user daemon-reload
+    systemctl --user enable restic-backup.timer 2>/dev/null || true
+    warn "restic needs ~/.config/restic/password (from KeePass) before the timer can run"
 }
 
 setup_zsh() {
@@ -427,6 +444,7 @@ main() {
     setup_suckless
     setup_nvchad
     setup_symlinks
+    setup_user_units
     install_gcloud
     install_system_files
     enable_services

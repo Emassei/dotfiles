@@ -1,0 +1,17 @@
+[Unit]
+Description=rclone mount gdrive:Kindle notes at philosophy/kindle-notes
+AssertPathIsDirectory=%h/code/python/philosophy/kindle-notes
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/rclone mount "gdrive:Kindle notes" %h/code/python/philosophy/kindle-notes \
+  --vfs-cache-mode writes \
+  --umask 022
+ExecStop=/usr/bin/fusermount3 -u %h/code/python/philosophy/kindle-notes
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

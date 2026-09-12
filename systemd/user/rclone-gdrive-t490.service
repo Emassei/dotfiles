@@ -1,0 +1,17 @@
+[Unit]
+Description=rclone mount gdrive:t490 at ~/gdrive
+AssertPathIsDirectory=%h/gdrive
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/rclone mount gdrive:t490 %h/gdrive \
+  --vfs-cache-mode writes \
+  --umask 022
+ExecStop=/usr/bin/fusermount3 -u %h/gdrive
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=Nightly backup to the vault
+
+[Timer]
+OnCalendar=*-*-* 03:23
+Persistent=true
+
+[Install]
+WantedBy=timers.target
