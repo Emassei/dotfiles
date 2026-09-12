@@ -2,7 +2,6 @@
 ack
 aws-session-manager-plugin
 brave-bin
-localsend-bin
 neofetch
 networkmanager-dmenu-git
 nordvpn-bin
