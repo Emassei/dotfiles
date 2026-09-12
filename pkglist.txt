@@ -134,3 +134,4 @@ zip
 zsh
 zsh-autosuggestions
 zsh-syntax-highlighting
+yubikey-manager
