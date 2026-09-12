@@ -12,7 +12,7 @@ passphrase; the YubiKey is enrolled as an additional keyslot afterwards.
 
 ## The three pieces that make the key work
 1. **mkinitcpio hooks — systemd-based, NOT the udev/encrypt ones:**
-       HOOKS=(base systemd autodetect keyboard sd-vconsole modconf block sd-encrypt lvm2 filesystems fsck)
+       HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt lvm2 filesystems fsck)
    `sd-encrypt` pulls in systemd-cryptsetup + the fido2 token plugin
    (usr/lib/cryptsetup/libcryptsetup-token-systemd-fido2.so, libcbor).
 2. **Kernel cmdline (GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub):**
