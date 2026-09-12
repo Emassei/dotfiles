@@ -135,3 +135,6 @@ zsh
 zsh-autosuggestions
 zsh-syntax-highlighting
 yubikey-manager
+ccid
+pcsclite
+xclip

@@ -334,6 +334,7 @@ EOF
 
 enable_services() {
     info "Enabling systemd timers and services..."
+    sudo systemctl enable --now pcscd.socket   # YubiKey (ykman oath) talks through pcscd
 
     # Weekly mirrorlist refresh
     sudo systemctl enable --now reflector.timer
