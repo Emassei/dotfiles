@@ -5,8 +5,9 @@
 # Uses ssh password auth (the fresh install allows it for ernie; no key bootstrap needed).
 # Essentials first (seconds), then the bulk (uses the restic exclude list, so no caches/media junk).
 set -e
-NEW=${1:?usage: handoff <new-machine ip>}; U=ernie
-R="rsync -aHAX --info=progress2 --no-inc-recursive -e 'ssh -o StrictHostKeyChecking=accept-new'"
+NEW=${1:?usage: handoff <new-machine ip> [ssh-port]}; PORT=${2:-22}; U=ernie
+DRY=${HANDOFF_DRY:+-n}   # HANDOFF_DRY=1 → rsync dry run
+R="rsync -aHAX $DRY --info=progress2 --no-inc-recursive -e 'ssh -p $PORT -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR'"
 echo ">> essentials (ssh keys, shell config, restic, agent history) → $NEW"
 eval $R ~/.ssh ~/.config/zsh ~/.config/restic ~/.claude ~/.codex ~/.gitconfig $U@$NEW:~/ 2>/dev/null || eval $R ~/.ssh ~/.config/zsh ~/.config/restic ~/.claude ~/.codex $U@$NEW:~/
 echo ">> bulk: the rest of ~ (excluding what the nightly backup excludes) — this is the long one"
