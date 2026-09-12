@@ -43,74 +43,11 @@ declare -A suckless_repos=(
 )
 
 # =============================================================================
-# Package lists
+# Package lists — generated files, the machine is the source of truth (see pkglist.txt)
 # =============================================================================
-PACKAGES=(
-    # Base
-    base-devel git pacman-contrib rclone
+PACKAGES=( $(grep -vE "^#|^$" "$DOTFILES/pkglist.txt") )
 
-    # Shell & terminal
-    zsh zsh-autosuggestions zsh-syntax-highlighting alacritty tmux
-
-    # Editor
-    neovim
-
-    # X11 + DWM stack
-    xorg-server xorg-xinit xorg-xrandr xbindkeys picom dunst libnotify
-    autorandr feh flameshot
-
-    # Portal (needed for Brave file dialogs)
-    xdg-desktop-portal xdg-desktop-portal-gtk
-
-    # Fonts
-    noto-fonts ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols ttf-lekton-nerd
-
-    # File management & TUI
-    ranger fzf ripgrep bat tree ncdu
-
-    # Media & PDF
-    mpv feh zathura zathura-pdf-poppler
-
-    # Utils
-    tldr xclip xsel bc htop jq pwgen lsof rsync
-
-    # Network
-    networkmanager network-manager-applet networkmanager-l2tp networkmanager-openvpn
-    nm-connection-editor reflector
-
-    # Audio
-    pavucontrol pipewire pipewire-pulse pamixer
-
-    # Dev tools
-    lazygit lazydocker nodejs-lts-jod npm docker docker-compose docker-buildx
-    python-pip pgcli mariadb postgresql-libs
-
-    # Cloud / infra
-    aws-cli-v2 azure-cli ansible-core
-
-    # Security / Yubikey
-    yubikey-personalization-gui keepassxc pass libfido2
-
-    # Other
-    gimp libreoffice-fresh ntfs-3g
-)
-
-AUR_PACKAGES=(
-    brave-bin
-    simple-mtpfs
-    pspg
-    libxft-bgra
-    networkmanager-dmenu-git
-    ttf-joypixels
-    ranger-git
-    yubico-authenticator-bin
-    yubikey-manager-qt
-    slack-desktop
-    aws-session-manager-plugin
-    ack
-    rofi-greenclip
-    oh-my-zsh-git
-)
+AUR_PACKAGES=( $(grep -vE "^#|^$" "$DOTFILES/aurlist.txt") )
 
 # =============================================================================
 # Functions
