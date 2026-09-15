@@ -302,6 +302,12 @@ install_system_files() {
             "$DOTFILES/system/acpi/lid-layout.rules" /etc/acpi/events/lid-layout
     fi
 
+    # udev: display hotplug (dock plug/unplug) reruns the same layout hook
+    if [[ -f "$DOTFILES/system/udev/95-monitor-hotplug.rules" ]]; then
+        sudo install -o root -g root -m 644 \
+            "$DOTFILES/system/udev/95-monitor-hotplug.rules" /etc/udev/rules.d/
+    fi
+
     # Weekly update stager: pre-download upgrades + Arch news check, notify
     if [[ -d "$DOTFILES/system/pacman-stage" ]]; then
         sudo install -o root -g root -m 755 \

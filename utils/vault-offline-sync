@@ -11,7 +11,7 @@ LABEL=vault-offline; M=/mnt/$LABEL
 DEV=$(blkid -L $LABEL) || { echo "no drive labelled $LABEL in the dock"; exit 1; }
 sudo mkdir -p $M; mountpoint -q $M || sudo mount "$DEV" $M
 echo "== syncing $VAULT_HOST:/srv/data/vault/ -> $M/vault/ =="
-rsync -a --delete --info=progress2 -e ssh $VAULT_HOST:/srv/data/vault/ $M/vault/
+rsync -a --delete --info=progress2 --rsync-path="sudo rsync" -e ssh $VAULT_HOST:/srv/data/vault/ $M/vault/
 echo "== restic check (t490 repo on the offline copy) =="
 export RESTIC_REPOSITORY=$M/vault/t490 RESTIC_PASSWORD_FILE=$HOME/.config/restic/password
 if [ "$1" = --full ]; then restic check --read-data; else restic check --read-data-subset=5%; fi
