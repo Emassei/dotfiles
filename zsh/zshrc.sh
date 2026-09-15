@@ -28,7 +28,7 @@ alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
 alias cat='bat'
 alias codes='ykman oath accounts code'
 # add a new OTP: run add_qr, click-drag the QR on screen; it goes straight onto the YubiKey
-alias add_qr='import /tmp/qr.png && zbarimg -q --raw /tmp/qr.png | ykman oath accounts uri -'
+alias add_qr='import /tmp/qr.png && ykman oath accounts uri "$(zbarimg -q --raw /tmp/qr.png)" && shred -u /tmp/qr.png'
 alias almanac='~/dotfiles/utils/almanac'
 alias audio='~/dotfiles/utils/audio-toggle'
 alias loeb='~/dotfiles/utils/loeb'
