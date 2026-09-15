@@ -1,0 +1,22 @@
+#!/bin/bash
+# vault-offline-sync — refresh the OFFLINE copy of the vault on the drive labelled
+# "vault-offline" (a 2.5" HDD kept in a drawer, plugged into the dock once a month).
+#   1. mount by label   2. rsync the restic repos from the vault (--delete: pruned packs go)
+#   3. restic check the t490 repo on the copy (structure + a sample of data)
+#   4. SMART re-read (pending/reallocated sectors — the drive's honesty check)   5. unmount
+# Run on the t490 with the drive in the dock:  vault-offline-sync   (--full = read ALL data in check)
+set -e
+VAULT_HOST=${VAULT_HOST:-pivault}          # becomes t420 after the cascade
+LABEL=vault-offline; M=/mnt/$LABEL
+DEV=$(blkid -L $LABEL) || { echo "no drive labelled $LABEL in the dock"; exit 1; }
+sudo mkdir -p $M; mountpoint -q $M || sudo mount "$DEV" $M
+echo "== syncing $VAULT_HOST:/srv/data/vault/ -> $M/vault/ =="
+rsync -a --delete --info=progress2 -e ssh $VAULT_HOST:/srv/data/vault/ $M/vault/
+echo "== restic check (t490 repo on the offline copy) =="
+export RESTIC_REPOSITORY=$M/vault/t490 RESTIC_PASSWORD_FILE=$HOME/.config/restic/password
+if [ "$1" = --full ]; then restic check --read-data; else restic check --read-data-subset=5%; fi
+restic snapshots --compact | tail -3
+echo "== drive health =="
+sudo smartctl -A -d sat "${DEV%[0-9]*}" 2>/dev/null | grep -E 'Reallocated_Sector|Current_Pending|Power_On_Hours' | awk '{printf "  %-24s %s\n",$2,$NF}'
+sync; sudo umount $M; echo "== done — unplug and drawer it. Next sync in a month. =="
+date +%Y-%m-%d > ~/.local/state/vault-offline-last-sync 2>/dev/null || true
