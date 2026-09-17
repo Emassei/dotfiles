@@ -1,0 +1,7 @@
+#!/bin/sh
+# udev hook (96-keyboard-hotplug.rules): reapply caps/escape swap to the
+# running X session after a keyboard hotplug. Same auth trick as lid-layout.sh.
+sleep 1
+auth=$(ls -t /tmp/serverauth.* 2>/dev/null | head -1)
+[ -n "$auth" ] || exit 0
+exec su ernie -c "DISPLAY=:0 XAUTHORITY=$auth setxkbmap -option caps:swapescape"

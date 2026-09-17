@@ -1,0 +1,4 @@
+# Display connector appeared/vanished (dock plug/unplug included):
+# rerun the lid-aware layout. systemd-run so udev isn't blocked and the
+# child survives udev's cleanup.
+ACTION=="change", SUBSYSTEM=="drm", RUN+="/usr/bin/systemd-run --no-block /etc/acpi/lid-layout.sh"
