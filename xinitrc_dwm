@@ -1,8 +1,11 @@
 #!/bin/sh
 
-# startx sessions inherit XDG_SESSION_TYPE=tty, which makes portal-aware
-# apps (flameshot 14+) skip native X11 capture and hang on the screenshot
-# portal — which nothing on this box implements. Claim x11 explicitly.
+# startx sessions inherit XDG_SESSION_TYPE=tty. Claim x11 explicitly so
+# portal-aware apps know what they're on. NOTE: this is NOT what fixes
+# flameshot 14+ — it uses the screenshot portal by default on any session
+# type, and the gtk portal backend hangs on X11 without GNOME. The real fix
+# is useX11LegacyScreenshot=true in ~/.config/flameshot/flameshot.ini
+# (seeded from apps/flameshot by deploy).
 export XDG_SESSION_TYPE=x11
 
 # Monitor layout: autorandr handles dock/undock profiles.
