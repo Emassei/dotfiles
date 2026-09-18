@@ -49,6 +49,15 @@ copy_mode = "alt+u"
 # zsh runs vi-mode, so alt+f isn't forward-word here.
 toggle_sidebar = "alt+f"
 
+[terminal]
+# Herdr's pane emulator advertises kitty graphics (incl. shared-memory
+# transport) to pane programs, but only draws them when the OUTER terminal
+# is kitty/ghostty/wezterm. Under alacritty that means yazi picks the kitty
+# path, nothing renders, and its image task hangs. Off = yazi falls back to
+# the ueberzugpp X11 overlay, which works. Re-enable if the terminal changes.
+# Takes effect on server restart or client reattach.
+kitty_graphics = false
+
 [ui]
 # When the sidebar is toggled off, take it to zero width instead of
 # leaving the thin status rail.

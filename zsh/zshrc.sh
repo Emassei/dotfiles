@@ -22,10 +22,17 @@ alias df='df -h -x fuse.rclone -x fuse.portal'
 alias tmux='tmux -f "$HOME/dotfiles/tmux/tmux.conf"'
 alias v="nvim -p"
 alias vim="nvim -p"
-alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
-alias r='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
+# yazi (replaced ranger 2026-09-18): cd to the last directory on exit
+y() { local t; t=$(mktemp -t yazi-cwd.XXXXXX); yazi "$@" --cwd-file="$t"
+      local d; d=$(<"$t"); rm -f "$t"; [[ -n $d && $d != $PWD ]] && cd -- "$d"; }
+alias r=y
 alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
 alias cat='bat'
+# eza for ls (icons need a nerd font, which alacritty has)
+alias ls='eza --icons --group-directories-first'
+alias ll='eza -l --icons --group-directories-first --git'
+alias la='eza -la --icons --group-directories-first --git'
+alias tree='eza --tree --icons'
 alias codes='ykman oath accounts code'
 # add a new OTP: run add_qr, click-drag the QR on screen; it goes straight onto the YubiKey
 alias add_qr='import /tmp/qr.png && ykman oath accounts uri "$(zbarimg -q --raw /tmp/qr.png)" && shred -u /tmp/qr.png'
@@ -35,13 +42,11 @@ alias loeb='~/dotfiles/utils/loeb'
 alias lector='~/dotfiles/utils/lector'
 alias scriptorium='~/code/python/scriptorium/.venv/bin/scriptorium'
 
-alias colombia="curl https://corona-stats.online/co"
 
 alias translate="spanish_translate"
 alias pacman_clean="sudo pacman -Qtdq | sudo pacman -Rns -;sudo pacman -Scc"
 
-alias stopwatch="stopwatch"
-alias speed_test="curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python -"
+alias speed_test="speedtest-cli"
 
 alias vpn_chile="connect_to_vpn chile"
 alias vpn_florida="connect_to_vpn florida"
@@ -63,7 +68,7 @@ alias english="trans -I en:es"
 alias latin="trans -I la:en"
 
 alias english-latin="trans -I en:la"
-alias french="tans -I fr:en"
+alias french="trans -I fr:en"
 
 alias pi_colombia='ssh pi@macondo-colombia.ddns.net -p 2454'
 alias define='sdcv'
@@ -129,3 +134,6 @@ if [ -d "$HOME/.local/opt/google-cloud-sdk" ] && [[ ":$PATH:" != *":$HOME/.local
     source "$HOME/.local/opt/google-cloud-sdk/path.zsh.inc"
     source "$HOME/.local/opt/google-cloud-sdk/completion.zsh.inc"
 fi
+
+# zoxide: `z <fuzzy dir>` jumps to a frequently used directory (yazi's z key uses it too)
+command -v zoxide >/dev/null && eval "$(zoxide init zsh)"

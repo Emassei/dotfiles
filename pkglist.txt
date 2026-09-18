@@ -1,11 +1,3 @@
-# Explicitly-installed repo packages — generated from the live t490 (pacman -Qqe), 2026-09-11.
-# deploy installs this list. Regenerate: pacman -Qqe | grep -vxFf <(pacman -Qqm)
-base-devel
-pipewire
-pipewire-pulse
-pipewire-alsa
-wireplumber
-pamixer
 7zip
 acpid
 alacritty
@@ -17,6 +9,7 @@ arp-scan
 autorandr
 aws-cli-v2
 azure-cli
+base-devel
 bat
 bc
 bind
@@ -24,24 +17,29 @@ blueman
 bluez
 bluez-utils
 btop
+ccid
 cronie
+# deploy installs this list. Regenerate: pacman -Qqe | grep -vxFf <(pacman -Qqm)
 dhcpcd
 docker
 docker-buildx
 docker-compose
 dunst
+# Explicitly-installed repo packages — generated from the live t490 (pacman -Qqe), 2026-09-11.
 ex-vi-compat
+eza
+fd
 feh
 flameshot
 fwupd
 fzf
 gimp
 git
+git-delta
 git-filter-repo
 github-cli
 gnome-disk-utility
 gpick
-htop
 httpie
 imagemagick
 inetutils
@@ -64,13 +62,13 @@ mpv
 ncdu
 neovim
 net-tools
-network-manager-applet
 networkmanager
+network-manager-applet
 networkmanager-l2tp
 networkmanager-openvpn
 newsboat
-nm-connection-editor
 nmap
+nm-connection-editor
 nnn
 nodejs-lts-jod
 noto-fonts
@@ -79,13 +77,18 @@ nvme-cli
 openbsd-netcat
 openssh
 pacman-contrib
+pamixer
 pandoc-cli
 pass
 pavucontrol
+pcsclite
 pdfarranger
 perl-xml-xpath
 pgcli
 picom
+pipewire
+pipewire-alsa
+pipewire-pulse
 pwgen
 python-aiohttp
 python-pip
@@ -97,6 +100,7 @@ rsync
 scrcpy
 slock
 smartmontools
+speedtest-cli
 strongswan
 sudo
 tailscale
@@ -115,8 +119,10 @@ vlc
 w3m
 wget
 whois
+wireplumber
 wpa_supplicant
 xbindkeys
+xclip
 xdg-user-dirs
 xdotool
 xl2tpd
@@ -125,16 +131,15 @@ xorg-mkfontscale
 xorg-server
 xorg-xinit
 xorg-xrandr
+yazi
 yt-dlp
+yubikey-manager
 yubikey-personalization-gui
 zathura
 zathura-pdf-poppler
 zbar
 zip
+zoxide
 zsh
 zsh-autosuggestions
 zsh-syntax-highlighting
-yubikey-manager
-ccid
-pcsclite
-xclip

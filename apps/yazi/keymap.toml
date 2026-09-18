@@ -1,0 +1,11 @@
+# ranger habits carried over. Everything else is yazi's default (which is
+# already vim-ish: hjkl, gg/G, yy/dd/pp, space, /, q).
+[mgr]
+prepend_keymap = [
+  { on = "<C-f>", run = "plugin fzf",   desc = "fzf jump (was ranger fzf_select)" },
+  { on = "<C-g>", run = "search --via=fd",    desc = "recursive fd search (was fzf_locate)" },
+  { on = "S",     run = 'shell "$SHELL" --block', desc = "open shell here" },
+  { on = "dD",    run = "remove --permanently", desc = "delete permanently" },
+  { on = "dd",    run = "remove", desc = "trash" },
+  { on = "cw",    run = "rename", desc = "rename" },
+]

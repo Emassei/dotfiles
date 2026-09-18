@@ -1,0 +1,35 @@
+# yazi — replaces ranger (2026-09-18). Ported from apps/ranger/rifle.conf:
+# audio loops in mpv, images in feh, PDFs/comics in zathura. Previews for
+# images/PDFs/video are built in (ueberzugpp under X11).
+
+[mgr]
+show_hidden = false
+sort_by = "natural"
+sort_dir_first = true
+
+[opener]
+# yazi 26 syntax: %s = all selected files, %s1 = the first one (no "$@").
+edit  = [{ run = '${EDITOR:-nvim} %s', block = true, desc = "edit" }]
+pager = [{ run = '${PAGER:-less} %s',  block = true, desc = "pager" }]
+audio = [{ run = 'mpv --loop=yes %s',  block = true, desc = "mpv (loop)" }]
+video = [{ run = 'mpv --fs %s', orphan = true, desc = "mpv fullscreen" },
+         { run = 'mpv %s',      orphan = true, desc = "mpv windowed" }]
+image = [{ run = 'feh %s',      orphan = true, desc = "feh" }]
+pdf   = [{ run = 'zathura %s1', orphan = true, desc = "zathura" }]
+open  = [{ run = 'xdg-open %s1', orphan = true, desc = "xdg-open" }]
+# "extract" and "reveal" are yazi's built-ins (ya pub extract / xdg-open dir)
+
+[open]
+prepend_rules = [
+  { mime = "text/*",          use = ["edit", "pager", "reveal"] },
+  { mime = "audio/*",         use = ["audio", "reveal"] },
+  { mime = "video/*",         use = ["video", "reveal"] },
+  { mime = "image/*",         use = ["image", "reveal"] },
+  { mime = "application/pdf", use = ["pdf", "reveal"] },
+  { mime = "image/vnd.djvu",  use = ["pdf", "reveal"] },
+  { url  = "*.cbz",           use = ["pdf", "reveal"] },
+  { url  = "*.cbr",           use = ["pdf", "reveal"] },
+  { mime = "application/{json,toml,x-yaml,x-shellscript,xml}", use = ["edit", "pager", "reveal"] },
+  { mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*}", use = ["extract", "open", "reveal"] },
+  { url  = "*", use = ["open", "edit", "reveal"] },
+]

@@ -9,7 +9,6 @@ oh-my-zsh-git
 paru
 perl-file-next
 pspg
-ranger-git
 rofi-greenclip
 simple-mtpfs
 simplescreenrecorder
