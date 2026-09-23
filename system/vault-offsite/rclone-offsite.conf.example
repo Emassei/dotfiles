@@ -1,0 +1,12 @@
+# /etc/rclone-offsite.conf on the VAULT BOX (root, 0600). Real one holds the
+# vault-offsite IAM user's key (personal AWS acct 3120…, user can list/get/put
+# on massei-vault-offsite, NO delete). Mint a new key in IAM if lost.
+[offsite]
+type = s3
+provider = AWS
+access_key_id = AKIA…
+secret_access_key = …
+region = us-east-1
+no_check_bucket = true
+acl =
+no_head = true

@@ -137,3 +137,15 @@ fi
 
 # zoxide: `z <fuzzy dir>` jumps to a frequently used directory (yazi's z key uses it too)
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
+
+# awsp [profile] — switch AWS profile for this shell and show who you are.
+# No arg lists the profiles. Profiles live in ~/.config/aws/credentials.
+awsp() {
+  if [ -z "$1" ]; then
+    printf 'current: %s\n' "${AWS_PROFILE:-default}"
+    aws configure list-profiles 2>/dev/null | sed 's/^/  /'
+    return
+  fi
+  export AWS_PROFILE="$1"
+  aws sts get-caller-identity --output text --query 'Arn' 2>&1 | sed "s/^/$1 -> /"
+}

@@ -4,9 +4,22 @@
 # notification from any source (quakewatch, KDE Connect phone mirror, …)
 # mentions sismo/temblor/terremoto/earthquake. Unmutes the default sink
 # first so it is heard through headphones even if audio was muted.
+#
+# Exactly 5 short beeps. Both dunst rules ([quake-summary] and [quake-body])
+# match the same notification, and the phone mirrors it too, so a 10-second
+# cooldown lock keeps the overlapping triggers from stacking into a siren.
+
+LOCK=/tmp/quake-alarm.lock
+exec 9>"$LOCK"
+flock -n 9 || exit 0                       # another alarm is already sounding
+if [ -f "$LOCK.last" ] && [ $(( $(date +%s) - $(cat "$LOCK.last") )) -lt 10 ]; then
+    exit 0                                 # sounded within the last 10s
+fi
+date +%s > "$LOCK.last"
 
 pactl set-sink-mute @DEFAULT_SINK@ 0 2>/dev/null
 
-for _ in 1 2 3; do
-    paplay --volume=65536 /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga
+for _ in 1 2 3 4 5; do
+    paplay --volume=65536 /usr/share/sounds/freedesktop/stereo/bell.oga
+    sleep 0.35
 done

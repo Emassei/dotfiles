@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly restic check of the rescued repo copy in S3 (reads 2% of data)
+After=network-online.target
+[Service]
+Type=oneshot
+Nice=10
+EnvironmentFile=/etc/restic-offsite.env
+ExecStart=/usr/bin/restic -r s3:s3.us-east-1.amazonaws.com/massei-vault-offsite/vault/rescued -p /home/ernie/.config/restic/password-rescued check --read-data-subset=2%% --no-lock
+StandardOutput=append:/var/log/vault-offsite-check.log
+StandardError=append:/var/log/vault-offsite-check.log

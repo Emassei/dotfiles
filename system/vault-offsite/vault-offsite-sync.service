@@ -1,0 +1,10 @@
+[Unit]
+Description=Mirror the restic vault to S3 (offsite, copy-only, never deletes)
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+Nice=10
+IOSchedulingClass=idle
+ExecStart=/usr/bin/rclone --config /etc/rclone-offsite.conf copy /srv/data/vault offsite:massei-vault-offsite/vault --exclude "/*/locks/**" --size-only --fast-list --transfers 4 --checkers 8 --stats 10m --stats-one-line --log-level NOTICE --log-file /var/log/vault-offsite-sync.log
+ExecStartPost=/bin/sh -c "date -Is > /var/lib/vault-offsite/last-success"

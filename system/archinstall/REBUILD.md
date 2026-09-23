@@ -69,6 +69,11 @@ Run once as ernie after the first boot. Idempotent. Four steps:
    `.zshrc.work`), `.config/restic`, `.claude`, `.codex` — so deploy can reach GitHub
    and the shell is mine. The **bulk** of `~` (code, media…) restores in the background
    (`~/ripcord-restore.log`); hours over the Pi's link.
+   **Pi gone too?** `ripcord --from-s3` skips tailscale and restores the same repo
+   from the offsite copy (`s3://massei-vault-offsite/vault/t490`, personal AWS acct).
+   It prompts for an S3 access key — the `vault-offsite` user's (lives only on the
+   Pi) or a fresh one minted in the IAM console — plus the same vault password.
+   Full pull ≈ 200G ≈ $18 egress, a few hours. See `system/vault-offsite/README.md`.
 3. **deploy --yes** — see below.
 4. **YubiKey** — if the key is enrolled: makes sure GRUB's cmdline actually asks for it
    (`rd.luks.options=<uuid>=fido2-device=auto`). If not enrolled and a key is plugged
