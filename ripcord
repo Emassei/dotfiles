@@ -5,7 +5,8 @@
 #   2. restore ~ from the vault (code, .ssh, .config, agent history, secrets)
 #   3. deploy                  (packages, dwm fork, links, units)
 #   4. YubiKey LUKS enrollment (if install.py couldn't — key wasn't plugged in)
-# `ripcord --from-s3` restores from the offsite S3 copy instead of the Pi.
+# Asks where to restore from (Pi vault / S3 / handoff from the old laptop)
+# unless told: `ripcord --from-pi`, `ripcord --from-s3`.
 set -e
 G='\033[0;32m'; Y='\033[1;33m'; N='\033[0m'; info(){ echo -e "${G}[ripcord]${N} $1"; }; warn(){ echo -e "${Y}[ripcord]${N} $1"; }
 [ "$(id -u)" -eq 0 ] && { echo "run as ernie, not root"; exit 1; }
@@ -15,6 +16,26 @@ VAULT=rest:http://100.93.44.40:8000/t490
 # vault-offsite user's key (only on the Pi) or a fresh one minted in the IAM
 # console of the personal AWS account. Same repo password as the vault.
 FROM_S3=; [ "$1" = "--from-s3" ] && FROM_S3=1
+SOURCE=; [ "$1" = "--from-pi" ] && SOURCE=pi
+
+# No flag, real terminal, home not already seeded → ask where to restore from.
+# (Rehearsal/automation sets a flag or RIPCORD_SKIP_RESTORE, so this never blocks a VM run.)
+if [ -z "$FROM_S3$SOURCE$RIPCORD_SKIP_RESTORE" ] && [ -t 0 ] && ! ls ~/.ssh/id_* >/dev/null 2>&1; then
+  echo
+  echo "Where should your home directory come from?"
+  echo "  1) the Pi vault over tailscale   — at home, on the LAN (fast; needs phone to approve tailscale)"
+  echo "  2) the S3 offsite copy           — away from home, or the Pi is gone (needs the S3 key from KeePass)"
+  echo "  3) the old laptop via handoff    — it's alive and next to you (fastest)"
+  while :; do
+    read -rp "choice [1/2/3]: " c
+    case "$c" in
+      1) break ;;
+      2) FROM_S3=1; break ;;
+      3) echo; echo "On the OLD laptop run:   ~/dotfiles/utils/handoff $(ip -4 -o addr show scope global 2>/dev/null | grep -v tailscale | awk '{print $4}' | cut -d/ -f1 | head -1)"
+         echo "then re-run ripcord here — it will see ~/.ssh and skip the vault restore."; exit 0 ;;
+    esac
+  done
+fi
 
 if [ -n "$FROM_S3" ]; then
   info "1/4 offsite mode: restoring from S3 (massei-vault-offsite), tailscale not needed"

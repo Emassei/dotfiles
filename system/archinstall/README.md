@@ -10,7 +10,10 @@
 5. `reboot`. Unlock with the key (or passphrase). Log in as ernie.
    (zsh will offer its new-user config wizard — press `q`; deploy sets up the real config.)
 6. `git clone https://github.com/Emassei/dotfiles ~/dotfiles && ~/dotfiles/ripcord`
-   - checkpoint: approve `tailscale up` on the phone
+   - checkpoint: it asks where home comes from — 1 = Pi vault (at home), 2 = S3 (away /
+     Pi gone), 3 = handoff from the old laptop (it prints the command to run over there).
+     Flags skip the question: `--from-pi`, `--from-s3`.
+   - checkpoint: approve `tailscale up` on the phone (Pi route)
    - checkpoint: vault password (KeePass) for the home-directory restore
 7. `startx` → your dwm. Done.
 
