@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""invoice-gen — generate a month of invoices (or the rest of the year) as PDFs.
+
+Config: ~/.config/invoice/invoice.toml  (see dotfiles/apps/invoice/invoice.example.toml)
+
+Months name the month being BILLED (with period="previous" the PDF is dated
+the 1st of the following month):
+    invoice-gen                    # bill this month
+    invoice-gen --month 2026-11    # bill November (dated Dec 1)
+    invoice-gen --rest-of-year     # bill this month through December
+    invoice-gen --range 2026-10 2027-03
+    invoice-gen ... --dry-run      # print what would be written, write nothing
+    invoice-gen ... --config other.toml --seq 42   # starting {seq} for number_format
+
+Each invoice is a complete, standalone PDF. Existing files are never overwritten
+unless --force is given.
+"""
+import argparse
+import calendar
+import datetime as dt
+import os
+import sys
+import tomllib
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer, Table,
+                                TableStyle)
+
+DEFAULT_CONFIG = os.path.expanduser("~/.config/invoice/invoice.toml")
+
+
+def month_iter(start: dt.date, end: dt.date):
+    y, m = start.year, start.month
+    while (y, m) <= (end.year, end.month):
+        yield y, m
+        m += 1
+        if m == 13:
+            y, m = y + 1, 1
+
+
+def parse_ym(s: str) -> dt.date:
+    y, m = s.split("-")
+    return dt.date(int(y), int(m), 1)
+
+
+def money(x: float, cur: str) -> str:
+    return f"{cur} {x:,.2f}"
+
+
+def build(cfg: dict, year: int, month: int, seq: int) -> tuple[str, list]:
+    inv = cfg["invoice"]
+    issue_day = min(int(inv.get("issue_day", 1)), calendar.monthrange(year, month)[1])
+    issue = dt.date(year, month, issue_day)
+    due = issue + dt.timedelta(days=int(inv.get("due_days", 30)))
+    if inv.get("period", "previous") == "previous":
+        py, pm = (year - 1, 12) if month == 1 else (year, month - 1)
+    else:
+        py, pm = year, month
+    period = f"{calendar.month_name[pm]} {py}"
+    # {year}/{month} = issue date; {pyear}/{pmonth} = the period being billed
+    number = inv.get("number_format", "{year}-{month:02d}").format(year=year, month=month, pyear=py, pmonth=pm, seq=seq)
+    cur = inv.get("currency", "USD")
+
+    base = ParagraphStyle("base", fontName="Helvetica", fontSize=10, leading=13)
+    small = ParagraphStyle("small", parent=base, fontSize=9, leading=11, textColor=colors.HexColor("#555555"))
+    bold = ParagraphStyle("bold", parent=base, fontName="Helvetica-Bold")
+    title = ParagraphStyle("title", parent=base, fontName="Helvetica-Bold", fontSize=22, leading=26)
+
+    def block(d: dict, label: str | None = None):
+        out = []
+        if label:
+            out.append(Paragraph(label, small))
+        if d.get("attn"):
+            out.append(Paragraph(d["attn"], base))
+        out.append(Paragraph(d.get("name", ""), bold))
+        for ln in d.get("lines", []):
+            out.append(Paragraph(ln, base))
+        for k in ("email", "phone", "tax_id"):
+            if d.get(k):
+                out.append(Paragraph(d[k], base))
+        return out
+
+    story = []
+    meta = [
+        [Paragraph("Invoice #", small), Paragraph(number, bold)],
+        [Paragraph("Date", small), Paragraph(issue.strftime("%B %d, %Y"), base)],
+        [Paragraph("Due", small), Paragraph(due.strftime("%B %d, %Y"), base)],
+        [Paragraph("Period", small), Paragraph(period, base)],
+    ]
+    meta_t = Table(meta, colWidths=[0.9 * inch, 1.9 * inch], hAlign="RIGHT")
+    meta_t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("BOTTOMPADDING", (0, 0), (-1, -1), 2)]))
+    head = Table([[block(cfg["from"]) + [Spacer(1, 6), Paragraph(inv.get("title", "INVOICE"), title)], meta_t]],
+                 colWidths=[4.3 * inch, 2.9 * inch])
+    head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    story += [head, Spacer(1, 18)]
+    story += block(cfg["to"], "BILL TO")
+    story.append(Spacer(1, 18))
+
+    items = cfg.get("items", [])
+    simple = not any("quantity" in it or "rate" in it for it in items)   # fixed sums only
+    total = 0.0
+    rows = []
+    for it in items:
+        desc = it.get("description", "").format(period=period, year=year, month=month)
+        if "amount" in it:
+            amt = float(it["amount"])
+        else:
+            amt = float(it.get("quantity", 1)) * float(it.get("rate", 0))
+        total += amt
+        if simple:
+            rows.append([Paragraph(desc, base), Paragraph(money(amt, cur), base)])
+        else:
+            qty = float(it.get("quantity", 1)); rate = float(it.get("rate", amt / qty if qty else 0))
+            rows.append([Paragraph(desc, base), Paragraph(f"{qty:g}", base), Paragraph(money(rate, cur), base), Paragraph(money(amt, cur), base)])
+    if simple:
+        rows.insert(0, [Paragraph("Description", bold), Paragraph("Amount", bold)])
+        rows.append([Paragraph("Total", bold), Paragraph(money(total, cur), bold)])
+        items_t = Table(rows, colWidths=[5.6 * inch, 1.6 * inch])
+        total_line = ("LINEABOVE", (0, -1), (-1, -1), 0.8, colors.black)
+    else:
+        rows.insert(0, [Paragraph("Description", bold), Paragraph("Qty", bold), Paragraph("Rate", bold), Paragraph("Amount", bold)])
+        rows.append(["", "", Paragraph("Total", bold), Paragraph(money(total, cur), bold)])
+        items_t = Table(rows, colWidths=[3.9 * inch, 0.6 * inch, 1.3 * inch, 1.4 * inch])
+        total_line = ("LINEABOVE", (2, -1), (-1, -1), 0.8, colors.black)
+    items_t.setStyle(TableStyle([
+        ("LINEBELOW", (0, 0), (-1, 0), 0.8, colors.black),
+        total_line,
+        ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    story += [items_t, Spacer(1, 22)]
+
+    pay = cfg.get("payment", {}).get("lines", [])
+    if pay:
+        story.append(Paragraph("PAYMENT DETAILS", small))
+        for ln in pay:
+            story.append(Paragraph(ln, base))
+        story.append(Spacer(1, 12))
+    if inv.get("terms"):
+        story += [Paragraph("TERMS", small), Paragraph(inv["terms"], base), Spacer(1, 12)]
+    if inv.get("notes"):
+        story.append(Paragraph(inv["notes"], base))
+    return number, story, (py, pm)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--config", default=DEFAULT_CONFIG)
+    g = ap.add_mutually_exclusive_group()
+    g.add_argument("--month", help="YYYY-MM")
+    g.add_argument("--rest-of-year", action="store_true")
+    g.add_argument("--range", nargs=2, metavar=("FROM", "TO"), help="YYYY-MM YYYY-MM inclusive")
+    ap.add_argument("--seq", type=int, default=1, help="starting value for {seq} in number_format")
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--force", action="store_true", help="overwrite existing PDFs")
+    a = ap.parse_args()
+
+    try:
+        with open(a.config, "rb") as f:
+            cfg = tomllib.load(f)
+    except FileNotFoundError:
+        print(f"no config at {a.config} — copy dotfiles/apps/invoice/invoice.example.toml there and fill it in", file=sys.stderr)
+        return 1
+
+    # Month arguments name the month BEING BILLED. With period = "previous"
+    # that invoice is issued on the 1st of the following month, so
+    # --rest-of-year bills through December and issues the last one on Jan 1.
+    shift = 1 if cfg["invoice"].get("period", "previous") == "previous" else 0
+    today = dt.date.today()
+    if a.month:
+        start = end = parse_ym(a.month)
+    elif a.rest_of_year:
+        start, end = dt.date(today.year, today.month, 1), dt.date(today.year, 12, 1)
+    elif a.range:
+        start, end = parse_ym(a.range[0]), parse_ym(a.range[1])
+    else:
+        start = end = dt.date(today.year, today.month, 1)
+
+    out = cfg.get("output", {})
+    written = 0
+    for i, (by, bm) in enumerate(month_iter(start, end)):
+        y, m = (by + 1, 1) if (bm + shift) == 13 else (by, bm + shift)   # issue month
+        number, story, (py, pm) = build(cfg, y, m, a.seq + i)
+        fmt = dict(number=number, year=y, month=m, pyear=py, pmonth=pm)
+        d = os.path.expanduser(out.get("dir", "~/invoices/{year}").format(**fmt))
+        path = os.path.join(d, out.get("filename", "invoice-{number}.pdf").format(**fmt))
+        if os.path.exists(path) and not a.force:
+            print(f"skip   {path} (exists; --force to overwrite)")
+            continue
+        if a.dry_run:
+            print(f"would  {path}")
+            continue
+        os.makedirs(d, exist_ok=True)
+        SimpleDocTemplate(path, pagesize=letter, leftMargin=0.8 * inch, rightMargin=0.8 * inch,
+                          topMargin=0.8 * inch, bottomMargin=0.8 * inch,
+                          title=f"Invoice {number}", author=cfg["from"].get("name", "")).build(story)
+        os.chmod(path, 0o600)
+        print(f"wrote  {path}")
+        written += 1
+    if not a.dry_run:
+        print(f"{written} invoice(s) written")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

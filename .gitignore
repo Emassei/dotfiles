@@ -40,3 +40,6 @@ __pycache__/
 # Claude Code local permission rules (client paths - never publish)
 .claude/settings.local.json
 docs/
+
+# filled invoice config (personal + client details) — only the .example is tracked
+invoice.toml

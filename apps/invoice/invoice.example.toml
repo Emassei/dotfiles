@@ -1,0 +1,47 @@
+# invoice-gen config — copy to ~/.config/invoice/invoice.toml (0600, NOT in git)
+# and fill in. Everything here is free text; leave a field empty to hide it.
+
+[from]
+name    = "Your Name"
+lines   = ["123 Example St", "Medellín, Colombia"]   # address lines, any number
+email   = "you@example.com"
+phone   = ""
+tax_id  = ""                                          # e.g. NIT / EIN, optional
+
+[to]
+name    = "Client Inc."
+lines   = ["456 Client Ave", "Atlanta, GA 30301"]
+email   = ""
+attn    = ""                                          # "Attn: Accounts Payable"
+
+[invoice]
+# {year}/{month} = issue date, {pyear}/{pmonth} = month being billed, {seq} = counter.
+# A Dec 1 invoice for November is "2026-12" with the first form, "2026-11" with the second.
+number_format = "{pyear}-{pmonth:02d}"
+issue_day     = 1                        # day of month the invoice is dated
+due_days      = 30                       # due = issue + this many days
+period        = "previous"               # "previous" or "current" month (service period text)
+currency      = "USD"
+title         = "INVOICE"
+notes         = "Thank you for your business."
+terms         = "Payment due within 30 days by bank transfer."
+
+# Line items. Use {period} in a description to insert e.g. "September 2026".
+# Fixed sum: give `amount`. (If no item uses quantity/rate, the Qty and Rate
+# columns are left out entirely — just Description and Amount.)
+[[items]]
+description = "Services — {period}"
+amount      = 1000.00
+
+# Or itemised:
+# [[items]]
+# description = "Extra thing"
+# quantity    = 2
+# rate        = 50.00
+
+[payment]                      # printed as-is in a "Payment details" box
+lines = ["Bank: Example Bank", "Account: 000000000", "Routing: 000000000"]
+
+[output]
+dir      = "~/personal/invoices/{pyear}"   # {year} {pyear} {number} usable here and in filename
+filename = "invoice-{number}.pdf"

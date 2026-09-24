@@ -92,6 +92,7 @@ pipewire-pulse
 pwgen
 python-aiohttp
 python-pip
+python-reportlab
 rclone
 reflector
 restic

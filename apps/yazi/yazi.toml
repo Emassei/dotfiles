@@ -16,6 +16,7 @@ video = [{ run = 'mpv --fs %s', orphan = true, desc = "mpv fullscreen" },
          { run = 'mpv %s',      orphan = true, desc = "mpv windowed" }]
 image = [{ run = 'feh %s',      orphan = true, desc = "feh" }]
 pdf   = [{ run = 'zathura %s1', orphan = true, desc = "zathura" }]
+libreoffice = [{ run = 'libreoffice %s', orphan = true, desc = "LibreOffice" }]
 open  = [{ run = 'xdg-open %s1', orphan = true, desc = "xdg-open" }]
 # "extract" and "reveal" are yazi's built-ins (ya pub extract / xdg-open dir)
 
@@ -25,7 +26,7 @@ prepend_rules = [
   { mime = "audio/*",         use = ["audio", "reveal"] },
   { mime = "video/*",         use = ["video", "reveal"] },
   { mime = "image/*",         use = ["image", "reveal"] },
-  { mime = "application/pdf", use = ["pdf", "reveal"] },
+  { mime = "application/pdf", use = ["pdf", "libreoffice", "reveal"] },
   { mime = "image/vnd.djvu",  use = ["pdf", "reveal"] },
   { url  = "*.cbz",           use = ["pdf", "reveal"] },
   { url  = "*.cbr",           use = ["pdf", "reveal"] },
