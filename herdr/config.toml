@@ -26,9 +26,16 @@ next_tab = "alt+l"
 next_agent = "alt+a"
 previous_agent = "alt+shift+a"
 
-# alt+o is a custom command (herdr-attend) — see [[keys.command]] at the
-# bottom of this file. Built-in notification jump disabled.
+# The built-in open_notification_target only focuses a toast that is
+# currently ON SCREEN (herdr's reference: "focus the currently visible
+# notification target") — no queue, and toasts are suppressed for the active
+# tab, so it can't reach a check-marked agent in the sidebar. Left unbound;
+# alt+o is the herdr-attend popup below (blocked → done → idle). 2026-09-28.
 open_notification_target = ""
+# Sidebar agent panel is priority-sorted (blocked, then done/check-marked, at
+# the top), so ctrl+b then alt+1 jumps to the top of the attention queue,
+# alt+2 the next, etc. Deterministic fallback when the toast queue is empty.
+focus_agent = "prefix+alt+1..9"
 
 # dwm-tag style: alt+1..9 jumps straight to that workspace.
 switch_workspace = "alt+1..9"
@@ -73,7 +80,10 @@ agent_panel_sort = "priority"
 # No desktop popups — the sidebar queue and alt+o are the interface.
 status_indicators = "symbols"
 [ui.toast]
-delivery = "off"
+# "herdr" = small in-app toasts inside the herdr window (not desktop popups).
+# Needed because the alt+o built-in (open_notification_target) walks the
+# toast queue: with delivery = "off" there is no queue and alt+o is inert.
+delivery = "herdr"
 
 # Audible ping when an agent finishes or needs input.
 [ui.sound]
@@ -88,13 +98,16 @@ rows = [[
   { token = "workspace", fg = "#f8f8f2", dim = false },
 ]]
 
-# alt+o -> jump to the next agent that needs attention (blocked first,
-# then done, longest-waiting first); skips idle/working. Repeated
-# presses drain the queue.
+# Attend: jump to the next agent that needs you (blocked → done → idle).
+# "done" is reconstructed from state_change_seq (the API doesn't expose it).
+# popup type: the script detaches the focus call so it lands after the
+# popup closes (a focus request from inside a modal popup is ignored).
 [[keys.command]]
 key = "alt+o"
-type = "shell"
+type = "popup"
 command = "/home/ernie/dotfiles/utils/herdr-attend"
+width = "40%"
+height = 3
 
 # Fuzzy jump: fzf over all workspaces + agents, pick one to focus.
 [[keys.command]]

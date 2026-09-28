@@ -1,18 +1,60 @@
 #!/bin/bash
-# Jump to the next herdr agent that needs attention.
-# blocked (waiting on an answer) beats done (finished unseen); idle and
-# working agents are skipped entirely. The currently focused agent is
-# excluded, so repeated presses cycle through the queue — and focusing a
-# done agent marks it seen, so the queue drains as you go.
+# Jump to the next herdr agent that is ready for you (bound to alt+o).
+#
+# herdr's API only reports idle / working / blocked — the sidebar's "done"
+# (finished, not yet looked at) is not exposed. So "done" is reconstructed
+# here: an idle agent whose current state_change_seq we have not yet SEEN.
+# Seen = (pane_id, seq) pairs recorded in a small runtime file whenever this
+# script focuses a pane, plus whatever pane is focused when it runs. An agent
+# that finishes again gets a new seq and counts as done again.
+#
+# Order:  blocked (longest-waiting first)  →  done (most recent first)  →  otherwise idle, cycling.
+# Working agents are skipped, as is the pane you are in.
 HERDR="$HOME/.local/bin/herdr"
+SEEN="${XDG_RUNTIME_DIR:-/tmp}/herdr-attend.seen"
+touch "$SEEN"
 
-target=$("$HERDR" agent list | jq -r '
-  .result.agents
-  | map(select((.agent_status == "blocked" or .agent_status == "done")
-               and (.focused | not)))
-  | sort_by([.agent_status, .state_change_seq])
-  | .[0].pane_id // empty')
-# sort: "blocked" < "done" alphabetically, then lowest state_change_seq —
-# the agent that has been waiting the longest is first in line.
+agents=$("$HERDR" agent list) || exit 1
 
-[ -n "$target" ] && exec "$HERDR" agent focus "$target"
+# the pane we're sitting in has been seen at its current seq
+jq -r '.result.agents[] | select(.focused) | "\(.pane_id) \(.state_change_seq)"' <<<"$agents" >> "$SEEN"
+
+# 1. blocked, longest-waiting first
+target=$(jq -r '.result.agents
+  | map(select(.agent_status == "blocked" and (.focused | not)))
+  | sort_by(.state_change_seq) | .[0].pane_id // empty' <<<"$agents")
+
+# 2. done = idle/done with an unseen (pane, seq); most recently finished first
+if [ -z "$target" ]; then
+  target=$(jq -r '.result.agents
+    | map(select((.agent_status == "idle" or .agent_status == "done") and (.focused | not)))
+    | sort_by(.state_change_seq) | reverse
+    | .[] | "\(.pane_id) \(.state_change_seq)"' <<<"$agents" \
+    | command grep -vxFf "$SEEN" | head -1 | cut -d' ' -f1)
+fi
+
+# 3. nothing new: cycle through idle agents, most recently finished first
+if [ -z "$target" ]; then
+  CYCLE="${XDG_RUNTIME_DIR:-/tmp}/herdr-attend.cycle"; touch "$CYCLE"
+  idle=$(jq -r '.result.agents
+    | map(select(.agent_status == "idle" and (.focused | not)))
+    | sort_by(.state_change_seq) | reverse | .[].pane_id' <<<"$agents")
+  [ -z "$idle" ] && exit 1
+  target=$(command grep -vxFf "$CYCLE" <<<"$idle" | head -1)
+  [ -z "$target" ] && { : > "$CYCLE"; target=$(head -1 <<<"$idle"); }
+  echo "$target" >> "$CYCLE"
+fi
+
+# mark the target seen at its current seq, then go
+jq -r --arg p "$target" '.result.agents[] | select(.pane_id == $p) | "\(.pane_id) \(.state_change_seq)"' <<<"$agents" >> "$SEEN"
+sort -u -o "$SEEN" "$SEEN"
+# Bound as a "popup" key, like herdr-jump. The focus call must run INSIDE the
+# popup: herdr attributes a command to the client that opened it by process
+# ancestry, so a detached/backgrounded focus lands on no client at all.
+# (A "shell" key snaps focus back when the command exits, which undoes it.)
+# agent focus alone marks the target seen but does not always move the
+# client's viewed tab; focus the workspace and tab explicitly first.
+read -r ws tab < <(jq -r --arg p "$target" '.result.agents[] | select(.pane_id == $p) | "\(.workspace_id) \(.tab_id)"' <<<"$agents")
+"$HERDR" workspace focus "$ws" >/dev/null 2>&1
+"$HERDR" tab focus "$tab" >/dev/null 2>&1
+exec "$HERDR" agent focus "$target"
