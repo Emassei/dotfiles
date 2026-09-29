@@ -23,9 +23,10 @@ alias tmux='tmux -f "$HOME/dotfiles/tmux/tmux.conf"'
 alias v="nvim -p"
 alias vim="nvim -p"
 # yazi (replaced ranger 2026-09-18): cd to the last directory on exit
-y() { local t; t=$(mktemp -t yazi-cwd.XXXXXX); yazi "$@" --cwd-file="$t"
+y() { local t; t=$(mktemp -t yazi-cwd.XXXXXX); command yazi "$@" --cwd-file="$t"
       local d; d=$(<"$t"); rm -f "$t"; [[ -n $d && $d != $PWD ]] && cd -- "$d"; }
 alias r=y
+alias yazi=y   # bare `yazi` too, so quitting always lands you where you were
 alias gitfind='git checkout --track $(git branch -r | fzf) && git pull'
 alias cat='bat'
 # eza for ls (icons need a nerd font, which alacritty has)
