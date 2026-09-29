@@ -21,6 +21,7 @@ ccid
 cronie
 # deploy installs this list. Regenerate: pacman -Qqe | grep -vxFf <(pacman -Qqm)
 dhcpcd
+dnsmasq
 docker
 docker-buildx
 docker-compose
@@ -43,6 +44,7 @@ gpick
 httpie
 imagemagick
 inetutils
+iw
 jq
 kdeconnect
 keepassxc
