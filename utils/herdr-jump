@@ -8,19 +8,23 @@ pick=$("$HERDR" api snapshot | jq -r '
   .result.snapshot as $s
   | ($s.workspaces | map({(.workspace_id): .label}) | add) as $wl
   | ( $s.workspaces[]
-      | ["ws", .workspace_id,
+      | ["ws", .workspace_id, "", "",
          "\(.number)  \(.label)  (\(.tab_count) tabs)"] ),
+    ( $s.tabs[]
+      | ["tab", .workspace_id, .tab_id, "",
+         "   ›  \($wl[.workspace_id] // .workspace_id)  ›  \(.label // .tab_id)"] ),
     ( $s.agents[]
-      | ["ag", .pane_id,
+      | ["ag", .workspace_id, .tab_id, .pane_id,
          "→ \(.agent) [\(.agent_status)]  \($wl[.workspace_id] // .workspace_id)  \(.cwd | split("/") | last)"] )
   | @tsv' \
-  | fzf --delimiter='\t' --with-nth=3 --no-multi \
+  | fzf --delimiter='\t' --with-nth=5 --no-multi \
         --prompt='jump ▸ ' --info=hidden --layout=reverse)
 
 [ -n "$pick" ] || exit 0
-kind=$(cut -f1 <<<"$pick")
-id=$(cut -f2 <<<"$pick")
-case "$kind" in
-  ws) exec "$HERDR" workspace focus "$id" ;;
-  ag) exec "$HERDR" agent focus "$id" ;;
-esac
+IFS=$'\t' read -r kind ws tab pane _ <<<"$pick"
+# Focus workspace → tab → pane in order. Focusing only the agent lands on the
+# workspace's *active* tab, not the agent's tab, in multi-tab workspaces.
+"$HERDR" workspace focus "$ws" >/dev/null 2>&1
+[ -n "$tab" ]  && "$HERDR" tab focus "$tab" >/dev/null 2>&1
+[ -n "$pane" ] && exec "$HERDR" agent focus "$pane"
+exit 0

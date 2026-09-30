@@ -90,12 +90,13 @@ delivery = "herdr"
 enabled = true
 
 [ui.sidebar.agents]
-# Explicit bright styling — the agent token renders too dim under dracula.
-# cyan = agent kind, foreground-white = workspace name.
+# One line per agent: state + workspace (= the repo/project, bright) + tab,
+# agent kind dimmed at the end. ("codex" repeated 18 times told you nothing.)
 rows = [[
   { token = "state_icon" },
-  { token = "agent", fg = "#8be9fd", bold = true, dim = false },
-  { token = "workspace", fg = "#f8f8f2", dim = false },
+  { token = "workspace", fg = "#f8f8f2", bold = true, dim = false },
+  { token = "tab", dim = true },
+  { token = "agent", fg = "#8be9fd", dim = true },
 ]]
 
 # Attend: jump to the next agent that needs you (blocked → done → idle).
