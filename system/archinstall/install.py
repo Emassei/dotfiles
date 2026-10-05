@@ -44,7 +44,7 @@ USERNAME = "ernie"
 HOSTNAME_DEFAULT = "p14s"
 TIMEZONE = "America/Bogota"
 ROOT_GIB = 60
-EXTRA_PKGS = ["base-devel", "git", "zsh", "networkmanager", "openssh", "vim", "libfido2", "restic", "tailscale"]
+EXTRA_PKGS = ["base-devel", "git", "zsh", "networkmanager", "openssh", "vim", "libfido2", "restic", "tailscale", "rsync"]
 SERVICES = ["NetworkManager", "sshd"]
 
 
