@@ -111,6 +111,10 @@ else
     if grep -q 'cryptdevice=' /etc/default/grub; then
       sudo sed -i -E "s|cryptdevice=UUID=[^:]+:([a-z]+)|rd.luks.name=$UUID=\1 rd.luks.options=$UUID=fido2-device=auto|" /etc/default/grub
       sudo grub-mkconfig -o /boot/grub/grub.cfg
+    elif ! grep -q 'fido2-device=auto' /etc/default/grub; then
+      # install.py's systemd path: rd.luks.name is already there, only the fido2 option is missing
+      sudo sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"|GRUB_CMDLINE_LINUX_DEFAULT=\"\1 rd.luks.options=$UUID=fido2-device=auto\"|" /etc/default/grub
+      sudo grub-mkconfig -o /boot/grub/grub.cfg
     fi
     info "done — reboot will ask for the key (fallback: passphrase)"
   else warn "not enrolled and no key plugged in — later: plug it in and run: sudo ~/dotfiles/system/luks-fido2/enroll-luks-yubikey $LUKS"; fi
