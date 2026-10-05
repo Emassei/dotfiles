@@ -3,15 +3,18 @@
 # for when the vault (Medellín) is far away and the old laptop is right here.
 # Run ON THE OLD MACHINE:  handoff <new-machine-ip-or-tailnet-ip>
 # Uses ssh password auth (the fresh install allows it for ernie; no key bootstrap needed).
+# Run it in a REAL terminal — not via Claude's `!` runner, which has no tty for the
+# password prompts (every ssh stage silently fails with "Permission denied").
 # Essentials first (seconds), then the bulk (uses the restic exclude list, so no caches/media junk).
 set -e
 NEW=${1:?usage: handoff <new-machine ip> [ssh-port]}; PORT=${2:-22}; U=ernie
 DRY=${HANDOFF_DRY:+-n}   # HANDOFF_DRY=1 → rsync dry run
 R="rsync -aHAX $DRY --info=progress2 --no-inc-recursive -e 'ssh -p $PORT -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR'"
 echo ">> essentials (ssh keys, shell config, restic, agent history) → $NEW"
-ESS=(); for d in ~/.ssh ~/.config/zsh ~/.config/restic ~/.claude ~/.codex ~/.gitconfig; do [ -e "$d" ] && ESS+=("$d"); done
+ESS=(); for d in .ssh .config/zsh .config/restic .claude .codex .gitconfig; do [ -e "$HOME/$d" ] && ESS+=("$d"); done
+# --relative keeps the paths (so .config/zsh lands in ~/.config/zsh, not ~/zsh);
 # never clobber the new box's authorized_keys (it may hold keys the old box doesn't): merge instead
-eval $R --exclude=authorized_keys "${ESS[@]}" $U@$NEW:~/
+( cd "$HOME" && eval $R --relative --exclude=authorized_keys "${ESS[@]}" $U@$NEW:~/ )
 [ -n "$DRY" ] || ssh -p $PORT -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR $U@$NEW 'mkdir -p ~/.ssh; chmod 700 ~/.ssh; touch ~/.ssh/authorized_keys; cat >> ~/.ssh/authorized_keys; sort -u -o ~/.ssh/authorized_keys ~/.ssh/authorized_keys; chmod 600 ~/.ssh/authorized_keys' < ~/.ssh/authorized_keys
 echo ">> bulk: the rest of ~ (excluding what the nightly backup excludes) — this is the long one"
 eval $R --exclude-from=$HOME/.config/restic/excludes --exclude='.cache' --exclude='.ssh/authorized_keys' ~/ $U@$NEW:~/
