@@ -1,11 +1,14 @@
 #!/bin/sh
-# Turn wifi off when an ethernet device is up, back on when it goes down.
-# NM calls this script with: $1 = interface, $2 = action
+# Turn wifi off when an ethernet connection that provides a DEFAULT ROUTE is
+# up (dock at home), back on when it goes down. A wired link with no gateway —
+# a direct laptop-to-laptop cable, a profile with never-default — is left
+# alone, so it doesn't kill the internet (2026-10-05: it did, three times).
+# NM calls this script with: $1 = interface, $2 = action, and exports
+# IP4_GATEWAY / CONNECTION_ID for the connection in question.
 
 iface="$1"
 action="$2"
 
-# Only react to ethernet up/down events
 case "$iface" in
     eth*|en*) ;;
     *) exit 0 ;;
@@ -13,6 +16,7 @@ esac
 
 case "$action" in
     up)
+        [ -n "$IP4_GATEWAY" ] || exit 0          # no gateway → not an uplink → keep wifi
         nmcli radio wifi off
         ;;
     down)
