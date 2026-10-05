@@ -5,7 +5,8 @@
 # Deliberately raw xrandr for the dual layout: saving it as an autorandr
 # profile would collide with 'docked' (identical output fingerprint —
 # autorandr can't see lid state) and make hotplug detection ambiguous.
-extern=$(xrandr -q | grep -oP '^\S*-2-1(?= connected)' | head -1)
+# any connected output that isn't the panel: the home dock's DP (*-2-1), a hotel HDMI, a USB-C monitor
+extern=$(xrandr -q | grep -oP '^(?!eDP)\S+(?= connected)' | head -1)
 lid=$(grep -oP 'open|closed' /proc/acpi/button/lid/*/state 2>/dev/null)
 
 if [ -z "$extern" ]; then
