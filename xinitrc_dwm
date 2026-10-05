@@ -7,6 +7,10 @@
 # is useX11LegacyScreenshot=true in ~/.config/flameshot/flameshot.ini
 # (seeded from apps/flameshot by deploy).
 export XDG_SESSION_TYPE=x11
+# dwmblocks runs its block scripts by name from dotfiles/utils; don't depend on
+# the login shell having sourced zshrc (a fresh box with the zsh-newuser stub
+# as ~/.zshrc came up with an empty bar, 2026-10-05).
+export PATH="$HOME/.local/bin:$HOME/dotfiles/utils:$PATH"
 
 # Monitor layout: autorandr handles dock/undock profiles.
 # Save a profile from a working layout with:  autorandr --save <name>
