@@ -3,7 +3,7 @@
 # Default programs:
 
 export EDITOR="nvim"
-export TERMINAL="st"
+export TERMINAL="alacritty"   # dwmblocks click handlers open $TERMINAL; st is not installed on new boxes
 export BROWSER="brave"
 
 # ~/ Clean-up:
