@@ -1,0 +1,33 @@
+#!/bin/sh
+# Enroll a new TOTP account on a YubiKey by scanning a QR code off the screen.
+# Asks which key FIRST (before the capture) so cancelling costs you nothing
+# and the dmenu bar isn't covering the QR you're about to drag over.
+# ykman has no QR flag; a QR just encodes an otpauth:// URI, so decode and
+# hand it to `ykman oath accounts uri`.
+
+serial=$(yubi-pick) || exit 1
+name=$(ykman -d "$serial" info 2>/dev/null | sed -n 's/^Device type: YubiKey //p')
+
+notify-send "󰌆 YubiKey $name ($serial)" "Now drag a region around the QR code."
+
+shot=$(mktemp --suffix=.png) || exit 1
+trap 'rm -f "$shot"' EXIT INT TERM
+
+if command -v flameshot >/dev/null 2>&1; then
+	flameshot gui --raw > "$shot" 2>/dev/null
+else
+	import "$shot" 2>/dev/null
+fi
+[ -s "$shot" ] || exit 0
+
+uri=$(zbarimg --quiet --raw "$shot" 2>/dev/null | head -1)
+case "$uri" in
+	otpauth://*) ;;
+	"") notify-send -u critical "YubiKey" "No QR code found in that region."; exit 1 ;;
+	*)  notify-send -u critical "YubiKey" "Not an otpauth QR code."; exit 1 ;;
+esac
+
+# -t requires a touch to emit each code; drop it if you'd rather not.
+out=$(ykman -d "$serial" oath accounts uri -t "$uri" 2>&1) \
+	&& notify-send "󰌆 YubiKey $name ($serial)" "Account added (touch required)." \
+	|| notify-send -u critical "YubiKey" "$out"

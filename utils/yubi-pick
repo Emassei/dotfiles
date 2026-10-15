@@ -1,0 +1,16 @@
+#!/bin/sh
+# Echo the serial of the YubiKey to act on.
+# One key plugged in: use it silently. More than one: ask via dmenu.
+# Sourced by `codes` and `add_qr`; also usable on its own.
+
+serials=$(ykman list --serials 2>/dev/null)
+[ -z "$serials" ] && { notify-send "YubiKey" "No YubiKey detected."; exit 1; }
+
+# Single key - no prompt.
+[ "$(echo "$serials" | wc -l)" -eq 1 ] && { echo "$serials"; exit 0; }
+
+# Several - show "5 NFC (20374032)" style lines, return the serial.
+choice=$(ykman list 2>/dev/null | sed -n 's/^YubiKey \([^(]*\)(.*Serial: \([0-9]*\)$/\1(\2)/p' \
+	| dmenu -i -l 5 -p "YubiKey:")
+[ -z "$choice" ] && exit 1
+echo "$choice" | grep -oE '[0-9]+\)$' | tr -d ')'

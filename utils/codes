@@ -1,0 +1,18 @@
+#!/bin/sh
+# Pick a TOTP account off a YubiKey and copy its code to the clipboard.
+# Prompts for which key only when more than one is plugged in.
+
+serial=$(yubi-pick) || exit 1
+
+account=$(ykman -d "$serial" oath accounts list 2>/dev/null | dmenu -i -l 15 -p "Account:")
+[ -z "$account" ] && exit 0
+
+code=$(ykman -d "$serial" oath accounts code -s "$account" 2>&1)
+case "$code" in
+	*[!0-9]*|"")
+		notify-send -u critical "YubiKey" "$code"
+		exit 1 ;;
+esac
+
+printf '%s' "$code" | xclip -selection clipboard
+notify-send "󰌆 $account" "$code  - copied, 30s"
