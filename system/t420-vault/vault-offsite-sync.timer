@@ -1,0 +1,8 @@
+[Unit]
+Description=Nightly offsite mirror of the vault (after the 03:23/03:47 backups land)
+[Timer]
+OnCalendar=*-*-* 04:30:00 America/Bogota
+RandomizedDelaySec=10m
+Persistent=true
+[Install]
+WantedBy=timers.target

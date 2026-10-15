@@ -1,0 +1,18 @@
+# Restic REST server, append-only vault. t420 (x86_64).
+# Adapted from pivault. --no-auth is safe ONLY because access is confined to
+# the tailnet; the t420's firewall must not expose :8000 on the LAN.
+# Port 8100, not the Pi's 8000: on this box a docker container
+# (react-backend-1) publishes 0.0.0.0:8000 and so claims that port on
+# every interface, the tailnet address included. 2026-10-15.
+[Unit]
+Description=Restic REST server (append-only vault)
+After=network.target srv-data.mount
+Requires=srv-data.mount
+
+[Service]
+User=restserver
+ExecStart=/usr/bin/rest-server --path /srv/data/vault --listen 100.114.186.10:8100 --append-only --no-auth
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

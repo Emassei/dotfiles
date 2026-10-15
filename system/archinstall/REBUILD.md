@@ -63,7 +63,7 @@ Run once as ernie after the first boot. Idempotent. Four steps:
 
 1. **tailscale** — `sudo tailscale up`, approve on the phone. Needed because the vault
    only answers on the tailnet.
-2. **restore from the vault** (restic, `rest:http://100.93.44.40:8000/t490`). Prompts
+2. **restore from the vault** (restic, `rest:http://vault:8100/t490`). Prompts
    for the vault password (KeePass) once, stores it in `~/.config/restic/password`.
    Restores the **essentials first** — `.ssh`, `.config/zsh` (incl. the private
    `.zshrc.work`), `.config/restic`, `.claude`, `.codex` — so deploy can reach GitHub

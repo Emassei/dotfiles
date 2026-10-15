@@ -1,9 +1,9 @@
 [Unit]
-Description=Nightly restic backup to pivault
+Description=Nightly restic backup to the vault (t420)
 
 [Service]
 SuccessExitStatus=3
 Type=oneshot
-Environment=RESTIC_REPOSITORY=rest:http://100.93.44.40:8000/t490
+Environment=RESTIC_REPOSITORY=rest:http://vault:8100/t490
 Environment=RESTIC_PASSWORD_FILE=%h/.config/restic/password
 ExecStart=/usr/bin/restic backup %h --exclude-file %h/.config/restic/excludes

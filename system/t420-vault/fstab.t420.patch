@@ -1,0 +1,11 @@
+# --- REMOVE: these point at pivault and break when the drive moves ---
+#ernie@100.93.44.40:/srv/data/rescued /mnt/pivault-rescued fuse.sshfs ro,allow_other,noauto,x-systemd.automount,_netdev,IdentityFile=/home/ernie/.ssh/id_ed25519,reconnect,ServerAliveInterval=15 0 0
+#100.93.44.40:/srv/data/movies    /srv/media/movies  nfs4  ro,_netdev,noauto,x-systemd.automount,x-systemd.idle-timeout=600,soft,timeo=50  0 0
+#100.93.44.40:/srv/data/tv_shows  /srv/media/tv      nfs4  ro,_netdev,noauto,x-systemd.automount,x-systemd.idle-timeout=600,soft,timeo=50  0 0
+
+# --- ADD: the vault drive, by UUID, carried over from the Pi ---
+UUID=aade82f4-e642-4188-8263-c832606fe903  /srv/data  ext4  defaults,nofail  0 2
+
+# --- ADD: media is now local; keep Jellyfin's paths stable ---
+/srv/data/movies     /srv/media/movies  none  bind,nofail  0 0
+/srv/data/tv_shows   /srv/media/tv      none  bind,nofail  0 0

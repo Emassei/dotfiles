@@ -10,7 +10,7 @@
 set -e
 G='\033[0;32m'; Y='\033[1;33m'; N='\033[0m'; info(){ echo -e "${G}[ripcord]${N} $1"; }; warn(){ echo -e "${Y}[ripcord]${N} $1"; }
 [ "$(id -u)" -eq 0 ] && { echo "run as ernie, not root"; exit 1; }
-VAULT=rest:http://100.93.44.40:8000/t490
+VAULT=rest:http://vault:8100/t490
 # --from-s3: the Pi is gone too — restore from the offsite copy (see
 # system/vault-offsite/README.md). Needs an access key for the bucket: the
 # vault-offsite user's key (only on the Pi) or a fresh one minted in the IAM
@@ -51,7 +51,7 @@ else
   sudo systemctl enable --now tailscaled
   tailscale status >/dev/null 2>&1 || sudo tailscale up
 fi
-until ping -c1 -W2 100.93.44.40 >/dev/null 2>&1; do warn "waiting to reach the vault (approve tailscale on your phone)..."; sleep 5; done
+until curl -sf -o /dev/null -m2 http://vault:8100/ 2>/dev/null || [ "$?" = 22 ]; do warn "waiting to reach the vault (approve tailscale on your phone)..."; sleep 5; done
 fi
 
 info "2/4 restore home from the vault"

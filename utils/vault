@@ -3,7 +3,7 @@
 # of the t490). List is instant (snapshot summaries are stored in the
 # repo); Enter runs a real diff against the previous night, which the
 # Pi 3 serves slowly — expect a wait.
-R=(restic -r rest:http://100.93.44.40:8000/t490 -p "$HOME/.config/restic/password")
+R=(restic -r rest:http://vault:8100/t490 -p "$HOME/.config/restic/password")
 gold=$'\033[38;5;178m'; rst=$'\033[0m'
 
 tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
