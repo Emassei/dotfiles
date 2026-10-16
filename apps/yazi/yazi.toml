@@ -17,11 +17,14 @@ video = [{ run = 'mpv --fs %s', orphan = true, desc = "mpv fullscreen" },
 image = [{ run = 'feh %s',      orphan = true, desc = "feh" }]
 pdf   = [{ run = 'zathura %s1', orphan = true, desc = "zathura" }]
 libreoffice = [{ run = 'libreoffice %s', orphan = true, desc = "LibreOffice" }]
+browser = [{ run = 'brave %s', orphan = true, desc = "Brave" }]
 open  = [{ run = 'xdg-open %s1', orphan = true, desc = "xdg-open" }]
 # "extract" and "reveal" are yazi's built-ins (ya pub extract / xdg-open dir)
 
 [open]
 prepend_rules = [
+  # html before text/*: html IS text/*, so without this it opens in $EDITOR.
+  { mime = "text/html",       use = ["browser", "edit", "pager", "reveal"] },
   { mime = "text/*",          use = ["edit", "pager", "reveal"] },
   { mime = "audio/*",         use = ["audio", "reveal"] },
   { mime = "video/*",         use = ["video", "reveal"] },
