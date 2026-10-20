@@ -4,15 +4,28 @@
 # Port 8100, not the Pi's 8000: on this box a docker container
 # (react-backend-1) publishes 0.0.0.0:8000 and so claims that port on
 # every interface, the tailnet address included. 2026-10-15.
+#
+# Ordering: binding the tailnet address means this cannot start before
+# tailscaled has created tailscale0, or it dies with "cannot assign requested
+# address". network.target is NOT enough - it says nothing about Tailscale.
+# That bug cost 4 nights of backups after the 2026-10-15 reboot: it retried 5
+# times in 18ms, hit the start limit, and never tried again once the interface
+# appeared. Hence tailscaled ordering AND a restart policy that outlasts a slow
+# interface.
 [Unit]
 Description=Restic REST server (append-only vault)
-After=network.target srv-data.mount
+After=network-online.target tailscaled.service srv-data.mount
+Wants=network-online.target tailscaled.service
 Requires=srv-data.mount
+# Keep retrying instead of giving up in 18ms: 60 starts allowed per 5 min.
+StartLimitIntervalSec=300
+StartLimitBurst=60
 
 [Service]
 User=restserver
 ExecStart=/usr/bin/rest-server --path /srv/data/vault --listen 100.114.186.10:8100 --append-only --no-auth
-Restart=on-failure
+Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
