@@ -1,14 +1,61 @@
 #!/bin/sh
-# Toggle the default audio output to the next sink (headphones <-> speakers)
-# and move all playing streams over so the switch is instant.
+# Cycle the default audio output and move all playing streams over so the
+# switch is instant.
+#
+# DOCKED: cycles dock headphones <-> monitor speakers. Those are the only two
+# outputs that go anywhere when the laptop is on the dock, so the built-in
+# speakers are deliberately NOT in the rotation - landing on them mid-cycle
+# meant audio coming out of the laptop while you are wearing headphones.
+# UNDOCKED: there is nothing but the built-in speakers, so it selects those.
+#
+# Why not just cycle sinks: docked there are six, four of them HDMI pins on the
+# Radeon card and three of those lead nowhere. A plain "next sink" walk spends
+# presses in dead outputs. So each target is picked by what it IS.
+#
+# The monitor sink is found via ALSA's ELD data rather than hardcoded: only a
+# pin with a connected display reports eld_valid=1, and the pin index maps to
+# the HDMI sink number off by one (pins are 0-based, sinks are 1-based - so
+# eld#0.3 is HDMI4__sink). The monitor also moves between DP outputs across
+# dock cycles, so nothing here may assume a fixed output name.
+
+sinks=$(pactl list short sinks | cut -f2)
+pick() { printf '%s\n' "$sinks" | grep -m1 -- "$1"; }
+
+# --- dock headphones: the USB-C Dock Gen2 analog jack (line-out and headphone
+# jack are the same analog-output port), else any USB analog output.
+phones=$(pick 'usb-Lenovo_ThinkPad_USB-C_Dock.*analog-stereo')
+[ -n "$phones" ] || phones=$(pick 'usb-.*analog-stereo')
+
+# --- monitor speakers: the HDMI/DP sink whose ALSA pin has a live display.
+monitor=
+for eld in /proc/asound/card*/eld#*; do
+    [ -r "$eld" ] || continue
+    grep -q '^eld_valid[[:space:]]*1' "$eld" 2>/dev/null || continue
+    pin=${eld##*eld#}                 # e.g. 0.3
+    pin=${pin#*.}                     # e.g. 3
+    case $pin in ''|*[!0-9]*) continue;; esac
+    monitor=$(pick "HiFi__HDMI$((pin + 1))__sink")
+    [ -n "$monitor" ] && break
+done
+
+# --- built-in: the UCM "Speaker" sink, or "Headphones" when something is in the
+# laptop's own jack (that profile replaces the speaker sink rather than adding
+# one), or the classic non-UCM analog-stereo sink. Undocked fallback only.
+builtin=$(pick '^alsa_output\.pci-.*HiFi__\(Speaker\|Headphones\)__sink')
+[ -n "$builtin" ] || builtin=$(pick '^alsa_output\.pci-.*analog-stereo')
 
 current=$(pactl get-default-sink)
-sinks=$(pactl list short sinks | cut -f2)
 
-# next sink after the current one, wrapping around
-next=$(printf '%s\n%s\n' "$sinks" "$sinks" \
-    | awk -v cur="$current" 'found && $0 != cur {print; exit} $0 == cur {found=1}')
-[ -n "$next" ] || exit 0
+if [ -n "$phones" ] && [ -n "$monitor" ]; then
+    # Docked with both: strictly these two. Anything else (a dead HDMI sink, the
+    # built-in speakers) counts as "not the headphones" and sends us there.
+    if [ "$current" = "$phones" ]; then next=$monitor; else next=$phones; fi
+else
+    # Undocked, or one of the pair missing: first of whatever actually exists.
+    next=${phones:-${monitor:-$builtin}}
+fi
+
+[ -n "$next" ] && [ "$next" != "$current" ] || exit 0
 
 pactl set-default-sink "$next"
 pactl list short sink-inputs | cut -f1 | while read -r stream; do
