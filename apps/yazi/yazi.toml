@@ -25,6 +25,9 @@ open  = [{ run = 'xdg-open %s1', orphan = true, desc = "xdg-open" }]
 prepend_rules = [
   # html before text/*: html IS text/*, so without this it opens in $EDITOR.
   { mime = "text/html",       use = ["browser", "edit", "pager", "reveal"] },
+  # csv above text/*, same reason as html: csv IS text/*. edit stays first
+  # so `o` is still nvim; LibreOffice is there on `O` for a real spreadsheet.
+  { mime = "text/csv",        use = ["edit", "libreoffice", "pager", "reveal"] },
   { mime = "text/*",          use = ["edit", "pager", "reveal"] },
   { mime = "audio/*",         use = ["audio", "reveal"] },
   { mime = "video/*",         use = ["video", "reveal"] },
