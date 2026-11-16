@@ -62,9 +62,10 @@ port_range(){
   seq -s, $arg1
 }
 
-# Custom cd
+# Custom cd. Pass every arg through: `cd -- "$dir"` (used by the yazi wrapper)
+# was collapsing to `cd --` = home, and unquoted $1 broke paths with spaces.
 c() {
-	cd $1;
+	builtin cd "$@";
 	#ls;
 }
 alias cd="c"
