@@ -1,14 +1,27 @@
-if [[ $OSTYPE == darwin* ]]; then
-  pbcopy
-elif [[ $OSTYPE == cygwin* ]]; then
-  cat > /dev/clipboard
+#!/bin/sh
+# Pipe stdin to the system clipboard.
+#
+# Needs the shebang: tmux's copy-pipe runs this through `sh -c`, and the old
+# version used zsh-only syntax ($+commands[...], print) with no shebang, so
+# every branch failed silently under bash and nothing reached the clipboard.
+# POSIX sh + command -v works everywhere this runs.
+
+case "$(uname -s)" in
+  Darwin)
+    exec pbcopy
+    ;;
+  CYGWIN* | MINGW* | MSYS*)
+    exec cat > /dev/clipboard
+    ;;
+esac
+
+if [ -n "$WAYLAND_DISPLAY" ] && command -v wl-copy > /dev/null 2>&1; then
+  exec wl-copy
+elif command -v xclip > /dev/null 2>&1; then
+  exec xclip -in -selection clipboard
+elif command -v xsel > /dev/null 2>&1; then
+  exec xsel --clipboard --input
 else
-  if (( $+commands[xclip] )); then
-    xclip -in -selection clipboard
-  elif (( $+commands[xsel] )); then
-    xsel --clipboard --input 
-  else
-    print "clipcopy: Platform $OSTYPE not supported or xclip/xsel not installed" >&2
-    return 1
-  fi
+  echo "copy: no clipboard tool found (install xclip, xsel, or wl-clipboard)" >&2
+  exit 1
 fi

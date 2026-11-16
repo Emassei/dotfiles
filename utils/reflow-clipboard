@@ -1,0 +1,38 @@
+#!/bin/sh
+# Reflow whatever is on the clipboard: undo terminal display wrapping so
+# prose becomes whole paragraphs again, then put it back.
+#
+# Copying out of a herdr/tmux pane yields what was ON SCREEN — lines broken
+# at the pane edge, an agent's "• " bullet, a hanging indent. Pasting that
+# into an email means rejoining it by hand. Copy with y as usual, then press
+# the bound key and paste.
+#
+# Bound to alt+y in herdr/config.toml.
+
+set -e
+
+UNWRAP="$HOME/dotfiles/utils/unwrap"
+COPY="$HOME/dotfiles/utils/copy"
+
+if [ ! -x "$UNWRAP" ] || [ ! -x "$COPY" ]; then
+  echo "reflow-clipboard: missing $UNWRAP or $COPY" >&2
+  exit 1
+fi
+
+before=$(xclip -o -selection clipboard 2>/dev/null || true)
+
+if [ -z "$before" ]; then
+  echo "Clipboard is empty — copy something first (v to select, y to yank)."
+  exit 0
+fi
+
+after=$(printf '%s' "$before" | "$UNWRAP" --plain)
+printf '%s' "$after" | "$COPY"
+
+# Report what changed, so the popup is informative rather than silent.
+lines_before=$(printf '%s' "$before" | wc -l | tr -d ' ')
+lines_after=$(printf '%s' "$after" | wc -l | tr -d ' ')
+chars=$(printf '%s' "$after" | wc -c | tr -d ' ')
+
+echo "Reflowed: ${lines_before} lines -> ${lines_after}  (${chars} chars)"
+echo "Ready to paste."

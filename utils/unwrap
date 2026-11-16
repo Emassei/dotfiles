@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""Reflow terminal-wrapped text back into real paragraphs.
+
+Copying out of a pane gives you whatever was ON SCREEN: a line longer than the
+pane is broken wherever the edge fell, agent output carries a bullet and a
+hanging indent, and every line may be padded. Pasting that into an email or a
+doc means rejoining it by hand.
+
+This undoes the display wrapping:
+  - strips a leading list marker from the first line of a block
+  - strips the common leading indent
+  - joins lines inside a paragraph back into one line
+  - keeps blank lines as paragraph breaks
+  - leaves genuine structure alone: real list items (each keeps its own line),
+    indented code/pre blocks, and table or box-drawing rows
+
+Reads stdin, writes stdout, so it composes:
+    unwrap < file
+    xclip -o | unwrap | xclip -in -selection clipboard
+
+  -p / --plain   also drop list markers, for pasting prose into an email
+                 where an agent's "• " bullet isn't wanted
+"""
+
+import re
+import sys
+
+# A list marker at the start of a line: bullet glyphs, or "1." / "1)" numbering.
+MARKER = re.compile(r"^\s*(?:[•▪◦‣·*+-]|\d{1,3}[.)])\s+")
+
+# Rows we must not join: box drawing, table pipes, or a line that is mostly
+# punctuation/rules rather than prose.
+STRUCTURAL = re.compile(r"[─│┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬]|^\s*\|.*\|\s*$|^\s*[-=_]{3,}\s*$")
+
+
+def common_indent(lines):
+    """Smallest leading-space count across non-blank lines."""
+    widths = [len(ln) - len(ln.lstrip(" ")) for ln in lines if ln.strip()]
+    return min(widths) if widths else 0
+
+
+def looks_like_code(block):
+    """Indented further than the block's base, or structural -> leave as is."""
+    return any(STRUCTURAL.search(ln) for ln in block)
+
+
+def unwrap_block(block, plain=False):
+    """Join the lines of one paragraph, preserving a leading list marker."""
+    if looks_like_code(block):
+        return block
+
+    out = []
+    buf = []
+    prefix = ""
+
+    for ln in block:
+        stripped = ln.strip()
+        m = MARKER.match(ln)
+        if m and not buf:
+            # Marker opens this block: remember it, keep the rest as text.
+            prefix = "" if plain else m.group(0).strip() + " "
+            stripped = ln[m.end():].strip()
+        elif m:
+            # A new list item inside the block: flush what we have, start over.
+            out.append(prefix + " ".join(buf))
+            prefix = "" if plain else m.group(0).strip() + " "
+            buf = [ln[m.end():].strip()]
+            continue
+        if stripped:
+            buf.append(stripped)
+
+    if buf:
+        out.append(prefix + " ".join(buf))
+    return out
+
+
+def main():
+    plain = any(a in ("-p", "--plain") for a in sys.argv[1:])
+    text = sys.stdin.read()
+    # Trailing pane padding goes first; it otherwise survives into the joins.
+    lines = [ln.rstrip() for ln in text.split("\n")]
+
+    base = common_indent(lines)
+    lines = [ln[base:] if len(ln) >= base else ln for ln in lines]
+
+    result = []
+    block = []
+    for ln in lines:
+        if ln.strip():
+            block.append(ln)
+        else:
+            if block:
+                result.extend(unwrap_block(block, plain))
+                block = []
+            result.append("")
+    if block:
+        result.extend(unwrap_block(block, plain))
+
+    # Collapse runs of blank lines to one, and trim the ends.
+    cleaned = []
+    for ln in result:
+        if ln == "" and cleaned and cleaned[-1] == "":
+            continue
+        cleaned.append(ln)
+    while cleaned and cleaned[0] == "":
+        cleaned.pop(0)
+    while cleaned and cleaned[-1] == "":
+        cleaned.pop()
+
+    sys.stdout.write("\n".join(cleaned) + "\n")
+
+
+if __name__ == "__main__":
+    main()

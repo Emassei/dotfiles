@@ -133,3 +133,13 @@ type = "popup"
 command = "lazygit"
 width = "85%"
 height = "85%"
+
+# Reflow the clipboard after a pane copy: alt+u, v, y gives you text broken
+# at the pane edge with a bullet and hanging indent. This rejoins paragraphs
+# so it pastes into an email whole. Copy as usual, then alt+y, then paste.
+[[keys.command]]
+key = "alt+y"
+type = "popup"
+command = "/home/ernie/dotfiles/utils/reflow-clipboard"
+width = "50%"
+height = 4
