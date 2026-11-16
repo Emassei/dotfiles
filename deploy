@@ -225,6 +225,7 @@ setup_symlinks() {
     create_symlink "$DOTFILES/apps/fontconfig/fonts.conf" "$HOME/.config/fontconfig/fonts.conf"
     create_symlink "$DOTFILES/apps/greenclip/greenclip.toml" "$HOME/.config/greenclip.toml"
     create_symlink "$DOTFILES/apps/autorandr" "$HOME/.config/autorandr"
+    mkdir -p "$HOME/.config/pulse" && create_symlink "$DOTFILES/apps/pulse/default.pa" "$HOME/.config/pulse/default.pa"
     create_symlink "$DOTFILES/restic/excludes" "$HOME/.config/restic/excludes"
 }
 
@@ -319,6 +320,13 @@ install_system_files() {
             "$DOTFILES/system/udev/96-keyboard-hotplug.rules" /etc/udev/rules.d/
     fi
 
+    # Lid closed while plugged in keeps the box awake (applies at next boot —
+    # never restart logind under a running X session)
+    if [[ -f "$DOTFILES/system/logind/lid-server.conf" ]]; then
+        sudo install -D -o root -g root -m 644 \
+            "$DOTFILES/system/logind/lid-server.conf" /etc/systemd/logind.conf.d/lid-server.conf
+    fi
+
     # Weekly update stager: pre-download upgrades + Arch news check, notify
     if [[ -d "$DOTFILES/system/pacman-stage" ]]; then
         sudo install -o root -g root -m 755 \
@@ -370,6 +378,10 @@ enable_services() {
 
     # NetworkManager dispatcher
     sudo systemctl enable --now NetworkManager-dispatcher.service
+
+    # Docker: daemon at boot + socket access without sudo (group applies at next login)
+    sudo systemctl enable --now docker.service
+    sudo usermod -aG docker "$USER"
 
     # User services
     systemctl --user enable --now greenclip.service
