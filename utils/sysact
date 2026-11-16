@@ -13,8 +13,8 @@ cmds="\
 🚪 leave dwm	kill -TERM $(pgrep -u $USER "\bdwm$")
 ♻ renew dwm	kill -HUP $(pgrep -u $USER "\bdwm$")
 🐻 hibernate	slock ${hib:-systemctl suspend-then-hibernate -i}
-🔃 reboot	${reb:-sudo -A reboot}
-🖥 poweroff	${shut:-sudo -A shutdown -h now}"
+🔃 reboot	${reb:-systemctl reboot -i}
+🖥 poweroff	${shut:-systemctl poweroff -i}"
 
 choice="$(echo "$cmds" | cut -d'	' -f 1 | dmenu)" || exit 1
 
