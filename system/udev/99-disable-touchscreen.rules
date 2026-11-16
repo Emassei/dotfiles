@@ -1,0 +1,18 @@
+# Disable the p14s touchscreen.
+#
+# The panel is a Novatek i2c-hid touchscreen that enumerates with the opaque
+# name "NVTK0603:00 0603:F200" - no "touch" anywhere in it. It is the
+# touchscreen though: PROP=2 is INPUT_PROP_DIRECT, KEY=400 is BTN_TOUCH, and it
+# exposes ABS_MT_* multitouch axes.
+#
+# ENV{ID_INPUT*}="" hides it from libinput/X/Wayland so nothing consumes its
+# events, while leaving the kernel driver bound (so no dmesg noise and no
+# effect on the other i2c-hid devices on the same bus).
+#
+# To re-enable: delete or comment this file, then
+#   sudo udevadm control --reload && sudo udevadm trigger
+# or just reboot.
+
+SUBSYSTEM=="input", ATTRS{name}=="NVTK0603:00 0603:F200", \
+  ENV{ID_INPUT}="", ENV{ID_INPUT_TOUCHSCREEN}="", ENV{ID_INPUT_MOUSE}="", \
+  ENV{LIBINPUT_IGNORE_DEVICE}="1"
