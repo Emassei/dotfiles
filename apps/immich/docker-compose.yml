@@ -29,6 +29,10 @@ services:
       - redis
       - database
     restart: always
+    # The server runs the ffmpeg transcode jobs. Same reason as the ML cap
+    # below: uncapped ffmpeg on this CPU is a thermal-shutdown risk. 2 threads'
+    # worth leaves headroom for postgres, jellyfin and the vault's rest-server.
+    cpus: 2.0
     healthcheck:
       disable: false
 
@@ -45,6 +49,15 @@ services:
     env_file:
       - .env
     restart: always
+    # CPU cap: this box is a 2011 i7-2640M (2 cores / 4 threads) with no AVX2
+    # and a dust-limited cooler. Uncapped, CLIP + face inference pegged every
+    # thread, drove the package to 97-100C and thermally killed the machine
+    # twice (2026-10-15, nearly again on 10-20) - which hard-cut power and left
+    # four filesystems, the vault drive included, needing journal recovery.
+    # 1.0 = one thread's worth. Indexing is slower; the box survives.
+    cpus: 1.0
+    cpu_shares: 256
+    mem_limit: 2g
     healthcheck:
       disable: false
 
