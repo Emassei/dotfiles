@@ -18,7 +18,11 @@ esac
 if grep -qx up /sys/class/net/e*/operstate 2>/dev/null; then
 	icon="🌐"
 elif grep -qx up /sys/class/net/w*/operstate 2>/dev/null; then
-	icon="$(awk '/^\s*w/ { print "📶", int($3 * 100 / 70) "%" }' /proc/net/wireless)"
+	# Some drivers (e.g. the P14s wifi) leave /proc/net/wireless empty; fall
+	# back to NetworkManager's cached signal (no rescan).
+	q=$(awk '/^\s*w/ { print int($3 * 100 / 70) }' /proc/net/wireless)
+	[ -z "$q" ] && q=$(nmcli -t -f IN-USE,SIGNAL dev wifi 2>/dev/null | awk -F: '/^\*/ { print $2; exit }')
+	icon="📶 ${q:-?}%"
 else
 	icon="❎"
 fi
