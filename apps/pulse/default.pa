@@ -1,0 +1,12 @@
+# PulseAudio user config (t490). Loads the system default, then forces the
+# onboard card onto the speakers+mic profile at every start.
+#
+# Why: module-card-restore brings back the last-used profile even when it's an
+# HDMI output that is no longer plugged in (undocked reboot 2026-09-18 → all
+# audio went to a dead HDMI sink). module-switch-on-port-available (loaded by
+# the system default.pa) still hops to HDMI when the dock monitor appears and
+# back to analog when it disappears — this only fixes the starting point.
+.include /etc/pulse/default.pa
+
+.nofail
+set-card-profile alsa_card.pci-0000_00_1f.3 output:analog-stereo+input:analog-stereo
