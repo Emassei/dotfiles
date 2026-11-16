@@ -1,6 +1,10 @@
 [Unit]
 Description=Auto-mount Samsung phone via simple-mtpfs
 After=default.target
+# Without a limit, Restart=on-failure retries every 3s forever when no phone
+# is plugged in, which spams the journal. Give up after 5 tries per minute.
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 Type=forking
