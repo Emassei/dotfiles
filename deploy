@@ -227,7 +227,14 @@ setup_symlinks() {
         mkdir -p "$HOME/.pi/profiles/$_p/extensions"
         create_symlink "$DOTFILES/apps/pi/mode-indicator.ts" "$HOME/.pi/profiles/$_p/extensions/mode-indicator.ts"
     done
-    # Sub-agents: personal profile only (not enabled for work).
+    # Sub-agents (work profile: read-only scout + planner only; worker/reviewer stay personal-only).
+    mkdir -p "$HOME/.pi/profiles/work/extensions/subagent" "$HOME/.pi/profiles/work/agents"
+    create_symlink "$DOTFILES/apps/pi/subagent/index.ts" "$HOME/.pi/profiles/work/extensions/subagent/index.ts"
+    create_symlink "$DOTFILES/apps/pi/subagent/agents.ts" "$HOME/.pi/profiles/work/extensions/subagent/agents.ts"
+    for _a in scout planner; do
+        create_symlink "$DOTFILES/apps/pi/subagent/agents/$_a.md" "$HOME/.pi/profiles/work/agents/$_a.md"
+    done
+    create_symlink "$DOTFILES/apps/pi/subagent/AGENTS.work.md" "$HOME/.pi/profiles/work/AGENTS.md"
     mkdir -p "$HOME/.pi/profiles/personal/extensions/subagent" "$HOME/.pi/profiles/personal/agents"
     create_symlink "$DOTFILES/apps/pi/subagent/index.ts" "$HOME/.pi/profiles/personal/extensions/subagent/index.ts"
     create_symlink "$DOTFILES/apps/pi/subagent/agents.ts" "$HOME/.pi/profiles/personal/extensions/subagent/agents.ts"

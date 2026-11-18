@@ -1,4 +1,4 @@
-# Pi sub-agent extension (personal profile only)
+# Pi sub-agent extension (personal: all four agents; work: read-only scout + planner)
 
 Copied from pi 1.5.2's `examples/extensions/subagent/` and pinned here so upgrades
 cannot change it. Each sub-agent is a separate `pi --mode json -p --no-session`
@@ -9,4 +9,4 @@ Changes from upstream:
 - `scout` no longer has `bash` (read-only: read, grep, find, ls).
 
 `worker` has every tool and `reviewer` has `bash`. Treat both as full-permission agents.
-Not enabled for the work profile.
+Work profile: only `scout` and `planner` are linked, with `AGENTS.work.md` as its delegation rule.
