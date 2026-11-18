@@ -1,0 +1,37 @@
+{
+  "providers": {
+    "azure-foundry-claude": {
+      "baseUrl": "https://configured-locally.invalid/anthropic",
+      "api": "anthropic-messages",
+      "apiKey": "azure-foundry-entra",
+      "headers": {
+        "Authorization": "!~/dotfiles/utils/azure-foundry-bearer"
+      },
+      "models": [
+        {
+          "id": "claude-fable-5",
+          "name": "Claude Fable 5 (work Azure Foundry)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 1000000,
+          "maxTokens": 128000,
+          "thinkingLevelMap": {
+            "off": null,
+            "xhigh": "xhigh",
+            "max": "max"
+          },
+          "compat": {
+            "forceAdaptiveThinking": true,
+            "supportsMidConvoSystemMessages": true,
+            "supportsMidConvoToolChanges": true,
+            "supportsStrictTools": true
+          },
+          "promptCache": {
+            "short": 300,
+            "long": 3600
+          }
+        }
+      ]
+    }
+  }
+}

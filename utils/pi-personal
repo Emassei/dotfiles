@@ -1,0 +1,13 @@
+#!/bin/sh
+# Personal Pi profile: personal Anthropic OAuth only; never inherit work cloud credentials.
+unset AZURE_FOUNDARY_URL AZURE_OPENAI_API_KEY AZURE_OPENAI_API_KEY_EAST_US_2
+unset AZURE_OPENAI_BASE_URL AZURE_OPENAI_RESOURCE_NAME
+unset OPENAI_API_KEY OPENAI_BASE_URL OPENAI_ORG_ID OPENAI_ORGANIZATION
+export PI_CODING_AGENT_DIR="$HOME/.pi/profiles/personal"
+# Tint the terminal background so this profile is recognisable; reset on exit.
+if [ -t 1 ]; then
+  printf '\033]11;%s\007' '#0d1f14'
+  trap 'printf "\033]111\007"' EXIT
+  trap 'exit 143' TERM HUP
+fi
+"$HOME/.pi/agent/bin/pi" "$@"

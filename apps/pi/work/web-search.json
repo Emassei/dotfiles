@@ -1,0 +1,5 @@
+{
+  "webSearch": { "allowedProviders": ["openai"] },
+  "searchRouting": { "providers": ["openai"], "useCurrentModel": true, "fallbackOn": ["unsupported"] },
+  "fetchRouting": { "providers": ["http"], "allowRemoteHostedProviders": false }
+}

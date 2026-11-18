@@ -1,0 +1,30 @@
+#!/bin/sh
+# Work Pi profile: Azure/OpenAI credentials only; never inherit personal Anthropic auth.
+unset ANTHROPIC_API_KEY ANTHROPIC_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN
+unset ANTHROPIC_FEDERATION_RULE_ID ANTHROPIC_ORGANIZATION_ID
+unset ANTHROPIC_IDENTITY_TOKEN_FILE ANTHROPIC_SERVICE_ACCOUNT_ID ANTHROPIC_WORKSPACE_ID
+# Work OpenAI deployments are reached through Azure, never the direct OpenAI provider.
+unset OPENAI_API_KEY OPENAI_BASE_URL OPENAI_ORG_ID OPENAI_ORGANIZATION
+# Reuse the machine-local Claude Code Foundry endpoint without committing the
+# work resource URL to this public dotfiles repository.
+if [ -z "${ANTHROPIC_FOUNDRY_BASE_URL:-}" ] && [ -r "$HOME/.claude/fable-foundry_2.json" ]; then
+  ANTHROPIC_FOUNDRY_BASE_URL=$(jq -r '.env.ANTHROPIC_FOUNDRY_BASE_URL // empty' "$HOME/.claude/fable-foundry_2.json")
+  export ANTHROPIC_FOUNDRY_BASE_URL
+fi
+export PI_CODING_AGENT_DIR="$HOME/.pi/profiles/work"
+if [ -n "${ANTHROPIC_FOUNDRY_BASE_URL:-}" ]; then
+  mkdir -p "$PI_CODING_AGENT_DIR"
+  umask 077
+  jq --arg url "$ANTHROPIC_FOUNDRY_BASE_URL" \
+    '.providers["azure-foundry-claude"].baseUrl = $url' \
+    "$HOME/dotfiles/apps/pi/work/models.template.json" \
+    > "$PI_CODING_AGENT_DIR/models.json.tmp" || exit $?
+  mv "$PI_CODING_AGENT_DIR/models.json.tmp" "$PI_CODING_AGENT_DIR/models.json"
+fi
+# Tint the terminal background so this profile is recognisable; reset on exit.
+if [ -t 1 ]; then
+  printf '\033]11;%s\007' '#2a1210'
+  trap 'printf "\033]111\007"' EXIT
+  trap 'exit 143' TERM HUP
+fi
+"$HOME/.pi/agent/bin/pi" "$@"

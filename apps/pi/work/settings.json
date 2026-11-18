@@ -1,0 +1,20 @@
+{
+  "tuiMode": "regular",
+  "theme": "dracula",
+  "defaultProvider": "azure",
+  "defaultModel": "gpt-5.6-sol",
+  "enabledModels": [
+    "azure/*",
+    "azure-foundry-claude/*"
+  ],
+  "extensions": [
+    "~/.pi/agent/extensions/herdr-agent-state.ts"
+  ],
+  "themes": [
+    "~/dotfiles/apps/pi/themes/dracula.json"
+  ],
+  "lastChangelogVersion": "1.5.2",
+  "packages": [
+    "npm:pi-web-access@0.48.0"
+  ]
+}

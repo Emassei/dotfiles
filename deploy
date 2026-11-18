@@ -124,6 +124,7 @@ setup_directories() {
     mkdir -p "$HOME/.config/yazi"
     mkdir -p "$HOME/.config/clipmenu"
     mkdir -p "$HOME/.config/herdr"
+    mkdir -p "$HOME/.pi/profiles/work" "$HOME/.pi/profiles/personal"
     mkdir -p "$HOME/.config/dunst" "$HOME/.config/flameshot" "$HOME/.config/fontconfig"
     mkdir -p "$HOME/.config/restic" "$HOME/.config/systemd/user"
     mkdir -p "$HOME/.local/share/zsh/history"
@@ -219,6 +220,13 @@ setup_symlinks() {
     create_symlink "$DOTFILES/apps/yazi/yazi.toml" "$HOME/.config/yazi/yazi.toml"
     create_symlink "$DOTFILES/apps/yazi/keymap.toml" "$HOME/.config/yazi/keymap.toml"
     create_symlink "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+    create_symlink "$DOTFILES/apps/pi/work/settings.json" "$HOME/.pi/profiles/work/settings.json"
+    create_symlink "$DOTFILES/apps/pi/personal/settings.json" "$HOME/.pi/profiles/personal/settings.json"
+    create_symlink "$DOTFILES/apps/pi/work/web-search.json" "$HOME/.pi/profiles/work/web-search.json"
+    for _p in work personal; do
+        mkdir -p "$HOME/.pi/profiles/$_p/extensions"
+        create_symlink "$DOTFILES/apps/pi/mode-indicator.ts" "$HOME/.pi/profiles/$_p/extensions/mode-indicator.ts"
+    done
     create_symlink "$DOTFILES/apps/dunst/dunstrc" "$HOME/.config/dunst/dunstrc"
     # flameshot rewrites its ini on every settings change (breaks symlinks): seed once, don't link.
     [[ -e "$HOME/.config/flameshot/flameshot.ini" ]] || cp "$DOTFILES/apps/flameshot/flameshot.ini" "$HOME/.config/flameshot/flameshot.ini"

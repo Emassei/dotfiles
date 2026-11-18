@@ -1,0 +1,22 @@
+{
+  "tuiMode": "regular",
+  "theme": "dracula",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-sonnet-5-5",
+  "enabledModels": [
+    "anthropic/*"
+  ],
+  "extensions": [
+    "~/.pi/agent/extensions/herdr-agent-state.ts"
+  ],
+  "themes": [
+    "~/dotfiles/apps/pi/themes/dracula.json"
+  ],
+  "lastChangelogVersion": "1.5.2",
+  "packages": [
+    "npm:pi-web-access@0.48.0"
+  ],
+  "extensionChangelogVersions": {
+    "{\"source\":\"npm:pi-web-access@0.48.0\",\"scope\":\"user\"}": "0.48.0"
+  }
+}
