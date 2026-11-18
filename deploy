@@ -227,6 +227,14 @@ setup_symlinks() {
         mkdir -p "$HOME/.pi/profiles/$_p/extensions"
         create_symlink "$DOTFILES/apps/pi/mode-indicator.ts" "$HOME/.pi/profiles/$_p/extensions/mode-indicator.ts"
     done
+    # Sub-agents: personal profile only (not enabled for work).
+    mkdir -p "$HOME/.pi/profiles/personal/extensions/subagent" "$HOME/.pi/profiles/personal/agents"
+    create_symlink "$DOTFILES/apps/pi/subagent/index.ts" "$HOME/.pi/profiles/personal/extensions/subagent/index.ts"
+    create_symlink "$DOTFILES/apps/pi/subagent/agents.ts" "$HOME/.pi/profiles/personal/extensions/subagent/agents.ts"
+    for _a in "$DOTFILES"/apps/pi/subagent/agents/*.md; do
+        create_symlink "$_a" "$HOME/.pi/profiles/personal/agents/$(basename "$_a")"
+    done
+    create_symlink "$DOTFILES/apps/pi/subagent/AGENTS.md" "$HOME/.pi/profiles/personal/AGENTS.md"
     create_symlink "$DOTFILES/apps/dunst/dunstrc" "$HOME/.config/dunst/dunstrc"
     # flameshot rewrites its ini on every settings change (breaks symlinks): seed once, don't link.
     [[ -e "$HOME/.config/flameshot/flameshot.ini" ]] || cp "$DOTFILES/apps/flameshot/flameshot.ini" "$HOME/.config/flameshot/flameshot.ini"
