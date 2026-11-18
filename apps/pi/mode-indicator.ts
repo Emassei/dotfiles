@@ -1,6 +1,6 @@
 // Custom pi footer, rendered as pills.
 //   Line 1:  [PERSONAL] [model] [thinking] [SMART ▰▰▰▱▱▱▱▱ 62k/100k]   (extension statuses)
-//   Line 2:  ~/cwd  ⎇ branch  +12 −3 · 2 files  ?1                                   ↑in ↓out  (cost in work mode)
+//   Line 2:  ~/cwd  ⎇ branch ⇡1  ●3 ~12 ✖1 ?5  +120 −45  stash 2                                   ↑in ↓out  (cost in work mode)
 //
 // Mode comes from PI_CODING_AGENT_DIR (set by utils/pi-personal and utils/pi-work).
 // Context zone is Matt Pocock's "dumb zone": models degrade past ~100k tokens of
@@ -99,13 +99,19 @@ export default function (pi: ExtensionAPI) {
 					const cwd = process.cwd().startsWith(home) ? "~" + process.cwd().slice(home.length) : process.cwd();
 					const branch = footerData.getGitBranch?.();
 					let left = fgc(cwd, 110) + (branch ? "  " + fgc(`⎇ ${branch}`, 179) : "");
-					if (diff) {
-						if (diff.files === 0 && diff.untracked === 0) left += "  " + dim("clean");
-						else {
-							if (diff.files > 0)
-								left += "  " + fgc(`+${diff.add}`, 41) + " " + fgc(`−${diff.del}`, 203) + dim(` · ${diff.files} file${diff.files === 1 ? "" : "s"}`);
-							if (diff.untracked > 0) left += "  " + fgc(`?${diff.untracked}`, 214);
-						}
+					if (gitInfo) {
+						const g = gitInfo;
+						if (g.ahead) left += " " + fgc(`⇡${g.ahead}`, 41);
+						if (g.behind) left += " " + fgc(`⇣${g.behind}`, 214);
+						const seg: string[] = [];
+						if (g.conflicted) seg.push(`\x1b[1;38;5;196m!${g.conflicted}${RESET}`);
+						if (g.staged) seg.push(fgc(`●${g.staged}`, 41));
+						if (g.modified) seg.push(fgc(`~${g.modified}`, 214));
+						if (g.deleted) seg.push(fgc(`✖${g.deleted}`, 203));
+						if (g.untracked) seg.push(fgc(`?${g.untracked}`, 75));
+						left += "  " + (seg.length ? seg.join(" ") : dim("clean"));
+						if (g.add || g.del) left += "  " + fgc(`+${g.add}`, 41) + " " + fgc(`−${g.del}`, 203);
+						if (g.stash) left += "  " + dim(`stash ${g.stash}`);
 					}
 					// Subscription (personal) cost is nominal; only show real $ in work mode.
 					const right = dim(`↑${k(input)} ↓${k(output)}`) + (profile === "work" ? dim(` $${cost.toFixed(2)}`) : "");
@@ -120,45 +126,72 @@ export default function (pi: ExtensionAPI) {
 
 	let refresh = () => {};
 
-	// Git diff summary vs HEAD (staged + unstaged), plus untracked count. Cached so
-	// render() stays synchronous; refreshed after tool calls and turns.
-	let diff: { add: number; del: number; files: number; untracked: number } | null = null;
+	// Git status, lazygit-style. Cached so render() stays synchronous; refreshed after
+	// tool calls/turns AND on a timer, so changes made in other panes (lazygit, workers) show up.
+	//   ●staged  ~modified  ✖deleted  ?untracked  !conflicted   ⇡ahead ⇣behind   +added −removed (tracked)
+	type GitInfo = {
+		staged: number; modified: number; deleted: number; untracked: number; conflicted: number;
+		add: number; del: number; ahead: number; behind: number; stash: number;
+	};
+	let gitInfo: GitInfo | null = null;
 	let diffBusy = false;
 	const git = (args: string[]) =>
 		new Promise<string>((resolve, reject) =>
-			execFile("git", args, { cwd: process.cwd(), timeout: 3000, maxBuffer: 4_000_000 }, (err, out) =>
+			execFile("git", args, { cwd: process.cwd(), timeout: 4000, maxBuffer: 16_000_000 }, (err, out) =>
 				err ? reject(err) : resolve(out),
 			),
 		);
+	const CONFLICT = new Set(["DD", "AU", "UD", "UA", "DU", "AA", "UU"]);
 	const refreshDiff = async () => {
 		if (diffBusy) return;
 		diffBusy = true;
 		try {
-			const [num, st] = await Promise.all([
-				git(["diff", "--numstat", "HEAD"]),
-				git(["status", "--porcelain", "--untracked-files=normal"]),
+			// -uall lists every untracked file instead of collapsing directories.
+			const [st, num, ab, stash] = await Promise.all([
+				git(["status", "--porcelain=v1", "-uall"]),
+				git(["diff", "--numstat", "HEAD"]).catch(() => ""),
+				git(["rev-list", "--left-right", "--count", "@{u}...HEAD"]).catch(() => ""),
+				git(["stash", "list"]).catch(() => ""),
 			]);
-			let add = 0, del = 0, files = 0;
+			const g: GitInfo = { staged: 0, modified: 0, deleted: 0, untracked: 0, conflicted: 0, add: 0, del: 0, ahead: 0, behind: 0, stash: 0 };
+			for (const line of st.split("\n")) {
+				if (line.length < 3) continue;
+				const x = line[0], y = line[1], xy = line.slice(0, 2);
+				if (xy === "??") { g.untracked++; continue; }
+				if (CONFLICT.has(xy)) { g.conflicted++; continue; }
+				if (x !== " ") g.staged++;
+				if (x === "D" || y === "D") g.deleted++;
+				else if (y !== " ") g.modified++;
+			}
 			for (const line of num.split("\n")) {
 				const [a, d] = line.split("\t");
 				if (!a) continue;
-				files++;
-				add += Number(a) || 0; // "-" for binary files -> 0
-				del += Number(d) || 0;
+				g.add += Number(a) || 0; // "-" for binary files -> 0
+				g.del += Number(d) || 0;
 			}
-			const untracked = st.split("\n").filter((l) => l.startsWith("??")).length;
-			diff = { add, del, files, untracked };
+			const [behind, ahead] = ab.trim().split(/\s+/).map(Number);
+			g.behind = behind || 0;
+			g.ahead = ahead || 0;
+			g.stash = stash.split("\n").filter(Boolean).length;
+			gitInfo = g;
 		} catch {
-			diff = null; // not a git repo, or no commits yet
+			gitInfo = null; // not a git repo
 		} finally {
 			diffBusy = false;
 			refresh();
 		}
 	};
+	let poll: ReturnType<typeof setInterval> | undefined;
 
 	pi.on("session_start", async (_e, ctx) => {
 		if (enabled) install(ctx);
 		void refreshDiff();
+		if (poll) clearInterval(poll);
+		poll = setInterval(() => void refreshDiff(), 4000);
+		poll.unref?.();
+	});
+	pi.on("session_shutdown" as any, async () => {
+		if (poll) clearInterval(poll);
 	});
 	for (const ev of ["tool_result", "turn_end", "agent_end"] as const) {
 		pi.on(ev as any, async () => void refreshDiff());
