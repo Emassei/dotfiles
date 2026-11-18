@@ -1,0 +1,8 @@
+#!/bin/sh
+# Print a short-lived Azure AI bearer header for Pi. The token is never stored.
+token=$(az account get-access-token \
+  --scope 'https://ai.azure.com/.default' \
+  --query accessToken \
+  --output tsv) || exit $?
+[ -n "$token" ] || { echo 'Azure CLI returned an empty Azure AI token' >&2; exit 1; }
+printf 'Bearer %s' "$token"

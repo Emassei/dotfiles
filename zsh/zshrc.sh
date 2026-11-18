@@ -35,6 +35,9 @@ alias ll='eza -l --icons --group-directories-first --git'
 alias la='eza -la --icons --group-directories-first --git'
 alias tree='eza --tree --icons'
 alias codes='ykman oath accounts code'
+# Keep work and personal LLM credentials isolated. Plain `pi` is deliberately
+# work-safe; use `pi-personal` explicitly for the personal Anthropic account.
+alias pi='pi-work'
 # add a new OTP: run add_qr, click-drag the QR on screen; it goes straight onto the YubiKey
 alias add_qr='import /tmp/qr.png && ykman oath accounts uri "$(zbarimg -q --raw /tmp/qr.png)" && shred -u /tmp/qr.png'
 alias almanac='~/dotfiles/utils/almanac'
