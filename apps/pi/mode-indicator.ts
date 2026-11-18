@@ -62,7 +62,8 @@ export default function (pi: ExtensionAPI) {
 
 			const zonePill = () => {
 				const tokens = ctx.getContextUsage?.()?.tokens;
-				if (tokens == null) return pill("CONTEXT ?", 250, 238);
+				// Unknown right after /compact until the next model response; context is small then.
+				if (tokens == null) return pill(`SMART ${"▱".repeat(BAR_CELLS)} compacted`, 16, 41);
 				const filled = Math.min(BAR_CELLS, Math.round((tokens / DUMB_AT) * BAR_CELLS));
 				const bar = "▰".repeat(filled) + "▱".repeat(BAR_CELLS - filled);
 				if (tokens < WARN_AT) return pill(`SMART ${bar} ${k(tokens)}/${k(DUMB_AT)}`, 16, 41);
