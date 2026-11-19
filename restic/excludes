@@ -19,7 +19,8 @@
 **/meili_data
 **/data-node
 **/docker/mysql/data
-**/claude-audit-log*/**/data/chats
 **/ib_buffer_pool
 **/ib_logfile*
 **/data/chats
+**/claude-audit-log*/**/data
+**/jamestown_devops/**/scratch
